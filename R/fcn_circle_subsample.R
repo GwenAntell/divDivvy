@@ -1,13 +1,9 @@
 library(terra)
 library(sf)
-# library(rangemap) # for alternate way to buffer and wrap around antimeridian
 
-# Should this run on only raster data? or including centroid pts as original
-# A: raster so as to rarefy sites (standardize area).
-# So, use cell number/site ID and centroid coords as input.
+# Use cell number/site ID and centroid coords as input.
 # (Strictly, these don't have to be raster cell coords - could be coords of
 # a predefined/clean set of locality points.)
-
 # dat should contain unique site/cell IDs and locations
 # (otherwise add step to subset pool to unique IDs)
 
@@ -46,7 +42,7 @@ cookie <- function(dat, siteId, xy, r, nSite, # prj,
   # assign sampling weights return ID names of rarefied sites/cells
   if (weight){  
     samplIds <- sample(sample(pool), nSite, replace = FALSE) 
-    # extra random
+    # extra random sampling
     
   } else {
     # assign sampling weights inverse-square proportional to distance
@@ -58,8 +54,6 @@ cookie <- function(dat, siteId, xy, r, nSite, # prj,
     
     # squared inverse weight because inverse alone is too weak an effect
     gcdists <- st_distance(poolPts, seedsfc) # spherical distances by default
-     # sp::spDistsN1(centroids, seed_pt) # GSA original way 
-     # fields::rdist.earth(pcoords[,c("paleolng","paleolat")], miles = FALSE) # RC way
     wts <- sapply(gcdists, function(x) x^(-2))
     # it's ok weights don't sum to 1; sample() doesn't require this
     samplIds <- c(seed, 
@@ -80,23 +74,3 @@ cookie <- function(dat, siteId, xy, r, nSite, # prj,
   # in plot representation, not polygon geometry
     # st_intersects(seedsfc, bufWrap, sparse = FALSE) 
 }
-
-# test sf buffering and wrapping code
-
-playxy <- cbind(long = 177, lat = -25)
-# cbind(long = c(0, 135, 177), lat = c(85, -25, 0))
-playpts <- st_point(playxy)
-#   list(st_point(playxy[1,]), 
-#                 st_point(playxy[2,]), 
-#                 st_point(playxy[3,])
-# )
-playsfc <- st_sfc(playpts, crs = 'epsg:4326')
-playbuf <- st_buffer(playsfc, dist = 1500*1000)
-playfin <- st_wrap_dateline(playbuf, options = c("WRAPDATELINE=YES"))
-# seems to fail if buffer is a multipoly (multiple point buffers)
-
-# playu <- st_union(playfin) # doesn't seem to do anything further?
-
-plot(wrld_simpl, border="grey50")
-plot(playfin, add=TRUE, pch=19, col ='blue')
-plot(playu, add=TRUE, pch=19, col ='green')
