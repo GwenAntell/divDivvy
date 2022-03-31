@@ -15,7 +15,7 @@ findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
   buf <- st_buffer(seedsfc, dist = r*1000) 
   # split poly into multipolygon around antimeridian (patches 2020 bug)
   bufWrap <- st_wrap_dateline(buf, options = c("WRAPDATELINE=YES"))
-  # identical results if st_union() applied to bufWrap
+  # identical results if st_union() applied to bufWrap.
   # alternative way to construct buffer, but adding new pkg dependency:
   # rangemap::geobuffer_points(seedxy, r*1000, wrap_antimeridian = TRUE)
   
@@ -29,7 +29,7 @@ findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
 
 # function to try all possible starting pts (i.e. all occupied cells)
 # save the ID of any cells that contain given pool size within buffer
-findSeeds <- function(dat, siteId, xy, r, nSite, # prj
+findSeeds <- function(dat, siteId, xy, r, nSite # , prj
                       ){
   # count unique sites (not taxon occurences) relative to subsample quota
   dupes <- duplicated(dat[,siteId])
@@ -37,14 +37,17 @@ findSeeds <- function(dat, siteId, xy, r, nSite, # prj
   
   # test whether each occupied site/cell is viable for subsampling
   posSeeds <- dat[,siteId]
-  isOK <- sapply(posSeeds, function(s){
+  posPools <- sapply(posSeeds, function(s){
     sPool <- findPool(s, dat, siteId, xy, r, nSite)
     n <- length(sPool)
-    ifelse(n > nSite, s, NA)
+    if (n > nSite)
+      sPool
   })
-  # return IDs of only those seeds that are viable (pool > nSite)
-  viable <- isOK[ !is.na(isOK)]
-  return(viable)
+  # return pool site/cell IDs for each viable seed point
+  # same overall list structure as cookies outputs; names = seed IDs
+  Filter(Negate(is.null), posPools)
+  # posPools[!sapply(posPools, is.null)] # equivalent, base syntax
+  
 }
 
 # Use cell number/site ID and centroid coords as input.
@@ -53,47 +56,53 @@ findSeeds <- function(dat, siteId, xy, r, nSite, # prj
 # dat should contain unique site/cell IDs and locations
 # (otherwise add step to subset pool to unique IDs)
 
-# function of 1 subsample (1 try on 1 starting cell within 1 bin)
-# take a subsample of sites/cells, without replacement, within buffered radius
 cookies <- function(dat, siteId, xy, r, nSite, # prj,
-                    seed, weight = FALSE){
-  pool <- findPool(seed, dat, siteId, xy, r, nSite)
-  if (length(pool) < nSite){
-    stop('not enough pool cells to sample')
+                    iter, weight = FALSE){
+  # this is the rate-limiting step (v slow), but overall
+  # it's most efficient to construct all spatial buffers here at start
+  # and not repeat the calculations anywhere later!
+  allPools <- findSeeds(dat, siteId, xy, r, nSite)
+  if (length(allPools) < 1){
+    stop('not enough close sites for any sample')
+  }
+  # convert to spatial features for distance calculations later
+  if (weight){
+    datSf <- st_as_sf(dat, coords = c('long','lat'),
+                      crs = 'epsg:4326')
   }
   
-  # assign sampling weights and return IDs of rarefied sites/cells
-  if (weight){  
-    samplIds <- sample(sample(pool), nSite, replace = FALSE) 
-    # extra random sampling
+  # takes a subsample of sites/cells, w/o replacement, w/in buffered radius
+  cookie <- function(){
+    # select one seed cell at random
+    seeds <- names(allPools)
+    if (length(seeds) > 1){
+      seed <- sample(sample(seeds), 1) 
+    } else { 
+      # sample() fcn makes mistake if only 1 item to pick
+      seed <- seeds
+    }
+    pool <- allPools[seed][[1]]
     
-  } else {
-    # assign sampling weights inverse-square proportional to distance
-    
-    # remove seed from probabilistic sampling - include it manually
-    pool <- pool[ !pool == seed]
-    poolPts <- datSf[poolBool,]
-    poolPts <- poolPts[ !poolPts$face == seed,]
-    
-    # squared inverse weight because inverse alone is too weak an effect
-    gcdists <- st_distance(poolPts, seedsfc) # spherical distances by default
-    wts <- sapply(gcdists, function(x) x^(-2))
-    # sample() doesn't require wts sum = 1; identical results without rescaling
-    samplIds <- c(seed, 
-                  sample(sample(pool), nSite-1, prob = wts, replace = FALSE)
-                  )
+    if (weight){  
+      # remove seed from probabilistic sampling - include it manually
+      # (otherwise inverse distance will divide by zero)
+      pool <- pool[ !pool == seed]
+      poolBool <- dat[,siteId] %in% pool
+      poolPts <- datSf[poolBool,] 
+      
+      # squared inverse weight because inverse alone is too weak an effect
+      seedRow <- which(dat[, siteId] == seed)[1]
+      seedPt <- datSf[seedRow,]
+      gcdists <- st_distance(poolPts, seedPt) # spherical distances by default
+      wts <- sapply(gcdists, function(x) x^(-2))
+      # sample() doesn't require wts sum = 1; identical results without rescaling
+      samplIds <- c(seed, 
+                    sample(sample(pool), nSite-1, prob = wts, replace = FALSE)
+      )
+    } else {
+      samplIds <- sample(sample(pool), nSite, replace = FALSE) 
+    }
+    return(samplIds) # IDs of rarefied sites/cells
   }
-  return(samplIds)
-  
-  # plot with global map to check it works correctly
-    # library(maptools) # for plotting a simple world map
-    # data("wrld_simpl")
-    # plot(wrld_simpl, border="grey50")
-    # plot(bufWrap, add=TRUE, col="red") # border = 'red', lwd=2
-    # points(dat[,xy], pch=19, col="blue")
-    # points(seedpt, pch=19, col="purple")
-  # buffer area looks like inverse of what it should, but -
-  # buffer does contain seed cell, so error must be 
-  # in plot representation, not polygon geometry
-    # st_intersects(seedsfc, bufWrap, sparse = FALSE) 
+  replicate(iter, cookie(), simplify = FALSE)
 }
