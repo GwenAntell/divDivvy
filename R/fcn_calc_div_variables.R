@@ -1,22 +1,41 @@
 library(iNEXT)
 library(units)
 
-dat <- sites
-taxVar <- 'genus'
-idVar <- 'face' # rename to 'siteVar' or 'sampVar' ?
-sampIds <- circs[[1]]
-collections <- 'collection_no' # remove as too problematic a variable?
-coords <- c('long','lat') 
-# c('paleolng','paleolat') # if using original, vector coords
-quotaQ <- 0.2
-quotaN <- 10
-omitDom <- TRUE
+# for testing purposes
+# dat <- sites
+# taxVar <- 'genus'
+# idVar <- 'face' # rename to 'siteVar' or 'sampVar' ?
+# sampIds <- circs[[1]]
+# collections <- 'collection_no' # remove as too problematic a variable?
+# coords <- c('long','lat') # c('paleolng','paleolat') # if using original, vector coords
+# quotaQ <- 0.2
+# quotaN <- 10
+# omitDom <- TRUE
 
-smry <- sampMeta(dat = df, taxVar = 'accepted_name', 
-                 idVar = 'siteID', sampIds = circs[[1]],
-                 collections = 'collection_no', 
-                 coords = c('paleolng','paleolat'),
-                 quotaQ = 0.15, quotaN = 10)
+# dat should be list of occs for a single taxon, which are presumed unique
+rangeSizer <- function(dat, coords = NULL){
+  out <- cbind('nOcc' = nrow(dat))
+  if ( !is.null(coords) ){
+    xy <- dat[,coords]
+    latDiff <- max(xy[,2]) - min(xy[,2])
+    latRng <- abs(latDiff)
+    pts <- st_as_sf(xy, coords = coords, crs = 'epsg:4326')
+    ptsGrp <- st_union(pts)
+    cntr <- unlist( st_centroid(ptsGrp) )
+    gcdists <- st_distance(pts) # returns units-class object (m)
+    gcMax <- max(gcdists) / 1000
+    mst <- spantree( drop_units(gcdists) )
+    agg <- sum(mst$dist) / 1000 
+    out <- cbind(out,
+                 'centroidLng' = cntr[1],
+                 'centroidLat' = cntr[2],
+                 'latRange' = latRng,
+                 'greatCircDist' = gcMax,
+                 'minSpanTree' = agg
+    )
+  }
+  return(out)
+}
 
 # collections arg = name of col containing collection id, e.g. 'collection_no'
 # coords arg = name of latlong cols to calculate lat range, MST, and midpoint
@@ -87,31 +106,6 @@ sampMeta <- function(dat, taxVar, idVar, sampIds,
     crRich <- crFull[crFull$order == 0, c('qD','qD.LCL','qD.UCL')]
     names(crRich) <- c('CRdiv','CRlow95','CRupr95')
     out <- cbind(out, crRich)
-  }
-  return(out)
-}
-
-# dat should be list of occs for a single taxon, which are presumed unique
-rangeSizer <- function(dat, coords = NULL){
-  out <- cbind('nOcc' = nrow(dat))
-  if ( !is.null(coords) ){
-    xy <- dat[,coords]
-    latDiff <- max(xy[,2]) - min(xy[,2])
-    latRng <- abs(latDiff)
-    pts <- st_as_sf(xy, coords = coords, crs = 'epsg:4326')
-    ptsGrp <- st_union(pts)
-    cntr <- unlist( st_centroid(ptsGrp) )
-    gcdists <- st_distance(pts) # returns units-class object (m)
-    gcMax <- max(gcdists) / 1000
-    mst <- spantree( drop_units(gcdists) )
-    agg <- sum(mst$dist) / 1000 
-    out <- cbind(out,
-                 'centroidLng' = cntr[1],
-                 'centroidLat' = cntr[2],
-                 'latRange' = latRng,
-                 'greatCircDist' = gcMax,
-                 'minSpanTree' = agg
-    )
   }
   return(out)
 }
