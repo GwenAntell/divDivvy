@@ -17,11 +17,12 @@ library(sf)
   # dat <- dat[keepRows,]
   # xy <- c('paleolng', 'paleolat')
   # nMin <- 3
+  # nSite <- 8 # if nSite supplied, nMin overridden
   # branchMax <- 1500 # in km
   # iter <- 500 # should be > 1 for sample() to work correctly
 
 ptClustr <- function(dat, xy = c('paleolng', 'paleolat'),
-                     nMin = 3, branchMax, iter 
+                     branchMax, iter, nSite = NULL, nMin = 3
                      ) {
   # subset to unique locations and find dist matrix between all
 	coords <- dat[,xy]
@@ -32,8 +33,10 @@ ptClustr <- function(dat, xy = c('paleolng', 'paleolat'),
 	# TODO only assign id if not already given? (e.g. cell name)
 	coords$ID <- paste('loc', 1:nrow(coords), sep = '') 
 	nLoc <- nrow(coords)
-	if (nLoc < nMin) {
-	  stop('insufficient points for a cluster')
+	if ( !is.null(nSite) ){
+	  if (nLoc < nSite) stop('insufficient points for a subsample')
+	} else {
+	  if (nLoc < nMin) stop('insufficient points for a cluster')
 	}
   
 	coordSf <- st_as_sf(coords, coords = xy, crs = 'epsg:4326')
@@ -67,8 +70,15 @@ ptClustr <- function(dat, xy = c('paleolng', 'paleolat'),
 	ss <- sapply(seeds, groupr)
 #	ss1 <- unique(ss) # duplicate subsample entities allowed, matches circ fcn
   
-	# weed out any clusters with fewer than min specified points
-	ss1 <- ss[sapply(ss, length) >= nMin]
+	# subsample trees to specified n sites
+	if ( !is.null(nSite) ){
+	  ss1 <- ss[sapply(ss, length) >= nSite]
+	  ss1 <- lapply(ss1, function(clust){
+	    clust <- sample(sample(clust), nSite, replace = FALSE)
+	  })
+	} else {
+	  ss1 <- ss[sapply(ss, length) >= nMin]
+	}
 	if (length(ss1) == 0){
 	  stop('not enough close sites for any sample')
 	} 
