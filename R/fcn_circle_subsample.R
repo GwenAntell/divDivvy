@@ -2,6 +2,16 @@ library(terra)
 library(sf)
 # TODO option to pass on prj info to relevant function guts
 
+# for testing purposes
+# dat <- sites
+# siteId <- 'face'
+# xy <- c('long','lat')
+# r <- 1000 # matches max branch length = 1000 for ptClustr
+# nSite <- 8
+# weight <- TRUE
+# iter <- 5
+# output <- 'full'
+
 # return vector of cells that lie within buffer radius of given seed
 # internal fcn for findPool and cookie
 findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
@@ -20,8 +30,7 @@ findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
   # rangemap::geobuffer_points(seedxy, r*1000, wrap_antimeridian = TRUE)
   
   # find sites within radius of seed site/cell
-  datSf <- st_as_sf(dat, coords = c('long','lat'),
-                    crs = 'epsg:4326')
+  datSf <- st_as_sf(dat, coords = xy, crs = 'epsg:4326')
   poolBool <-  st_intersects(datSf, bufWrap, sparse = FALSE)
   pool <- dat[poolBool, siteId]
   return(pool)
@@ -32,8 +41,8 @@ findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
 findSeeds <- function(dat, siteId, xy, r, nSite # , prj
                       ){
   # count unique sites (not taxon occurences) relative to subsample quota
-  dupes <- duplicated(dat[,siteId])
-  dat <- dat[ !dupes, ]
+  # dupes <- duplicated(dat[,siteId]) # can leave out since in higher-nested fn
+  # dat <- dat[ !dupes, ]
   
   # test whether each occupied site/cell is viable for subsampling
   posSeeds <- dat[,siteId]
@@ -53,22 +62,21 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 # Use cell number/site ID and centroid coords as input.
 # (Strictly, these don't have to be raster cell coords - could be coords of
 # a predefined/clean set of locality points.)
-# dat should contain unique site/cell IDs and locations
-# (otherwise add step to subset pool to unique IDs)
-
 cookies <- function(dat, siteId, xy, r, nSite, # prj,
-                    iter, weight = FALSE){
+                    iter, weight = FALSE, output = 'locs'){
+  dupes <- duplicated(dat[,siteId])
+  coords <- dat[ !dupes, c(xy, siteId)]
+  
   # this is the rate-limiting step (v slow), but overall
   # it's most efficient to construct all spatial buffers here at start
   # and not repeat the calculations anywhere later!
-  allPools <- findSeeds(dat, siteId, xy, r, nSite)
+  allPools <- findSeeds(coords, siteId, xy, r, nSite)
   if (length(allPools) < 1){
     stop('not enough close sites for any sample')
   }
   # convert to spatial features for distance calculations later
   if (weight){
-    datSf <- st_as_sf(dat, coords = c('long','lat'),
-                      crs = 'epsg:4326')
+    datSf <- st_as_sf(coords, coords = xy, crs = 'epsg:4326')
   }
   
   # takes a subsample of sites/cells, w/o replacement, w/in buffered radius
@@ -87,11 +95,11 @@ cookies <- function(dat, siteId, xy, r, nSite, # prj,
       # remove seed from probabilistic sampling - include it manually
       # (otherwise inverse distance will divide by zero)
       pool <- pool[ !pool == seed]
-      poolBool <- dat[,siteId] %in% pool
+      poolBool <- coords[,siteId] %in% pool
       poolPts <- datSf[poolBool,] 
       
       # squared inverse weight because inverse alone is too weak an effect
-      seedRow <- which(dat[, siteId] == seed)[1]
+      seedRow <- which(coords[, siteId] == seed)[1]
       seedPt <- datSf[seedRow,]
       gcdists <- st_distance(poolPts, seedPt) # spherical distances by default
       wts <- sapply(gcdists, function(x) x^(-2))
@@ -101,8 +109,19 @@ cookies <- function(dat, siteId, xy, r, nSite, # prj,
       )
     } else {
       samplIds <- sample(sample(pool), nSite, replace = FALSE) 
-    }
-    return(samplIds) # IDs of rarefied sites/cells
+    } # end site rarefaction
+    if (output == 'full'){
+      inSamp <- match(dat[, siteId], samplIds)
+      out <- dat[!is.na(inSamp), ]
+    } else {
+      if (output == 'locs'){
+        inSamp <- match(samplIds, coords[, siteId])
+        out <- coords[inSamp, xy]
+      } else {
+        stop('output argument must be one of c(\'full\', \'locs\')')
+      }
+    } # end output formatting
+    return(out)
   }
   replicate(iter, cookie(), simplify = FALSE)
 }

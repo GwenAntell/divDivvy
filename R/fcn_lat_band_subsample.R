@@ -1,4 +1,4 @@
-# datFls <- list.files('./data') %>% 
+# datFls <- list.files('./data') %>%
 #   grep('csv', ., value = TRUE)
 # df <- paste0('data/', datFls[1]) %>% read.csv
 # #  read.csv(header = TRUE, skip = 19) # if metadata included in download file
@@ -21,9 +21,11 @@
 bandit <- function(dat, xy, width, iter, nSite, 
                    centr = FALSE, absLat = FALSE,
                    output = 'locs'){
+  x <- xy[1]
+  y <- xy[2]
   dupes <- duplicated(dat[,xy])
-  dat <- dat[ !dupes, ]
-  lat <- dat[, xy[2] ]
+  coords <- dat[ !dupes, ]
+  lat <- coords[, y]
   if (absLat){
     lat <- abs(lat)
     brk <- seq(0, 90, by = width)
@@ -42,13 +44,13 @@ bandit <- function(dat, xy, width, iter, nSite,
   # }
   
   # end case of bin edge aligned at equator
-  dat[,'band'] <- cut(lat, brk, right = FALSE) # labels arg
+  coords[,'band'] <- cut(lat, brk, right = FALSE) # labels arg
   # right = F needed so points at lat = 0 included, if lat is absolute val
   # (any point at N or S pole is problematic instead)
-  bnds <- levels(dat[,'band'])
+  bnds <- levels(coords[,'band'])
   
   # pick out bands with sufficient point density for subsampling
-  bTally <- sapply(bnds, function(b) sum(dat[,'band'] %in% b) )
+  bTally <- sapply(bnds, function(b) sum(coords[,'band'] %in% b) )
   bnds <- bnds[ bTally >= nSite ]
   if (length(bnds) < 1){
     stop('not enough close sites for any sample')
@@ -57,11 +59,15 @@ bandit <- function(dat, xy, width, iter, nSite,
   
   # rarefy sites within a band
   sampBnd <- function(b){
-    bBool <- dat[,'band'] %in% b
-    bDat <- dat[bBool,]
+    bBool <- coords[,'band'] %in% b
+    bDat <- coords[bBool,]
     sampRows <- sample(1:nrow(bDat), nSite, replace = FALSE)
+    sampPtStrg <- paste(bDat[sampRows, x], bDat[sampRows, y], sep = '/')
+    datPtStrg  <- paste(dat[,x], dat[,y], sep = '/')
+    inSamp <- match(datPtStrg, sampPtStrg)
+    
     if (output == 'full'){
-      out <- bDat[sampRows, ]
+      out <- dat[!is.na(inSamp), ]
     } else {
       if (output == 'locs'){
         out <- bDat[sampRows, xy]
