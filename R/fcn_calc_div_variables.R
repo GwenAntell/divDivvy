@@ -2,39 +2,32 @@ library(iNEXT)
 library(units)
 
 # for testing purposes
-# dat <- sites
+# dat <- circs[[1]] 
 # taxVar <- 'genus'
-# idVar <- 'face' # rename to 'siteVar' or 'sampVar' ?
-# sampIds <- circs[[1]]
 # collections <- 'collection_no' # remove as too problematic a variable?
 # xy <- c('long','lat') # c('paleolng','paleolat') # if using original, vector coords
 # quotaQ <- 0.2
 # quotaN <- 10
 # omitDom <- TRUE
 
-# dat should be list of occs for a single taxon, which are presumed unique
-rangeSizer <- function(dat, xy = NULL){
-  out <- cbind('nOcc' = nrow(dat))
-  if ( !is.null(xy) ){
-    coords <- dat[,xy]
-    latDiff <- max(coords[,2]) - min(coords[,2])
-    latRng <- abs(latDiff)
-    pts <- st_as_sf(coords, coords = xy, crs = 'epsg:4326')
-    ptsGrp <- st_union(pts)
-    cntr <- unlist( st_centroid(ptsGrp) )
-    gcdists <- st_distance(pts) # returns units-class object (m)
-    gcdists <- set_units(gcdists, 'km')
-    gcMax <- max(gcdists) # / 1000 
-    mst <- spantree(gcdists) # drop_units(gcdists)
-    agg <- sum(mst$dist) # / 1000 
-    out <- cbind(out,
-                 'centroidLng' = cntr[1],
-                 'centroidLat' = cntr[2],
-                 'latRange' = latRng,
-                 'greatCircDist' = gcMax,
-                 'minSpanTree' = agg
-    )
-  }
+rangeSizer <- function(coords){
+  latDiff <- max(coords[,2]) - min(coords[,2])
+  latRng <- abs(latDiff)
+  pts <- st_as_sf(coords, coords = 1:2, crs = 'epsg:4326') 
+  ptsGrp <- st_union(pts)
+  cntr <- unlist( st_centroid(ptsGrp) )
+  gcdists <- st_distance(pts) # returns units-class object (m)
+  gcdists <- set_units(gcdists, 'km')
+  gcMax <- max(gcdists)
+  mst <- spantree( drop_units(gcdists) )  
+  agg <- sum(mst$dist) 
+  out <- cbind(out,
+               'centroidLng' = cntr[1],
+               'centroidLat' = cntr[2],
+               'latRange' = latRng,
+               'greatCircDist' = gcMax,
+               'minSpanTree' = agg
+  )
   return(out)
 }
 
@@ -47,45 +40,41 @@ rangeSizer <- function(dat, xy = NULL){
 # return: great circle distance and summed tree length is returned in km
 # if too few taxon occs to achieve specified rarefaction level, div is extrap
 
-sampMeta <- function(dat, taxVar, idVar, sampIds,
-                     collections = NULL, xy = NULL,
+sampMeta <- function(dat, taxVar, xy,
+                     collections = NULL, 
                      quotaQ = NULL, quotaN = NULL, 
                      omitDom = FALSE){
-  smpld <- dat[, idVar] %in% sampIds
-  datSamp <- dat[smpld,]
   out <- c()
   # n. collections (PBDB data) may be useful to know if rarefying
   if ( !is.null(collections) ){
-    collSamp <- unique( datSamp[,collections] )
+    collSamp <- unique( dat[,collections] )
     out <- cbind(out, 'nColl' = length(collSamp))
   }
   # comb out any duplicate occurrences of a taxon w/in single site.
   # do this after counting collections in case a single taxon
   # at a single site is recorded in multiple collections
-  if (is.null(xy)){
-    datSamp <- unique( datSamp[,c(taxVar, idVar)] )
-  } else {
-    datSamp <- unique( datSamp[,c(taxVar, idVar, xy)] )
-  }
+  dat <- unique( dat[,c(taxVar, xy)] )
   
-  siteSamp <- unique( datSamp[,idVar])
-  nSite <- length(siteSamp)
+  dat[,'site'] <- paste(dat[, xy[1] ], dat[, xy[2] ], sep = '/')
+  siteIds <- unique( dat[,'site'] )
+  nSite <- length(siteIds)
   out <- cbind(out, 'nSite'= nSite)
 
   # run range size fcn as if all occs were from a single taxon
   # duplicate localities affect only occ count, nothing else
-  spatMeta <- rangeSizer(datSamp, xy = xy)
+  sites <- unique( dat[,xy] )
+  spatMeta <- rangeSizer(coords = sites)
   out <- cbind(out, spatMeta)
   
   # diversity metrics; optional coverage and/or classical rarefaction
-  taxSamp <-  unique( datSamp[,taxVar] )
+  taxSamp <-  unique( dat[,taxVar] )
   out <- cbind(out, 'nTax' = length(taxSamp)) # raw count of taxa
-  freqs <- table( datSamp[,taxVar] )
+  freqs <- table( dat[,taxVar] )
   freqOrdr <- sort( as.numeric(freqs), decreasing = TRUE)
   if (omitDom == TRUE){
     dom <- names( which.max(freqs) )
-    domRows <- datSamp[,taxVar] == dom
-    datSamp <- datSamp[ !domRows, ]
+    domRows <- dat[,taxVar] == dom
+    dat <- dat[ !domRows, ]
   }
   if ( !is.null(quotaQ) ){
     sqsFull <- estimateD(list( c(nSite, freqOrdr) ), 
