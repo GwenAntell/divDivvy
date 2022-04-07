@@ -7,25 +7,26 @@ library(units)
 # idVar <- 'face' # rename to 'siteVar' or 'sampVar' ?
 # sampIds <- circs[[1]]
 # collections <- 'collection_no' # remove as too problematic a variable?
-# coords <- c('long','lat') # c('paleolng','paleolat') # if using original, vector coords
+# xy <- c('long','lat') # c('paleolng','paleolat') # if using original, vector coords
 # quotaQ <- 0.2
 # quotaN <- 10
 # omitDom <- TRUE
 
 # dat should be list of occs for a single taxon, which are presumed unique
-rangeSizer <- function(dat, coords = NULL){
+rangeSizer <- function(dat, xy = NULL){
   out <- cbind('nOcc' = nrow(dat))
-  if ( !is.null(coords) ){
-    xy <- dat[,coords]
-    latDiff <- max(xy[,2]) - min(xy[,2])
+  if ( !is.null(xy) ){
+    coords <- dat[,xy]
+    latDiff <- max(coords[,2]) - min(coords[,2])
     latRng <- abs(latDiff)
-    pts <- st_as_sf(xy, coords = coords, crs = 'epsg:4326')
+    pts <- st_as_sf(coords, coords = xy, crs = 'epsg:4326')
     ptsGrp <- st_union(pts)
     cntr <- unlist( st_centroid(ptsGrp) )
     gcdists <- st_distance(pts) # returns units-class object (m)
-    gcMax <- max(gcdists) / 1000
-    mst <- spantree( drop_units(gcdists) )
-    agg <- sum(mst$dist) / 1000 
+    gcdists <- set_units(gcdists, 'km')
+    gcMax <- max(gcdists) # / 1000 
+    mst <- spantree(gcdists) # drop_units(gcdists)
+    agg <- sum(mst$dist) # / 1000 
     out <- cbind(out,
                  'centroidLng' = cntr[1],
                  'centroidLat' = cntr[2],
@@ -47,7 +48,7 @@ rangeSizer <- function(dat, coords = NULL){
 # if too few taxon occs to achieve specified rarefaction level, div is extrap
 
 sampMeta <- function(dat, taxVar, idVar, sampIds,
-                     collections = NULL, coords = NULL,
+                     collections = NULL, xy = NULL,
                      quotaQ = NULL, quotaN = NULL, 
                      omitDom = FALSE){
   smpld <- dat[, idVar] %in% sampIds
@@ -61,10 +62,10 @@ sampMeta <- function(dat, taxVar, idVar, sampIds,
   # comb out any duplicate occurrences of a taxon w/in single site.
   # do this after counting collections in case a single taxon
   # at a single site is recorded in multiple collections
-  if (is.null(coords)){
+  if (is.null(xy)){
     datSamp <- unique( datSamp[,c(taxVar, idVar)] )
   } else {
-    datSamp <- unique( datSamp[,c(taxVar, idVar, coords)] )
+    datSamp <- unique( datSamp[,c(taxVar, idVar, xy)] )
   }
   
   siteSamp <- unique( datSamp[,idVar])
@@ -73,7 +74,7 @@ sampMeta <- function(dat, taxVar, idVar, sampIds,
 
   # run range size fcn as if all occs were from a single taxon
   # duplicate localities affect only occ count, nothing else
-  spatMeta <- rangeSizer(datSamp, coords = coords)
+  spatMeta <- rangeSizer(datSamp, xy = xy)
   out <- cbind(out, spatMeta)
   
   # diversity metrics; optional coverage and/or classical rarefaction
@@ -112,7 +113,7 @@ sampMeta <- function(dat, taxVar, idVar, sampIds,
 
 # TODO return range sizes for all species in all subsamples
 taxDists <- function(dat, taxVar, idVar, sampIds,
-                     coords = NULL, omitSingles = FALSE){
+                     xy = NULL, omitSingles = FALSE){
   if (omitSingles == TRUE){
     freqs <- table( dat[,taxVar] )
     singles <- names(freqs[freqs == 1])
