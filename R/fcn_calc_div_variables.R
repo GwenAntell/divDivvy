@@ -1,5 +1,3 @@
-library(iNEXT)
-library(units)
 
 # for testing purposes
 # dat <- circs[[1]] 
@@ -13,16 +11,15 @@ library(units)
 rangeSizer <- function(coords){
   latDiff <- max(coords[,2]) - min(coords[,2])
   latRng <- abs(latDiff)
-  pts <- st_as_sf(coords, coords = 1:2, crs = 'epsg:4326') 
-  ptsGrp <- st_union(pts)
-  cntr <- unlist( st_centroid(ptsGrp) )
-  gcdists <- st_distance(pts) # returns units-class object (m)
-  gcdists <- set_units(gcdists, 'km')
+  pts <- sf::st_as_sf(coords, coords = 1:2, crs = 'epsg:4326') 
+  ptsGrp <- sf::st_union(pts)
+  cntr <- unlist( sf::st_centroid(ptsGrp) )
+  gcdists <- sf::st_distance(pts) # returns units-class object (m)
+  gcdists <- units::set_units(gcdists, 'km')
   gcMax <- max(gcdists)
-  mst <- spantree( drop_units(gcdists) )  
+  mst <- vegan::spantree( units::drop_units(gcdists) )  
   agg <- sum(mst$dist) 
-  out <- cbind(out,
-               'centroidLng' = cntr[1],
+  out <- cbind('centroidLng' = cntr[1],
                'centroidLat' = cntr[2],
                'latRange' = latRng,
                'greatCircDist' = gcMax,
@@ -77,10 +74,10 @@ sampMeta <- function(dat, taxVar, xy,
     dat <- dat[ !domRows, ]
   }
   if ( !is.null(quotaQ) ){
-    sqsFull <- estimateD(list( c(nSite, freqOrdr) ), 
-                         datatype = 'incidence_freq',
-                         base = 'coverage', level = quotaQ # , conf=NULL # 95% CI or none
-                         )
+    sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ), 
+                                datatype = 'incidence_freq',
+                                base = 'coverage', level = quotaQ # , conf=NULL # 95% CI or none
+                                )
     # q0 = richness, q1 = exp of Shannon's entropy index, 
     # q2 = inverse of Simpson's concentration index
     sqsRich <- sqsFull[sqsFull$order == 0, c('SC','qD','qD.LCL','qD.UCL')]
@@ -89,10 +86,10 @@ sampMeta <- function(dat, taxVar, xy,
     out <- cbind(out, sqsRich)
   }
   if ( !is.null(quotaN) ){
-    crFull <- estimateD(list( c(nSite, freqOrdr) ), 
-                        datatype = 'incidence_freq',
-                        base = 'size', level = quotaN # , conf=NULL # 95% CI or none
-                        )
+    crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ), 
+                               datatype = 'incidence_freq',
+                               base = 'size', level = quotaN # , conf=NULL # 95% CI or none
+                               )
     crRich <- crFull[crFull$order == 0, c('qD','qD.LCL','qD.UCL')]
     names(crRich) <- c('CRdiv','CRlow95','CRupr95')
     out <- cbind(out, crRich)
@@ -101,13 +98,13 @@ sampMeta <- function(dat, taxVar, xy,
 }
 
 # TODO return range sizes for all species in all subsamples
-taxDists <- function(dat, taxVar, idVar, sampIds,
-                     xy = NULL, omitSingles = FALSE){
-  if (omitSingles == TRUE){
-    freqs <- table( dat[,taxVar] )
-    singles <- names(freqs[freqs == 1])
-    rows2toss <- dat[,taxVar] %in% singles
-    dat <- dat[ !rows2toss, ]
-  }
-  # apply rangeSizer to all taxa
-}
+# taxDists <- function(dat, taxVar, idVar, sampIds,
+#                      xy = NULL, omitSingles = FALSE){
+#   if (omitSingles == TRUE){
+#     freqs <- table( dat[,taxVar] )
+#     singles <- names(freqs[freqs == 1])
+#     rows2toss <- dat[,taxVar] %in% singles
+#     dat <- dat[ !rows2toss, ]
+#   }
+#   # apply rangeSizer to all taxa
+# }

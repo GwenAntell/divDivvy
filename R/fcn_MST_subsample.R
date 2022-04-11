@@ -1,6 +1,5 @@
 # function to find all nested nearest-neighbour spatial subsamples
 # modified from Roger Close's findAllNestedSpatialSubsamples.R
-library(sf)
 
 # Changes to original (published) code -
 # * Branch cutoff made *before* max threshold reached, not 1 point after
@@ -27,13 +26,13 @@ library(sf)
 # distMtrx arg = pairwise distances with units, rownames and colnames are pt IDs
 groupr <- function(seed, sfPts, distMtrx, distMax){
   diag(distMtrx) <- NA
-  distMax <- set_units(distMax, 'km')
+  distMax <- units::set_units(distMax, 'km')
   clust <- seed
   ptIds <- colnames(distMtrx)
   for (j in seq_along(ptIds)) { # alternative - while loop
     #	find distance from each point in the set to all remaining points
     distsOut <- distMtrx[ which(ptIds %in% clust),
-                          -which(ptIds %in% clust), drop = F]
+                         -which(ptIds %in% clust), drop = F]
     # then retrieve name of closest next point
     nearest <- names(which.min(apply(distsOut, MARGIN = 2, min)))
     canddt <- c(clust, nearest) # unique
@@ -56,7 +55,7 @@ clustr <- function(dat, xy, distMax, nSite = NULL, iter,
   coords <- dat[,xy]
 	dupes <- duplicated(coords)
 	coords <- coords[ !dupes, ]
-	coords <- coords[complete.cases(coords), ] 
+	coords <- coords[stats::complete.cases(coords), ] 
 	coords <- as.data.frame(coords) # in case data is given as a matrix
 	nLoc <- nrow(coords)
 	if ( !is.null(nSite) ){
@@ -64,9 +63,9 @@ clustr <- function(dat, xy, distMax, nSite = NULL, iter,
 	} else {
 	  if (nLoc < nMin) stop('insufficient points for a cluster')
 	}
-	coordSf <- st_as_sf(coords, coords = xy, crs = 'epsg:4326')
-	gcdists <- st_distance(coordSf) # spherical distances (m) by default
-	coords$ID <- paste('loc', 1:nrow(coords), sep = '') 
+	coordSf <- sf::st_as_sf(coords, coords = xy, crs = 'epsg:4326')
+	gcdists <- sf::st_distance(coordSf) # spherical distances (m) by default
+	coords$ID <- paste0('loc', seq_along(coords)) 
 	colnames(gcdists) <- rownames(gcdists) <- coords$ID
 	
 	# build all possible trees, but return NULL if fewer pts than allowed

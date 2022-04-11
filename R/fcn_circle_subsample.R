@@ -1,5 +1,3 @@
-library(terra)
-library(sf)
 # TODO option to pass on prj info to relevant function guts
 
 # for testing purposes
@@ -19,19 +17,19 @@ findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
   seedRow <- which(dat[, siteId] == seed)[1]
   # make sure coords are a 2-col, not-dataframe-class object to give to sf
   seedxy <- as.matrix( dat[seedRow, xy] )
-  seedpt <- st_point(seedxy)
+  seedpt <- sf::st_point(seedxy)
   # make sure to hard code the CRS for the buffer; sf can't infer lat-long
-  seedsfc <- st_sfc(seedpt, crs = 'epsg:4326')
-  buf <- st_buffer(seedsfc, dist = r*1000) 
+  seedsfc <- sf::st_sfc(seedpt, crs = 'epsg:4326')
+  buf <- sf::st_buffer(seedsfc, dist = r*1000) 
   # split poly into multipolygon around antimeridian (patches 2020 bug)
-  bufWrap <- st_wrap_dateline(buf, options = c("WRAPDATELINE=YES"))
+  bufWrap <- sf::st_wrap_dateline(buf, options = c("WRAPDATELINE=YES"))
   # identical results if st_union() applied to bufWrap.
   # alternative way to construct buffer, but adding new pkg dependency:
   # rangemap::geobuffer_points(seedxy, r*1000, wrap_antimeridian = TRUE)
   
   # find sites within radius of seed site/cell
-  datSf <- st_as_sf(dat, coords = xy, crs = 'epsg:4326')
-  poolBool <-  st_intersects(datSf, bufWrap, sparse = FALSE)
+  datSf <- sf::st_as_sf(dat, coords = xy, crs = 'epsg:4326')
+  poolBool <-  sf::st_intersects(datSf, bufWrap, sparse = FALSE)
   pool <- dat[poolBool, siteId]
   return(pool)
 }
@@ -49,7 +47,7 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
   posPools <- sapply(posSeeds, function(s){
     sPool <- findPool(s, dat, siteId, xy, r, nSite)
     n <- length(sPool)
-    if (n > nSite)
+    if (n >= nSite)
       sPool
   })
   # return pool site/cell IDs for each viable seed point
@@ -76,7 +74,7 @@ cookies <- function(dat, siteId, xy, r, nSite, # prj,
   }
   # convert to spatial features for distance calculations later
   if (weight){
-    datSf <- st_as_sf(coords, coords = xy, crs = 'epsg:4326')
+    datSf <- sf::st_as_sf(coords, coords = xy, crs = 'epsg:4326')
   }
   
   # takes a subsample of sites/cells, w/o replacement, w/in buffered radius
@@ -101,7 +99,7 @@ cookies <- function(dat, siteId, xy, r, nSite, # prj,
       # squared inverse weight because inverse alone is too weak an effect
       seedRow <- which(coords[, siteId] == seed)[1]
       seedPt <- datSf[seedRow,]
-      gcdists <- st_distance(poolPts, seedPt) # spherical distances by default
+      gcdists <- sf::st_distance(poolPts, seedPt) # spherical distances by default
       wts <- sapply(gcdists, function(x) x^(-2))
       # sample() doesn't require wts sum = 1; identical results without rescaling
       samplIds <- c(seed, 
