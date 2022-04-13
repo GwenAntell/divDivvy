@@ -10,17 +10,8 @@
 
 # for a lot of paleo datasets, there will be fewer unique sites
 # than desired number of iterations, so more efficient to build every possible tree
-# up front and then (re)sample them n iterations, instead of 
+# up front and then (re)sample them n iterations, instead of
 # recalculating a new tree each iteration
-
-# for testing purposes
-  # dat <- sites
-  # xy <- c('long', 'lat')
-  # nMin <- 3
-  # nSite <- 8 # if nSite supplied, nMin overridden
-  # distMax <- 1500 # in km, largest allowable distance between any 2 pts in clust
-  # iter <- 500 # should be > 1 for sample() to work correctly
-  # output <- 'locs'
 
 # find closest point, add it to set, and repeat until reach max tree branch
 # distMtrx arg = pairwise distances with units, rownames and colnames are pt IDs
@@ -37,7 +28,7 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
     nearest <- names(which.min(apply(distsOut, MARGIN = 2, min)))
     canddt <- c(clust, nearest) # unique
     # check if adding next pt puts cluster over size limit - if so don't add
-    diam <- max(distMtrx[which(ptIds %in% canddt), 
+    diam <- max(distMtrx[which(ptIds %in% canddt),
                          which(ptIds %in% canddt)], na.rm = T)
     if (diam > distMax){
       break
@@ -47,15 +38,56 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
   return(clust)
 }
 
-clustr <- function(dat, xy, distMax, nSite = NULL, iter, 
-                     nMin = 3, output = 'locs') {
+#' Cluster localities within regions of nearest neighbours
+#'
+#' Spatially subsample a dataset based on minimum spanning trees connecting
+#' points within regions of set extent, with optional rarefaction to a site quota.
+#'
+#' Lagomarcino and Miller (2012) developed an iterative approach of aggregating
+#' localities to build clusters based on convex hulls, inspired by species-area
+#' curve analysis (Scheiner 2003). Close et al. (2020) refined the approach and
+#' changed the proximity metric from minimum convex hull area to minimum spanning
+#' tree length. The present implementation adapts code from Close et al. (2020)
+#' to add an option for site rarefaction after cluster construction and to grow
+#' trees at random starting points \code{iter} number of times (instead of a
+#' deterministic, exhaustive iteration at every unique location).
+#'
+#' The function takes a single location as a starting (seed) point; the seed
+#' and its nearest neighbour initiate a spatial cluster. The distance between
+#' the two points is the first branch in a minimum spanning tree for the cluster.
+#' The location that has the shortest distance to any points already within the
+#' cluster is grouped in next, and its distance (branch) is added to the sum
+#' tree length. This iterative process continues until the largest distance
+#' between any two points in the cluster would exceed \code{distMax} km.
+#' Any tree with fewer than \code{nMin} points is prohibited.
+#'
+#' In the case that \code{nSite} is supplied, \code{nMin} argument is ignored,
+#' and any tree with fewer than \code{nSite} points is prohibited.
+#' After building a tree as described above, a random set of \code{nSite} points
+#' within the cluster is taken (without replacement). The returned output is
+#' the coordinates of subsampled points if \code{output = 'locs'} or the subset
+#' of \code{dat} associated with those coordinates if \code{output = 'full'}.
+#' The \code{nSite} argument makes \code{clustr} comparable with \code{cookies}
+#' in that it spatially standardises both extent and area/locality number.
+#'
+#' @inheritParams bandit
+#' @param iter The number of spatial subsamples to return
+#' @param distMax Numeric value for maximum diameter (km) allowed across
+#' locations in a subsample
+#' @param nMin Numeric value for the minimum number of sites to be included in
+#' every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.
+#'
+#' @seealso [cookies()]
+#' @export
+clustr <- function(dat, xy, distMax, nSite = NULL, iter,
+                   nMin = 3, output = 'locs') {
   # subset to unique locations and find dist matrix between all
   x <- xy[1]
   y <- xy[2]
   coords <- dat[,xy]
 	dupes <- duplicated(coords)
 	coords <- coords[ !dupes, ]
-	coords <- coords[stats::complete.cases(coords), ] 
+	coords <- coords[stats::complete.cases(coords), ]
 	coords <- as.data.frame(coords) # in case data is given as a matrix
 	nLoc <- nrow(coords)
 	if ( !is.null(nSite) ){
@@ -65,9 +97,9 @@ clustr <- function(dat, xy, distMax, nSite = NULL, iter,
 	}
 	coordSf <- sf::st_as_sf(coords, coords = xy, crs = 'epsg:4326')
 	gcdists <- sf::st_distance(coordSf) # spherical distances (m) by default
-	coords$ID <- paste0('loc', seq_along(coords)) 
+	coords$ID <- paste0('loc', seq_along(coords))
 	colnames(gcdists) <- rownames(gcdists) <- coords$ID
-	
+
 	# build all possible trees, but return NULL if fewer pts than allowed
 	posTrees <- sapply(coords$ID, function(seed){
 	  tr <- groupr(seed, coordSf, gcdists, distMax)
@@ -80,14 +112,14 @@ clustr <- function(dat, xy, distMax, nSite = NULL, iter,
 	availTrees <- Filter(Negate(is.null), posTrees)
 	if (length(availTrees) == 0){
 	  stop('not enough close sites for any sample')
-	} 
-	
+	}
+
 	smplTree <- function(){
 	  # select one seed cell at random
 	  seeds <- names(availTrees)
 	  if (length(seeds) > 1){
-	    seed <- sample(sample(seeds), 1) 
-	  } else { 
+	    seed <- sample(sample(seeds), 1)
+	  } else {
 	    # sample() fcn makes mistake if only 1 item to pick
 	    seed <- seeds
 	  }
