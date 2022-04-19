@@ -79,6 +79,18 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 #'
 #' @seealso [cookies()]
 #' @export
+#' @importFrom Rdpack reprompt
+#' @references
+#'
+#' \insertRef{Antell2020}{divDivvy}
+#'
+#' \insertRef{Close2020}{divDivvy}
+#'
+#' \insertRef{Lagomarcino2012}{divDivvy}
+#'
+#' \insertRef{Scheiner2003}{divDivvy}
+#'
+
 clustr <- function(dat, xy, distMax, nSite = NULL, iter,
                    nMin = 3, output = 'locs') {
   # subset to unique locations and find dist matrix between all

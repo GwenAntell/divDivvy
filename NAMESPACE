@@ -3,3 +3,4 @@
 export(bandit)
 export(clustr)
 export(cookies)
+importFrom(Rdpack,reprompt)
