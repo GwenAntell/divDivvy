@@ -19,3 +19,8 @@ RdMacros: Rdpack
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 LazyData: true
+Suggests: 
+    knitr,
+	icosa,
+    rmarkdown
+VignetteBuilder: knitr
