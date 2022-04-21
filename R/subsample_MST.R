@@ -70,6 +70,16 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 #' The \code{nSite} argument makes \code{clustr} comparable with \code{cookies}
 #' in that it spatially standardises both extent and area/locality number.
 #'
+#' The performance of \code{clustr} is designed on the assumption \code{iter}
+#' is much larger than the number of unique localities. Internal code first
+#' calculates the full minimum spanning tree at every viable starting point
+#' before it then samples those trees (i.e. resamples and optionally subsamples)
+#' for the specified number of iterations. This sequence means the total
+#' run-time increases only marginally even as \code{iter} increases greatly.
+#' However, if there are a large number of sites, particularly a large number
+#' of densely-spaced sites, the calculations will be slow even for a
+#' small number of iterations.
+#'
 #' @inheritParams bandit
 #' @param iter The number of spatial subsamples to return
 #' @param distMax Numeric value for maximum diameter (km) allowed across

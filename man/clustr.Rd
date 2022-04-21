@@ -25,7 +25,7 @@ every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.}
 
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows
-from \code{dat} associated with those coordinates (\code{output = 'all'}).}
+from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 }
 \description{
 Spatially subsample a dataset based on minimum spanning trees connecting
@@ -58,9 +58,25 @@ the coordinates of subsampled points if \code{output = 'locs'} or the subset
 of \code{dat} associated with those coordinates if \code{output = 'full'}.
 The \code{nSite} argument makes \code{clustr} comparable with \code{cookies}
 in that it spatially standardises both extent and area/locality number.
+
+The performance of \code{clustr} is designed on the assumption \code{iter}
+is much larger than the number of unique localities. Internal code first
+calculates the full minimum spanning tree at every viable starting point
+before it then samples those trees (i.e. resamples and optionally subsamples)
+for the specified number of iterations. This sequence means the total
+run-time increases only marginally even as \code{iter} increases greatly.
+However, if there are a large number of sites, particularly a large number
+of densely-spaced sites, the calculations will be slow even for a
+small number of iterations.
 }
 \references{
+\insertRef{Antell2020}{divDivvy}
+
+\insertRef{Close2020}{divDivvy}
+
 \insertRef{Lagomarcino2012}{divDivvy}
+
+\insertRef{Scheiner2003}{divDivvy}
 }
 \seealso{
 \code{\link[=cookies]{cookies()}}

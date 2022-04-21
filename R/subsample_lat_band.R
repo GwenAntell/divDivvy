@@ -18,13 +18,12 @@
 #' evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.
 #' @param output Whether the returned data should be a two-column matrix of
 #' subsample site coordinates (\code{output = 'locs'}) or the subset of rows
-#' from \code{dat} associated with those coordinates (\code{output = 'all'}).
+#' from \code{dat} associated with those coordinates (\code{output = 'full'}).
 
 #' @export
 
 # TODO an option for equal-area latitudinal bands?
 
-# output one of 'all' or 'locs'
 bandit <- function(dat, xy, width, iter, nSite,
                    centr = FALSE, absLat = FALSE,
                    output = 'locs'){

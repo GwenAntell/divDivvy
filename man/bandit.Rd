@@ -38,7 +38,7 @@ evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.}
 
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows
-from \code{dat} associated with those coordinates (\code{output = 'all'}).}
+from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 }
 \description{
 \code{bandit} subsamples spatial point data to a specified number of sites

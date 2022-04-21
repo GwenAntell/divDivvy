@@ -31,7 +31,7 @@ to the square of their distance from the centre of the subsample region.}
 
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows
-from \code{dat} associated with those coordinates (\code{output = 'all'}).}
+from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 }
 \description{
 Spatially subsample a dataset to produce samples of standard area and extent.
