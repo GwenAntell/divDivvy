@@ -24,8 +24,9 @@ locations in a subsample}
 every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.}
 
 \item{output}{Whether the returned data should be a two-column matrix of
-subsample site coordinates (\code{output = 'locs'}) or the subset of rows
-from \code{dat} associated with those coordinates (\code{output = 'full'}).}
+subsample site coordinates (\code{output = 'locs'}), with row names the
+site IDs, or the subset of rows from \code{dat} associated with those
+coordinates (\code{output = 'full'}).}
 }
 \description{
 Spatially subsample a dataset based on minimum spanning trees connecting

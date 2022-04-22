@@ -119,7 +119,7 @@ clustr <- function(dat, xy, distMax, nSite = NULL, iter,
 	}
 	coordSf <- sf::st_as_sf(coords, coords = xy, crs = 'epsg:4326')
 	gcdists <- sf::st_distance(coordSf) # spherical distances (m) by default
-	coords$ID <- paste0('loc', seq_along(coords))
+	coords$ID <- paste0('loc', 1:nrow(coords))
 	colnames(gcdists) <- rownames(gcdists) <- coords$ID
 
 	# build all possible trees, but return NULL if fewer pts than allowed
