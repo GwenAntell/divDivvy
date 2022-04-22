@@ -1,3 +1,6 @@
+# GSA note files
+.docx
+
 # History files
 .Rhistory
 .Rapp.history
@@ -21,7 +24,7 @@
 .Rproj.user/
 
 # produced vignettes
-vignettes/*.html
+# vignettes/*.html # it's actually useful to share html
 vignettes/*.pdf
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
@@ -37,3 +40,5 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+.Rproj.user
+inst/doc
