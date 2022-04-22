@@ -19,13 +19,11 @@ knitr::opts_chunk$set(
 
 # Overview
 
-Why to standardise spatial extent and area - if not written elsewhere
+Brief, self-contained explanation of why to standardise spatial extent and area
 
 What this vignette covers
 
-# Example: Pliocene bivalves
-
-## Setup
+# Prepare Paleobiology Database records of Pliocene bivalves
 
 We begin by loading the `divDivvy` package itself, as well as its geospatial package dependencies `sf`, `units`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction. The `icosa` package offers a convenient way to convert vector coordinate data to equal-area raster cells in the empirical examples that follow.
 ```{r setup, message=FALSE}
@@ -37,9 +35,7 @@ library(iNEXT)
 library(icosa)
 ```
 
-## Prepare data
-
-`divDivvy` includes three attached datasets: `bivalves`, `dinos`, and `trilos`. Each dataset is a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. The datasets are provided only as examples for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications.
+`divDivvy` includes three attached datasets: `bivalves`, `dinos`, and `trilos`. Each dataset is a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) (PBDB) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. The datasets are provided only as examples for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications.
 ```{r}
 data(bivalves)
 head(bivalves)
@@ -73,13 +69,13 @@ bivalves$face <- faceIds
 #TODO plot map
 ```
 
-## Spatially subsample in regions
+# Spatially subsample in regions
 
 `divDivvy` offers three approaches to spatially subsample data:
 
 * `cookies` Imposes a radial constraint on the spatial extent of a subsample and standardises area by rarefying the number of localities
 
-* `clustr` Imposes a maximum diameter on the spatial extent of a subsample, aggregates sites that are nearest neighbours, and optionally rarefies localities
+* `clustr` Imposes a maximum diameter on the spatial extent of a subsample, aggregates sites that are nearest neighbours (connecting them with a minimum spanning tree), and optionally rarefies localities
 
 * `bandit` Rarefies the number of localities within bands of equal latitude
 
@@ -108,29 +104,29 @@ circOccs <- cookies(dat = bivalves, siteId = 'face',
 head( circOccs[[1]] )
 ```
 
-Note that the data fed into the subsampling function contains duplicate taxon-location records. For instance, the subsample output printed above shows two genera (*Ennucula* and *Saccella*) each occur at least twice at the same coordinates (raster cell #F4323). Internally, the subsampling functions subset the input data *a priori* to unique localities, so duplicate records are irrelevant. If one is interested in the number of sampled PBDB collections or references, however, then it is necessary to retain all original occurrences. In the example above, the duplicates stem from different collections (#41542 and #41543 for *Ennucula* and #41541 and #41542 for *Saccella*).
+## Considerations regarding PBDB collections and references
 
-We have standardised spatial extent and area, but at this point we could now rarefy the number of collections or references, too, as a standardisation for sampling effort. Many global diversity analyses of PBDB data impose collection or reference quotas prior to calculating richness (@Close2017 for review). 
+Note that the data fed into the subsampling function can contain duplicate taxon-location records. For instance, the subsample output printed above shows two genera (*Ennucula* and *Saccella*) each occur at least twice at the same coordinates (raster cell #F4323). Internally, the subsampling functions subset the input data *a priori* to unique localities, so duplicate records are irrelevant. If one is interested in the number of sampled PBDB collections or references, however, then it is necessary to retain all original occurrences. In the example above, the duplicates stem from different collections (#41542 and #41543 for *Ennucula* and #41541 and #41542 for *Saccella*). We have standardised spatial extent and area, but at this point we could now rarefy the number of collections or references, too, as a standardisation for sampling effort.
 
-However, @Antell2020 chose not to:
-It has been found that there is a 1:1 correlation between reference counts and grid cell counts in global PBDB datasets of marine invertebrates [@Alroy2008]. Additional rarefaction on species count would compress the distribution of observed values further and could cause type 2 error.
+The study that developed the circular buffer approach for regional subsampling (implemented with \code{cookies}) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells [@Antell2020]. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts [@Alroy2008]. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).
 
-MST without rarefying sites might be a place to rarefy collections instead
+In contrast, the study that developed the minimum-spanning-tree (MST) approach for regional subsampling rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The \code{divDivvy} diversity summary function (\code{sampMeta}) and the most recent study to use MST subsamples [@Close2020] call on the \code{iNEXT} implementation of coverage-based richness estimation, which lacks this PBDB-specific functionality. Therefore, users should write custom richness estimation scripts or adapt Alroy's Perl script to rarefy collections and/or references if desired.
 
-@Close2020 didn't seem to rarefy collections? Except as cutoff:
-"Our focal results are based on spatial regions that simultaneously satisfy all of the following requirements: 1) a spatial extent of 1500, 2000, 2500, 3000 and 3500 km MST distance ±10%; 2) a minimum-spanning tree for which the longest branch is less than half of the desired MST length (i.e., the region does not represent two widely-separated clusters of localities with no sampling in-between); 3) at least five occupied grid cells (100 km spacings) per 40 thousand km of MST length, ensuring a minimum level of spatial coverage within each spatial region; 4) at least 15 references per thousand km of MST length, ensuring a minimum level of 5 research effort for each spatial region; 5) at least 20 collections; and 6) a multiton ratio of at least 0.2, ensuring a minimum level of sample completeness."
-Also note, excluded dominant for SQS.
+## Recommendation to subsample sites
+
+\code{clustr} allows the user to turn off site rarefaction (argument \code{nSite = NULL}), for backwards comparability with its originator publications described above. 
 
 ```{r MST subsample}
-# forrest <- clustr(dat = bivalves, distMax = 1500, 
-#                   xy = c('cellLng','cellLat'), iter = 100,  
-#                   nMin = 3, # nSite = 8, 
-#                   output = 'full')
-# TODO find and fix bug in this
+forrest <- clustr(dat = bivalves, distMax = 1500,
+                  xy = c('cellLng','cellLat'), iter = 100,
+                  nMin = 3, # nSite = 8,
+                  output = 'full')
 ```
 
+"Our focal results are based on spatial regions that simultaneously satisfy all of the following requirements: 1) a spatial extent of 1500, 2000, 2500, 3000 and 3500 km MST distance ±10%; 2) a minimum-spanning tree for which the longest branch is less than half of the desired MST length (i.e., the region does not represent two widely-separated clusters of localities with no sampling in-between); 3) at least five occupied grid cells (100 km spacings) per 40 thousand km of MST length, ensuring a minimum level of spatial coverage within each spatial region; 4) at least 15 references per thousand km of MST length, ensuring a minimum level of 5 research effort for each spatial region; 5) at least 20 collections; and 6) a multiton ratio of at least 0.2, ensuring a minimum level of sample completeness."
 
-## Spatially subsample by latitude
+
+# Spatially subsample by latitude
 
 ```{r lat subsample}
 bands <- bandit(dat = bivalves, width = 15,
@@ -139,7 +135,9 @@ bands <- bandit(dat = bivalves, width = 15,
                 )
 ```
 
-## Analysis on subsampled data
+# Analysis on subsampled data
+
+Exclude dominant for SQS: done in Close 2020 and Alroy 2008 but not Alroy 2014.
 
 ```{r meta data}
 # smry <- sampMeta(dat = forrest[[1]], taxVar = 'genus', 
