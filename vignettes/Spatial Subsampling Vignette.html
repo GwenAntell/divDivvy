@@ -455,14 +455,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <div id="overview" class="section level1">
 <h1>Overview</h1>
-<p>Why to standardise spatial extent and area - if not written
-elsewhere</p>
+<p>Brief, self-contained explanation of why to standardise spatial
+extent and area</p>
 <p>What this vignette covers</p>
 </div>
-<div id="example-pliocene-bivalves" class="section level1">
-<h1>Example: Pliocene bivalves</h1>
-<div id="setup" class="section level2">
-<h2>Setup</h2>
+<div id="prepare-paleobiology-database-records-of-pliocene-bivalves" class="section level1">
+<h1>Prepare Paleobiology Database records of Pliocene bivalves</h1>
 <p>We begin by loading the <code>divDivvy</code> package itself, as well
 as its geospatial package dependencies <code>sf</code>,
 <code>units</code>, and <code>vegan</code>, and the <code>iNEXT</code>
@@ -475,13 +473,10 @@ equal-area raster cells in the empirical examples that follow.</p>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vegan)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(iNEXT)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(icosa)</span></code></pre></div>
-</div>
-<div id="prepare-data" class="section level2">
-<h2>Prepare data</h2>
 <p><code>divDivvy</code> includes three attached datasets:
 <code>bivalves</code>, <code>dinos</code>, and <code>trilos</code>. Each
-dataset is a download of fossil occurrences from the <a href="https://paleobiodb.org/">Paleobiology Database</a> that has been
-subset to a few relevant columns and minimally cleaned.
+dataset is a download of fossil occurrences from the <a href="https://paleobiodb.org/">Paleobiology Database</a> (PBDB) that has
+been subset to a few relevant columns and minimally cleaned.
 <code>bivalves</code> contains ca. 8,000 (palaeo)coordinates and
 identifications for ca. 500 marine bivalve genera from the Pliocene. The
 datasets are provided only as examples for working with PBDB-structured
@@ -552,10 +547,10 @@ The spatial resolution of the grid is controlled by the arguments to the
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>bivalves[, <span class="fu">c</span>(<span class="st">'cellLng'</span>,<span class="st">'cellLat'</span>)] <span class="ot">&lt;-</span> cntrd</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>bivalves<span class="sc">$</span>face <span class="ot">&lt;-</span> faceIds</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#TODO plot map</span></span></code></pre></div>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co"> plot map</span></span></code></pre></div>
 </div>
-<div id="spatially-subsample-in-regions" class="section level2">
-<h2>Spatially subsample in regions</h2>
+<div id="spatially-subsample-in-regions" class="section level1">
+<h1>Spatially subsample in regions</h1>
 <p><code>divDivvy</code> offers three approaches to spatially subsample
 data:</p>
 <ul>
@@ -563,8 +558,9 @@ data:</p>
 extent of a subsample and standardises area by rarefying the number of
 localities</p></li>
 <li><p><code>clustr</code> Imposes a maximum diameter on the spatial
-extent of a subsample, aggregates sites that are nearest neighbours, and
-optionally rarefies localities</p></li>
+extent of a subsample, aggregates sites that are nearest neighbours
+(connecting them with a minimum spanning tree), and optionally rarefies
+localities</p></li>
 <li><p><code>bandit</code> Rarefies the number of localities within
 bands of equal latitude</p></li>
 </ul>
@@ -584,15 +580,15 @@ sites.</p>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(circLocs)</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 500</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>circLocs[[<span class="dv">1</span>]]</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        cellLng   cellLat</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5766 -75.10425  8.758412</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 83   -69.54017 11.267482</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6690 -67.35855 11.486871</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 74   -61.79731  9.973719</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5896 -75.13468  5.056325</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6505 -70.64713 13.033298</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6663 -62.91795 11.820358</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5763 -74.00862 10.774563</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         cellLng   cellLat</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4317 -75.10425  8.758412</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4159 -69.54017 11.267482</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4160 -67.35855 11.486871</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4323 -61.79731  9.973719</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4638 -75.13468  5.056325</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F3998 -70.64713 13.033298</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4162 -62.91795 11.820358</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F4157 -74.00862 10.774563</span></span>
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co"> colour in subsampled points on earlier map</span></span></code></pre></div>
 <p>If <code>output = "full"</code>, each element contains the subset of
@@ -619,7 +615,9 @@ subsample.</p>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 77 Nuculana (Saccella) karlmartini -61.79731 9.973719 F4323</span></span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 78                        Saccella -61.79731 9.973719 F4323</span></span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 79                        Saccella -61.79731 9.973719 F4323</span></span></code></pre></div>
-<p>Note that the data fed into the subsampling function contains
+<div id="considerations-regarding-pbdb-collections-and-references" class="section level2">
+<h2>Considerations regarding PBDB collections and references</h2>
+<p>Note that the data fed into the subsampling function can contain
 duplicate taxon-location records. For instance, the subsample output
 printed above shows two genera (<em>Ennucula</em> and <em>Saccella</em>)
 each occur at least twice at the same coordinates (raster cell #F4323).
@@ -629,55 +627,68 @@ If one is interested in the number of sampled PBDB collections or
 references, however, then it is necessary to retain all original
 occurrences. In the example above, the duplicates stem from different
 collections (#41542 and #41543 for <em>Ennucula</em> and #41541 and
-#41542 for <em>Saccella</em>).</p>
-<p>We have standardised spatial extent and area, but at this point we
-could now rarefy the number of collections or references, too, as a
-standardisation for sampling effort. Many global diversity analyses of
-PBDB data impose collection or reference quotas prior to calculating
-richness (<span class="citation">Close et al. (2017)</span> for
-review).</p>
+#41542 for <em>Saccella</em>). We have standardised spatial extent and
+area, but at this point we could now rarefy the number of collections or
+references, too, as a standardisation for sampling effort.</p>
 <p>The study that developed the circular buffer approach for regional
-subsampling chose avoided rarefying collections/references, however, as
-this step would be largely redundant with rarefying sites/raster grid
-cells <span class="citation">(Antell et al. 2020)</span>. The number of
-PBDB reference counts for marine invertebrate occurrences correlates
-nearly perfectly with grid cell counts <span class="citation">(Alroy et
-al. 2008)</span>. Applying rarefaction to both grid cells and
-collections or references would compress the distribution of observed
-values, which could reduce the statistical power of analysis and
-heighten the risk of overlooking a true biological signal (type 2
-error).</p>
-<p>MST without rarefying sites might be a place to rarefy collections
-instead</p>
-<p><span class="citation">Close et al. (2020)</span> didn’t seem to
-rarefy collections? Except as cutoff: “Our focal results are based on
-spatial regions that simultaneously satisfy all of the following
-requirements: 1) a spatial extent of 1500, 2000, 2500, 3000 and 3500 km
-MST distance ±10%; 2) a minimum-spanning tree for which the longest
-branch is less than half of the desired MST length (i.e., the region
-does not represent two widely-separated clusters of localities with no
-sampling in-between); 3) at least five occupied grid cells (100 km
-spacings) per 40 thousand km of MST length, ensuring a minimum level of
-spatial coverage within each spatial region; 4) at least 15 references
-per thousand km of MST length, ensuring a minimum level of 5 research
-effort for each spatial region; 5) at least 20 collections; and 6) a
-multiton ratio of at least 0.2, ensuring a minimum level of sample
-completeness.” Also note, excluded dominant for SQS.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># forrest &lt;- clustr(dat = bivalves, distMax = 1500, </span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#                   xy = c('cellLng','cellLat'), iter = 100,  </span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#                   nMin = 3, # nSite = 8, </span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                   output = 'full')</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co"> find and fix bug in this</span></span></code></pre></div>
+subsampling (implemented with ) avoided rarefying
+collections/references, as this step would be largely redundant with
+rarefying sites/raster grid cells <span class="citation">(Antell et al.
+2020)</span>. The number of PBDB reference counts for marine
+invertebrate occurrences correlates nearly perfectly with grid cell
+counts <span class="citation">(Alroy et al. 2008)</span>. Applying
+rarefaction to both grid cells and collections or references would
+compress the distribution of observed values, which could reduce the
+statistical power of analysis and heighten the risk of overlooking a
+true biological signal (type 2 error).</p>
+<p>In contrast, the study that developed the minimum-spanning-tree (MST)
+approach for regional subsampling rarefied collections within
+references, following <span class="citation">Alroy (2014)</span>, but
+avoided rarefying sites/cells <span class="citation">(Close et al.
+2017)</span>. The richness estimation procedure involved drawing PBDB
+references, drawing up to three collections within each of those
+references, and evaluating only the taxon occurrences within those
+subsampled collections. The diversity summary function () and the most
+recent study to use MST subsamples <span class="citation">(Close et al.
+2020)</span> call on the implementation of coverage-based richness
+estimation, which lacks this PBDB-specific functionality. Therefore,
+users should write custom richness estimation scripts or adapt Alroy’s
+Perl script to rarefy collections and/or references if desired.</p>
 </div>
-<div id="spatially-subsample-by-latitude" class="section level2">
-<h2>Spatially subsample by latitude</h2>
+<div id="recommendation-to-subsample-sites" class="section level2">
+<h2>Recommendation to subsample sites</h2>
+<p>There is an option in to turn off site rarefaction (argument ), for
+backwards comparability with its originator publications described
+above.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>forrest <span class="ot">&lt;-</span> <span class="fu">clustr</span>(<span class="at">dat =</span> bivalves, <span class="at">distMax =</span> <span class="dv">1500</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">xy =</span> <span class="fu">c</span>(<span class="st">'cellLng'</span>,<span class="st">'cellLat'</span>), <span class="at">iter =</span> <span class="dv">100</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">nMin =</span> <span class="dv">3</span>, <span class="co"># nSite = 8,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">output =</span> <span class="st">'full'</span>)</span></code></pre></div>
+<p>“Our focal results are based on spatial regions that simultaneously
+satisfy all of the following requirements: 1) a spatial extent of 1500,
+2000, 2500, 3000 and 3500 km MST distance ±10%; 2) a minimum-spanning
+tree for which the longest branch is less than half of the desired MST
+length (i.e., the region does not represent two widely-separated
+clusters of localities with no sampling in-between); 3) at least five
+occupied grid cells (100 km spacings) per 40 thousand km of MST length,
+ensuring a minimum level of spatial coverage within each spatial region;
+4) at least 15 references per thousand km of MST length, ensuring a
+minimum level of 5 research effort for each spatial region; 5) at least
+20 collections; and 6) a multiton ratio of at least 0.2, ensuring a
+minimum level of sample completeness.”</p>
+</div>
+</div>
+<div id="spatially-subsample-by-latitude" class="section level1">
+<h1>Spatially subsample by latitude</h1>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bands <span class="ot">&lt;-</span> <span class="fu">bandit</span>(<span class="at">dat =</span> bivalves, <span class="at">width =</span> <span class="dv">15</span>,</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">xy =</span> <span class="fu">c</span>(<span class="st">'cellLng'</span>,<span class="st">'cellLat'</span>), <span class="at">centr =</span> <span class="cn">FALSE</span>,</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">nSite =</span> <span class="dv">8</span>, <span class="at">iter =</span> <span class="dv">10</span>, <span class="at">absLat =</span> <span class="cn">FALSE</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                )</span></code></pre></div>
 </div>
-<div id="analysis-on-subsampled-data" class="section level2">
-<h2>Analysis on subsampled data</h2>
+<div id="analysis-on-subsampled-data" class="section level1">
+<h1>Analysis on subsampled data</h1>
+<p>Exclude dominant for SQS: done in Close 2020 and Alroy 2008 but not
+Alroy 2014.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># smry &lt;- sampMeta(dat = forrest[[1]], taxVar = 'genus', </span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#                  collections = 'collection_no', </span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#                  xy = c('cellLng','cellLat'),</span></span>
@@ -687,10 +698,13 @@ completeness.” Also note, excluded dominant for SQS.</p>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co"> range size per species and per sample</span></span></code></pre></div>
 </div>
-</div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Alroy2014" class="csl-entry">
+Alroy, John. 2014. <span>“Accurate and Precise Estimates of Origination
+and Extinction Rates.”</span> <em>Paleobiology</em> 40 (3): 374–97. <a href="https://doi.org/10.1666/13036">https://doi.org/10.1666/13036</a>.
+</div>
 <div id="ref-Alroy2008" class="csl-entry">
 Alroy, John, Martin Aberhan, David J Bottjer, Michael Foote, Franz T
 Fürsich, Peter J Harries, Austin J W Hendy, et al. 2008.

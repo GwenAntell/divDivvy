@@ -66,7 +66,7 @@ cntrd <- data.frame( pos(hgrid, faceIds) )
 bivalves[, c('cellLng','cellLat')] <- cntrd
 bivalves$face <- faceIds
 
-#TODO plot map
+# TODO plot map
 ```
 
 # Spatially subsample in regions
@@ -114,7 +114,7 @@ In contrast, the study that developed the minimum-spanning-tree (MST) approach f
 
 ## Recommendation to subsample sites
 
-\code{clustr} allows the user to turn off site rarefaction (argument \code{nSite = NULL}), for backwards comparability with its originator publications described above. 
+There is an option in \code{clustr} to turn off site rarefaction (argument \code{nSite = NULL}), for backwards comparability with its originator publications described above. 
 
 ```{r MST subsample}
 forrest <- clustr(dat = bivalves, distMax = 1500,
