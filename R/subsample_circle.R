@@ -80,6 +80,10 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #' @param weight Whether sites within the subsample radius should be drawn
 #' at random (\code{weight = FALSE}) or with probability inversely proportional
 #' to the square of their distance from the centre of the subsample region.
+#' @param output Whether the returned data should be a two-column matrix of
+#' subsample site coordinates (\code{output = 'locs'}), with row names the
+#' site IDs, or the subset of rows from \code{dat} associated with those
+#' coordinates (\code{output = 'full'}).
 #'
 #' @seealso [clustr()]
 #' @export
@@ -138,6 +142,7 @@ cookies <- function(dat, siteId, xy, r, nSite, # prj,
       if (output == 'locs'){
         inSamp <- match(samplIds, coords[, siteId])
         out <- coords[inSamp, xy]
+        rownames(out) <- samplIds
       } else {
         stop('output argument must be one of c(\'full\', \'locs\')')
       }
