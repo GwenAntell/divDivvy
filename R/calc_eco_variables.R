@@ -1,24 +1,15 @@
 
-# for testing purposes
-# dat <- circs[[1]] 
-# taxVar <- 'genus'
-# collections <- 'collection_no' # remove as too problematic a variable?
-# xy <- c('long','lat') # c('paleolng','paleolat') # if using original, vector coords
-# quotaQ <- 0.2
-# quotaN <- 10
-# omitDom <- TRUE
-
 rangeSizer <- function(coords){
   latDiff <- max(coords[,2]) - min(coords[,2])
   latRng <- abs(latDiff)
-  pts <- sf::st_as_sf(coords, coords = 1:2, crs = 'epsg:4326') 
+  pts <- sf::st_as_sf(coords, coords = 1:2, crs = 'epsg:4326')
   ptsGrp <- sf::st_union(pts)
   cntr <- unlist( sf::st_centroid(ptsGrp) )
   gcdists <- sf::st_distance(pts) # returns units-class object (m)
   gcdists <- units::set_units(gcdists, 'km')
   gcMax <- max(gcdists)
-  mst <- vegan::spantree( units::drop_units(gcdists) )  
-  agg <- sum(mst$dist) 
+  mst <- vegan::spantree( units::drop_units(gcdists) )
+  agg <- sum(mst$dist)
   out <- cbind('centroidLng' = cntr[1],
                'centroidLat' = cntr[2],
                'latRange' = latRng,
@@ -28,18 +19,56 @@ rangeSizer <- function(coords){
   return(out)
 }
 
-# collections arg = name of col containing collection id, e.g. 'collection_no'
-# coords arg = name of latlong cols to calculate lat range, MST, and midpoint
-# quotaN = if given, perform classical rarefaction w specified quota (n occs)
-# quotaQ = if given, perform SQS w specified coverage/quorum level
-# omitX = removes single/dominant species from ALL metrics
-
-# return: great circle distance and summed tree length is returned in km
-# if too few taxon occs to achieve specified rarefaction level, div is extrap
+#' Calculate basic spatial coverage and diversity metrics
+#'
+#' Summarise the geographic scope and position of occurrence data, and
+#' optionally estimate richness and evenness
+#'
+#' \code{sampMeta} compiles a variety of metadata about a (sub)sample,
+#' before or after spatial subsampling. The function counts the number
+#' of unique spatial sites, collections (if requested), and taxa, and
+#' calculates the centroid coordinates, latitudinal range (degrees),
+#' great circle distance (km), and summed minimum spanning tree length (km)
+#' for occurrences.
+#'
+#' If \code{quotaQ} is supplied, \code{sampMeta} rarefies richness at the
+#' given coverage value and returns the point estimate of richness (Hill number 0)
+#' and its 95% confidence interval as well as estimates of evenness (Pielou's J)
+#' and sample coverage (Good's *u*). If \code{quotaN} is supplied,
+#' \code{sampMeta} rarefies richness to the given number of occurrence counts
+#' and returns the point estimate of richness and its 95% confidence interval.
+#'
+#' Coverage-based and classical rarefaction are both calculated with
+#' \code{iNEXT::estimateD} internally. For details, such as how diversity
+#' is extrapolated if a sample is insufficient to achieve a specified
+#' rarefaction level, consult Chao and Jost (2012) and Hsieh *et al.* (2016).
+#'
+#' @param dat A \code{data.frame} or \code{matrix} containing taxon names,
+#' coordinates, and any associated variables.
+#' @param taxVar The name or numeric position of the column containing
+#' taxonomic identifications.
+#' @param xy A vector of two elements, specifying the name or numeric position
+#' of the columns containing longitude and latitude coordinates, respectively.
+#' @param collections The name or numeric position of the column containing
+#' unique collection IDs, e.g. 'collection_no' in PBDB data downloads.
+#' @param quotaQ A numeric value for the coverage (quorum) level at which to
+#' perform coverage-based rarefaction (shareholder quorum subsampling).
+#' @param quotaN A numeric value for the quota of taxon occurrences to subsample
+#' in classical rarefaction.
+#' @param omitDom If \code{omitDom = TRUE} and \code{quotaQ} or \code{quotaN}
+#' is supplied, remove the most common taxon prior to rarefaction.
+#'
+#' @export
+#'
+#' @references
+#'
+#' \insertRef{Chao2012}{divDivvy}
+#'
+#' \insertRef{Hsieh2016}{divDivvy}
 
 sampMeta <- function(dat, taxVar, xy,
-                     collections = NULL, 
-                     quotaQ = NULL, quotaN = NULL, 
+                     collections = NULL,
+                     quotaQ = NULL, quotaN = NULL,
                      omitDom = FALSE){
   out <- c()
   # n. collections (PBDB data) may be useful to know if rarefying
@@ -51,7 +80,7 @@ sampMeta <- function(dat, taxVar, xy,
   # do this after counting collections in case a single taxon
   # at a single site is recorded in multiple collections
   dat <- unique( dat[,c(taxVar, xy)] )
-  
+
   dat[,'site'] <- paste(dat[, xy[1] ], dat[, xy[2] ], sep = '/')
   siteIds <- unique( dat[,'site'] )
   nSite <- length(siteIds)
@@ -62,31 +91,39 @@ sampMeta <- function(dat, taxVar, xy,
   sites <- unique( dat[,xy] )
   spatMeta <- rangeSizer(coords = sites)
   out <- cbind(out, spatMeta)
-  
+
   # diversity metrics; optional coverage and/or classical rarefaction
   taxSamp <-  unique( dat[,taxVar] )
-  out <- cbind(out, 'nTax' = length(taxSamp)) # raw count of taxa
+  s <- length(taxSamp)
+  out <- cbind(out, 'nTax' = s) # raw count of taxa
   freqs <- table( dat[,taxVar] )
   freqOrdr <- sort( as.numeric(freqs), decreasing = TRUE)
+
+  # Pielou's J evenness metric (calculate before omitting dom)
+  pTax <- freqOrdr / sum(freqOrdr)
+  h <- -sum(pTax * log(pTax))
+  # vegan::diversity('shannon', base = exp(1))
+  j <- h / log(s)
+
   if (omitDom == TRUE){
     dom <- names( which.max(freqs) )
     domRows <- dat[,taxVar] == dom
     dat <- dat[ !domRows, ]
   }
   if ( !is.null(quotaQ) ){
-    sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ), 
+    sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
                                 datatype = 'incidence_freq',
                                 base = 'coverage', level = quotaQ # , conf=NULL # 95% CI or none
                                 )
-    # q0 = richness, q1 = exp of Shannon's entropy index, 
+    # q0 = richness, q1 = exp of Shannon's entropy index,
     # q2 = inverse of Simpson's concentration index
     sqsRich <- sqsFull[sqsFull$order == 0, c('SC','qD','qD.LCL','qD.UCL')]
     names(sqsRich) <- c('u','SQSdiv','SQSlow95','SQSupr95')
     # return sample coverage, richness estimate and 95% CI
-    out <- cbind(out, sqsRich)
+    out <- cbind(out, 'evenness' = j, sqsRich)
   }
   if ( !is.null(quotaN) ){
-    crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ), 
+    crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
                                datatype = 'incidence_freq',
                                base = 'size', level = quotaN # , conf=NULL # 95% CI or none
                                )
