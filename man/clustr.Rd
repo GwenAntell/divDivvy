@@ -11,7 +11,7 @@ clustr(dat, xy, distMax, nSite = NULL, iter, nMin = 3, output = "locs")
 coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of the columns containing longitude and latitude coordinates.}
+of the columns containing longitude and latitude coordinates, respectively.}
 
 \item{distMax}{Numeric value for maximum diameter (km) allowed across
 locations in a subsample}
@@ -24,9 +24,8 @@ locations in a subsample}
 every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.}
 
 \item{output}{Whether the returned data should be a two-column matrix of
-subsample site coordinates (\code{output = 'locs'}), with row names the
-site IDs, or the subset of rows from \code{dat} associated with those
-coordinates (\code{output = 'full'}).}
+subsample site coordinates (\code{output = 'locs'}) or the subset of rows
+from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 }
 \description{
 Spatially subsample a dataset based on minimum spanning trees connecting
@@ -35,7 +34,7 @@ points within regions of set extent, with optional rarefaction to a site quota.
 \details{
 Lagomarcino and Miller (2012) developed an iterative approach of aggregating
 localities to build clusters based on convex hulls, inspired by species-area
-curve analysis (Scheiner 2003). Close et al. (2020) refined the approach and
+curve analysis (Scheiner 2003). Close et al. (2017, 2020) refined the approach and
 changed the proximity metric from minimum convex hull area to minimum spanning
 tree length. The present implementation adapts code from Close et al. (2020)
 to add an option for site rarefaction after cluster construction and to grow
@@ -49,6 +48,8 @@ The location that has the shortest distance to any points already within the
 cluster is grouped in next, and its distance (branch) is added to the sum
 tree length. This iterative process continues until the largest distance
 between any two points in the cluster would exceed \code{distMax} km.
+In the very rare case multiple candidate points are tied for minimum distance
+from the cluster, one point is selected at random as the next to include.
 Any tree with fewer than \code{nMin} points is prohibited.
 
 In the case that \code{nSite} is supplied, \code{nMin} argument is ignored,
@@ -72,6 +73,8 @@ small number of iterations.
 }
 \references{
 \insertRef{Antell2020}{divDivvy}
+
+\insertRef{Close2017}{divDivvy}
 
 \insertRef{Close2020}{divDivvy}
 
