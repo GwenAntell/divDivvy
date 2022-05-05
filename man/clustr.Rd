@@ -72,15 +72,15 @@ of densely-spaced sites, the calculations will be slow even for a
 small number of iterations.
 }
 \references{
-\insertRef{Antell2020}{divDivvy}
+\insertRef{Antell2020}{divvy}
 
-\insertRef{Close2017}{divDivvy}
+\insertRef{Close2017}{divvy}
 
-\insertRef{Close2020}{divDivvy}
+\insertRef{Close2020}{divvy}
 
-\insertRef{Lagomarcino2012}{divDivvy}
+\insertRef{Lagomarcino2012}{divvy}
 
-\insertRef{Scheiner2003}{divDivvy}
+\insertRef{Scheiner2003}{divvy}
 }
 \seealso{
 \code{\link[=cookies]{cookies()}}

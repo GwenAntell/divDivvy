@@ -54,6 +54,9 @@ subsample locations more tightly.
 The method is introduced in Antell et al. (2020) and described in
 detail in Methods S1 therein.
 }
+\references{
+\insertRef{Antell2020}{divvy}
+}
 \seealso{
 \code{\link[=clustr]{clustr()}}
 }

@@ -20,7 +20,7 @@ bandit(
 coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of the columns containing longitude and latitude coordinates.}
+of the columns containing longitude and latitude coordinates, respectively.}
 
 \item{width}{A numeric value for the resolution of latitude bins, in degrees.}
 
@@ -43,4 +43,7 @@ from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 \description{
 \code{bandit} subsamples spatial point data to a specified number of sites
 within bins of equal latitude
+}
+\references{
+\insertRef{Marcot2016}{divvy}
 }

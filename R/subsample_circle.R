@@ -87,6 +87,9 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #'
 #' @seealso [clustr()]
 #' @export
+#' @references
+#'
+#' \insertRef{Antell2020}{divvy}
 cookies <- function(dat, siteId, xy, r, nSite, # prj,
                     iter, weight = FALSE, output = 'locs'){
   dupes <- duplicated(dat[,siteId])

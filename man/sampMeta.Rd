@@ -61,7 +61,7 @@ is extrapolated if a sample is insufficient to achieve a specified
 rarefaction level, consult Chao and Jost (2012) and Hsieh \emph{et al.} (2016).
 }
 \references{
-\insertRef{Chao2012}{divDivvy}
+\insertRef{Chao2012}{divvy}
 
-\insertRef{Hsieh2016}{divDivvy}
+\insertRef{Hsieh2016}{divvy}
 }

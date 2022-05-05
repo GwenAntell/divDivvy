@@ -6,7 +6,7 @@
 #' @param dat A \code{data.frame} or \code{matrix} containing the
 #' coordinate columns \code{xy} and any associated variables, e.g. taxon names.
 #' @param xy A vector of two elements, specifying the name or numeric position
-#' of the columns containing longitude and latitude coordinates.
+#' of the columns containing longitude and latitude coordinates, respectively.
 #' @param width A numeric value for the resolution of latitude bins, in degrees.
 #' @param iter The number of times to subsample localities within \strong{each}
 #' latitudinal band.
@@ -21,6 +21,9 @@
 #' from \code{dat} associated with those coordinates (\code{output = 'full'}).
 
 #' @export
+#' @references
+#'
+#' \insertRef{Marcot2016}{divvy}
 
 # TODO an option for equal-area latitudinal bands?
 

@@ -62,9 +62,9 @@ rangeSizer <- function(coords){
 #'
 #' @references
 #'
-#' \insertRef{Chao2012}{divDivvy}
+#' \insertRef{Chao2012}{divvy}
 #'
-#' \insertRef{Hsieh2016}{divDivvy}
+#' \insertRef{Hsieh2016}{divvy}
 
 sampMeta <- function(dat, taxVar, xy,
                      collections = NULL,
