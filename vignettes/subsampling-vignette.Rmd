@@ -25,9 +25,9 @@ What this vignette covers
 
 # Prepare Paleobiology Database records of Pliocene bivalves
 
-We begin by loading the `divDivvy` package itself, as well as its geospatial package dependencies `sf`, `units`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction. The `icosa` package offers a convenient way to convert vector coordinate data to equal-area raster cells in the empirical examples that follow.
+We begin by loading the `divvy` package itself, as well as its geospatial package dependencies `sf`, `units`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction. The `icosa` package offers a convenient way to convert vector coordinate data to equal-area raster cells in the empirical examples that follow.
 ```{r setup, message=FALSE}
-library(divDivvy)
+library(divvy)
 library(sf)
 library(units)
 library(vegan)
@@ -35,7 +35,7 @@ library(iNEXT)
 library(icosa)
 ```
 
-`divDivvy` includes three attached datasets: `bivalves`, `dinos`, and `trilos`. Each dataset is a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) (PBDB) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. The datasets are provided only as examples for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications.
+`divvy` includes three attached datasets: `bivalves`, `dinos`, and `trilos`. Each dataset is a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) (PBDB) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. The datasets are provided only as examples for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications.
 ```{r}
 data(bivalves)
 head(bivalves)
@@ -71,7 +71,7 @@ bivalves$face <- faceIds
 
 # Spatially subsample in regions
 
-`divDivvy` offers three approaches to spatially subsample data:
+`divvy` offers three approaches to spatially subsample data:
 
 * `cookies` Imposes a radial constraint on the spatial extent of a subsample and standardises area by rarefying the number of localities
 
@@ -108,15 +108,16 @@ head( circOccs[[1]] )
 
 Note that the data fed into the subsampling function can contain duplicate taxon-location records. For instance, the subsample output printed above shows two genera (*Ennucula* and *Saccella*) each occur at least twice at the same coordinates (raster cell #F4323). Internally, the subsampling functions subset the input data *a priori* to unique localities, so duplicate records are irrelevant. If one is interested in the number of sampled PBDB collections or references, however, then it is necessary to retain all original occurrences. In the example above, the duplicates stem from different collections (#41542 and #41543 for *Ennucula* and #41541 and #41542 for *Saccella*). We have standardised spatial extent and area, but at this point we could now rarefy the number of collections or references, too, as a standardisation for sampling effort.
 
-The study that developed the circular buffer approach for regional subsampling (implemented with \code{cookies}) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells [@Antell2020]. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts [@Alroy2008]. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).
+The study that developed the circular buffer approach for regional subsampling (implemented with `cookies`) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells [@Antell2020]. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts [@Alroy2008]. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).
 
-In contrast, the study that developed the minimum-spanning-tree (MST) approach for regional subsampling rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The \code{divDivvy} diversity summary function (\code{sampMeta}) and the most recent study to use MST subsamples [@Close2020] call on the \code{iNEXT} implementation of coverage-based richness estimation, which lacks this PBDB-specific functionality. Therefore, users should write custom richness estimation scripts or adapt Alroy's Perl script to rarefy collections and/or references if desired.
+In contrast, the study that developed the minimum-spanning-tree (MST) approach for regional subsampling rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The `divvy` diversity summary function (`sampMeta`) and the most recent study to use MST subsamples [@Close2020] call on the `iNEXT` implementation of coverage-based richness estimation, which lacks this PBDB-specific functionality. Therefore, users should write custom richness estimation scripts or adapt Alroy's Perl script to rarefy collections and/or references if desired.
 
 ## Recommendation to subsample sites
 
-There is an option in \code{clustr} to turn off site rarefaction (argument \code{nSite = NULL}), for backwards comparability with its originator publications described above. 
+There is an option in `clustr` to turn off site rarefaction (argument `nSite = NULL`), for backwards comparability with its originator publications described above. 
 
 ```{r MST subsample}
+set.seed(8)
 forrest <- clustr(dat = bivalves, distMax = 1500,
                   xy = c('cellLng','cellLat'), iter = 100,
                   nMin = 3, # nSite = 8,
@@ -140,12 +141,12 @@ bands <- bandit(dat = bivalves, width = 15,
 Exclude dominant for SQS: done in Close 2020 and Alroy 2008 but not Alroy 2014.
 
 ```{r meta data}
-# smry <- sampMeta(dat = forrest[[1]], taxVar = 'genus', 
-#                  collections = 'collection_no', 
-#                  xy = c('cellLng','cellLat'),
-#                  quotaQ = 0.2, quotaN = 10,
-#                  omitDom = TRUE)
-# smry
+smry <- sampMeta(dat = forrest[[1]], taxVar = 'genus',
+                 collections = 'collection_no',
+                 xy = c('cellLng','cellLat'),
+                 quotaQ = 0.2, quotaN = 10,
+                 omitDom = TRUE)
+smry
 
 # TODO range size per species and per sample
 ```
