@@ -21,21 +21,21 @@ rangeSizer <- function(coords){
 
 #' Calculate basic spatial coverage and diversity metrics
 #'
-#' Summarise the geographic scope and position of occurrence data, and
-#' optionally estimate richness and evenness
+#' Summarise the spatial extent and position of occurrence data, and
+#' optionally estimate diversity and evenness
 #'
-#' \code{sampMeta} compiles a variety of metadata about a (sub)sample,
+#' \code{sdsumry} compiles a variety of metadata about a (sub)sample,
 #' before or after spatial subsampling. The function counts the number
 #' of unique spatial sites, collections (if requested), and taxa, and
 #' calculates the centroid coordinates, latitudinal range (degrees),
 #' great circle distance (km), and summed minimum spanning tree length (km)
 #' for occurrences.
 #'
-#' If \code{quotaQ} is supplied, \code{sampMeta} rarefies richness at the
+#' If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 #' given coverage value and returns the point estimate of richness (Hill number 0)
 #' and its 95% confidence interval as well as estimates of evenness (Pielou's J)
 #' and sample coverage (Good's *u*). If \code{quotaN} is supplied,
-#' \code{sampMeta} rarefies richness to the given number of occurrence counts
+#' \code{sdsumry} rarefies richness to the given number of occurrence counts
 #' and returns the point estimate of richness and its 95% confidence interval.
 #'
 #' Coverage-based and classical rarefaction are both calculated with
@@ -56,7 +56,10 @@ rangeSizer <- function(coords){
 #' @param quotaN A numeric value for the quota of taxon occurrences to subsample
 #' in classical rarefaction.
 #' @param omitDom If \code{omitDom = TRUE} and \code{quotaQ} or \code{quotaN}
-#' is supplied, remove the most common taxon prior to rarefaction.
+#' is supplied, remove the most common taxon prior to rarefaction. The `nTax`
+#' and `evenness` returned are unaffected.
+#'
+#' @return A numeric vector of spatial and optional diversity metrics
 #'
 #' @export
 #'
@@ -66,7 +69,7 @@ rangeSizer <- function(coords){
 #'
 #' \insertRef{Hsieh2016}{divvy}
 
-sampMeta <- function(dat, taxVar, xy,
+sdsumry <- function(dat, taxVar, xy,
                      collections = NULL,
                      quotaQ = NULL, quotaN = NULL,
                      omitDom = FALSE){
@@ -84,20 +87,24 @@ sampMeta <- function(dat, taxVar, xy,
   dat[,'site'] <- paste(dat[, xy[1] ], dat[, xy[2] ], sep = '/')
   siteIds <- unique( dat[,'site'] )
   nSite <- length(siteIds)
-  out <- cbind(out, 'nSite'= nSite)
 
   # run range size fcn as if all occs were from a single taxon
   # duplicate localities affect only occ count, nothing else
   sites <- unique( dat[,xy] )
-  spatMeta <- rangeSizer(coords = sites)
-  out <- cbind(out, spatMeta)
+  spatSumry <- rangeSizer(coords = sites)
+  out <- cbind(out, 'nSite'= nSite, spatSumry)
+
+  # SCOR summed common occurrence rate (Hannisdal 2012)
+  freqs <- table( dat[,taxVar] )
+  freqOrdr <- sort( as.numeric(freqs), decreasing = TRUE)
+  # rate probability of detection under Poisson
+  lambda <- -log(1 - freqOrdr/nSite) # natural log
+  scor <- sum(lambda)
 
   # diversity metrics; optional coverage and/or classical rarefaction
   taxSamp <-  unique( dat[,taxVar] )
   s <- length(taxSamp)
-  out <- cbind(out, 'nTax' = s) # raw count of taxa
-  freqs <- table( dat[,taxVar] )
-  freqOrdr <- sort( as.numeric(freqs), decreasing = TRUE)
+  out <- cbind(out, 'SCOR' = scor, 'nTax' = s) # raw count of taxa
 
   # Pielou's J evenness metric (calculate before omitting dom)
   pTax <- freqOrdr / sum(freqOrdr)
@@ -106,10 +113,9 @@ sampMeta <- function(dat, taxVar, xy,
   j <- h / log(s)
 
   if (omitDom == TRUE){
-    dom <- names( which.max(freqs) )
-    domRows <- dat[,taxVar] == dom
-    dat <- dat[ !domRows, ]
+    freqOrdr <- freqOrdr[-1]
   }
+
   if ( !is.null(quotaQ) ){
     sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
                                 datatype = 'incidence_freq',
