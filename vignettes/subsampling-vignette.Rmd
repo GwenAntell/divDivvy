@@ -17,6 +17,26 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Contents
+
+* Why to subsample spatially
+
+* Prepare Paleobiology Database records
+
+* Subsampling examples
+
+    * Circular subsampling
+    
+    * Note on PBDB collections and references
+    
+    * Nearest-neighbour subsampling
+
+    * Latitudinal subsampling
+
+* Analysis on subsampled data
+
+* References
+
 This document introduces rationale for spatial subsampling and covers common use cases for `divvy` functions, including example R code. Sections below discuss ways to format data, choose parameters for and apply subsampling routines, and calculate common biodiversity metrics. Consult the separate document 'how subsampling works' for illustrated walk-throughs of the steps performed within each subsampling method (circular, nearest-neighbour, and latitidunal subsampling).
 
 # Why to subsample spatially
@@ -41,7 +61,7 @@ library(iNEXT)
 library(icosa)
 ```
 
-`divvy` includes the attached dataset `bivalves`, a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) (PBDB) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. The dataset is provided only as an example for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications.
+`divvy` includes the attached dataset `bivalves`, a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) (PBDB) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. The dataset is provided only as an example for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications. The `fossilbrush` package provides a palette of tools to help clean PBDB data.
 ```{r}
 data(bivalves)
 head(bivalves)
@@ -74,9 +94,8 @@ bivalves$face <- faceIds
 ```
 
 We can inspect the spatial distribution of the raster data by converting occurrence points to spatial features (a class that contains coordinate system information) and plotting them against a basic world map, supplied here from the `spData` package.
-```{r map data, fig.width=5.5, fig.align='center'}
+```{r map data, fig.width=5.5, fig.align='center', message=FALSE}
 occUniq <- unique(cntrd)
-# convert to 'simple feature collection' class
 ptsUniq <- st_as_sf(occUniq, coords = c('long','lat'), 
                     crs = 'epsg:4326')
 
@@ -85,10 +104,10 @@ countries <- world['continent']$geom
 par(mar = rep(1, 4))
 plot(countries, col = 'grey')
 plot(ptsUniq, add = TRUE, 
-     col ='blue', pch = 18)
+     col ='blue', pch = 17)
 ```
 
-# Spatially subsample in regions
+# Subsampling examples
 
 `divvy` offers three approaches to spatially subsample data:
 
@@ -100,91 +119,148 @@ plot(ptsUniq, add = TRUE,
 
 For details on the inner workings of each function, read the separate document, 'how subsampling works'.
 
-Subsamples are returned as elements in a list of length `iter`. If `output = "locs"`, each element is a data.frame of coordinates for the `nSite` sites included in a subsample.
+## Circular subsampling
+
+First let's apply circular subsampling, which both constraints the spatial extent of a sample to a specified radius from a random start point and standardises the spatial area of a sample to a specified number of sites. (Recall that sites were allocated to equal-area polygons in the preceding section.) The radius (1500 km) and number of sites (n = 12) and iterations (n = 500) are specified here to match the subsampling parameters in the global analysis of @Antell2020. 
 ```{r circ subsample}
 set.seed(7)
 circLocs <- cookies(dat = bivalves, siteId = 'face', 
                     xy = c('cellLng','cellLat'), 
-                    r = 1000, # radial distance in km
-                    nSite = 8, iter = 500,
+                    r = 1500, # radial distance in km
+                    nSite = 12, iter = 500, 
+                    weight = TRUE, # probabilistically aggregate subsampling sites
                     output = 'locs')
 length(circLocs)
 circLocs[[1]]
 ```
-
-This output may be useful as an intermediate object on which to run custom functions that calculate ecological parameters of interest, for instance metrics of spatial connectedness among fossil sites. We can also use it to explore where the subsample localities fall on our earlier map.
+Subsamples are returned as elements in a list of length `iter`. If `output = "locs"` (default), each element is a `data.frame` of coordinates for the `nSite` sites included in a subsample. This output may be useful as an intermediate object on which to run custom functions that calculate ecological parameters of interest, for instance metrics of spatial connectedness among fossil sites. We can also use location output to explore where the subsample plots on our earlier map.
 ```{r map subsample, fig.width=5.5, fig.align='center'}
 # original plot
 par(mar = rep(1, 4))
 plot(countries, col = 'grey')
 plot(ptsUniq, add = TRUE, 
-     col ='blue', pch = 18)
+     col ='blue', pch = 17)
 
 # over-plot the subsample locations
 smplPts <- st_as_sf(circLocs[[1]], 
                     coords = c('cellLng','cellLat'), 
                     crs = 'epsg:4326')
 plot(smplPts, add = TRUE, 
-     col = 'red', pch = 18)
+     col = 'red', pch = 17)
 ```
-This subsample happens to fall along the northern coast of South America.
+This subsample happens to fall along the coasts of Central America and northwestern South America. Now note that the first code chunk in this section set the `weight` argument of `cookies` to `TRUE`. Weighting means sites in a subsample are drawn with higher probability the closer they fall to the central occurrence point (seed cell). The seed cell is always included in weighted subsamples and is the first point listed in the output. To visibilise the subsample method further, let's extract the seed location and manually plot the circular constraint around it.
+```{r}
+cntr <- smplPts[1,]
+# distances inferred to be meters based on lat-long coord system
+r <- 1500
+buf <- st_buffer(cntr, dist = r*1000)
+# plot(buf, add = TRUE, border ='red', lwd = 2)
 
-Changing `output` from `"locs"` to `"full"`, each element of the returned object now contains the subset of occurrence rows from `bivalves` located at the sites in a subsample.
+# tally how many fossil localities fall within buffer region
+inBuf <- st_intersects(ptsUniq, buf, sparse = FALSE) 
+sum(inBuf)
+```
+```{r map buffer, fig.width=5.5, fig.align='center', echo = FALSE}
+# original plot
+par(mar = rep(1, 4))
+plot(countries, col = 'grey')
+plot(ptsUniq, add = TRUE, 
+     col ='blue', pch = 17)
+
+# over-plot the subsample locations
+smplPts <- st_as_sf(circLocs[[1]], 
+                    coords = c('cellLng','cellLat'), 
+                    crs = 'epsg:4326')
+plot(smplPts, add = TRUE, 
+     col = 'red', pch = 17)
+plot(buf, add = TRUE, border ='red', lwd = 2)
+```
+```{r, eval = FALSE, echo = FALSE}
+# code to plot unselected pool cell(s)
+pool <- ptsUniq[inBuf,]
+ptMatch <- st_intersects(pool, smplPts, sparse = FALSE) 
+matched <- apply(ptMatch, 1, function(x) any(x==TRUE))
+plot(pool[!matched,], add = TRUE, col = 'green')
+```
+There happen to be 13 sites in the region from which to draw a subsample of 12, and close inspection reveals the excluded blue point at the northeastern periphery. Weighting is designed to cluster subsample sites more compactly than random selection (`weight = FALSE`), so it is expected distant points will tend to be left out.
+
+As demonstrated above, the location-type output of `divvy` subsampling functions can be useful in certain cases; however, more often researchers will want to retrieve taxon records. Changing `output` from `"locs"` to `"full"`, each element of the returned object now contains the subset of occurrence rows from `bivalves` located at the sites in a subsample. This output will be useful for analysis in the final section below.
 ```{r circ subsample variation}
 set.seed(7)
+# same parameter values as above except for 'output'
 circOccs <- cookies(dat = bivalves, siteId = 'face', 
                     xy = c('cellLng','cellLat'), 
-                    r = 1000, # radial distance in km
-                    nSite = 8, iter = 500,
+                    r = 1500, 
+                    nSite = 12, iter = 500, 
+                    weight = TRUE, 
                     output = 'full')
 head( circOccs[[1]] )
 ```
 
-## Considerations regarding PBDB collections and references
+## Note on PBDB collections and references
 
-Note that the data fed into the subsampling function can contain duplicate taxon-location records. For instance, the subsample output printed above shows two genera (*Ennucula* and *Saccella*) each occur at least twice at the same coordinates (raster cell #F4323). Internally, the subsampling functions subset the input data *a priori* to unique localities, so duplicate records are irrelevant. If one is interested in the number of sampled PBDB collections or references, however, then it is necessary to retain all original occurrences. In the example above, the duplicates stem from different collections (#41542 and #41543 for *Ennucula* and #41541 and #41542 for *Saccella*). We have standardised spatial extent and area, but at this point we could now rarefy the number of collections or references, too, as a standardisation for sampling effort.
+Data fed into `divvy` subsampling functions can contain duplicate taxon-location records, which are common from the collections-based format of PBDB data entry. For instance, the subsample output printed above shows *Argopecten* twice at the same coordinates (raster cell #F4957). The duplicates stem from different collections (#51881 and #51887). In the previous section we standardised spatial extent and area, but at this point we could rarefy the number of collections or references, too, as a standardisation for sampling effort.
 
 The study that developed the circular buffer approach for regional subsampling (implemented with `cookies`) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells [@Antell2020]. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts [@Alroy2008]. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).
 
-In contrast, the study that developed the minimum-spanning-tree (MST) approach for regional subsampling rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The `divvy` diversity summary function (`sampMeta`) and the most recent study to use MST subsamples [@Close2020] call on the `iNEXT` implementation of coverage-based richness estimation, which lacks this PBDB-specific functionality. Therefore, users should write custom richness estimation scripts or adapt Alroy's Perl script to rarefy collections and/or references if desired.
+In contrast, the study that developed the nearest-neighbour subsampling approach described below rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The `divvy` diversity summary function (`sampMeta`) and the most recent study to use nearest-neighbour subsamples [@Close2020] call on the `iNEXT` implementation of coverage-based richness estimation, which lacks this PBDB-specific functionality. Therefore, users should write custom richness estimation scripts or adapt Alroy's Perl script to rarefy collections and/or references if desired.
 
-## Recommendation to subsample sites
+## Nearest-neighbour subsampling
 
-There is an option in `clustr` to turn off site rarefaction (argument `nSite = NULL`), for backwards comparability with its originator publications described above. 
+As mentioned in the preceding section, papers that analysed subsamples constructed with the nearest-neighbour method to date constrained only the spatial extent and not total area or site number in regions [@Close2017; @Close2020]. For backwards comparability with these originator publications, the `clustr` function contains an option to turn off site rarefaction (argument `nSite = NULL`). However, depending on study design it may well be prudent to standardise the area/density of sites with this method, as is mandated in the circular subsampling approach. As before, site quota are set with the `nSite` argument.
 
 ```{r MST subsample}
 set.seed(8)
-forrest <- clustr(dat = bivalves, distMax = 1500,
-                  xy = c('cellLng','cellLat'), iter = 100,
-                  nMin = 3, # nSite = 8,
-                  output = 'full')
+nnLocs <- clustr(dat = bivalves, 
+                 distMax = 3000, # diameter = 2x the circular radius above
+                 xy = c('cellLng','cellLat'), 
+                 nSite = 12, iter = 500)
+nnLocs[[1]]
 ```
 
-"Our focal results are based on spatial regions that simultaneously satisfy all of the following requirements: 1) a spatial extent of 1500, 2000, 2500, 3000 and 3500 km MST distance ±10%; 2) a minimum-spanning tree for which the longest branch is less than half of the desired MST length (i.e., the region does not represent two widely-separated clusters of localities with no sampling in-between); 3) at least five occupied grid cells (100 km spacings) per 40 thousand km of MST length, ensuring a minimum level of spatial coverage within each spatial region; 4) at least 15 references per thousand km of MST length, ensuring a minimum level of 5 research effort for each spatial region; 5) at least 20 collections; and 6) a multiton ratio of at least 0.2, ensuring a minimum level of sample completeness."
+If we skip site rarefaction and instead include all locations within a cluster of maximum diameter deterministically, a subsample built on a given starting location could include any number of sites above the minimum threshold (here, `nMin = 3`). The first replicate in this example contains 16 sites.
+```{r MST all sites}
+set.seed(8)
+nnAllSites <- clustr(dat = bivalves, 
+                     distMax = 3000, # diameter = 2x the circular radius above
+                     xy = c('cellLng','cellLat'), 
+                     nMin = 3, iter = 500)
+nrow( nnAllSites[[1]] )
+```
 
-
-# Spatially subsample by latitude
+## Latitudinal subsampling
 
 ```{r lat subsample}
-bands <- bandit(dat = bivalves, width = 15,
-                xy = c('cellLng','cellLat'), centr = FALSE,
-                nSite = 8, iter = 10, absLat = FALSE
-                )
+# bands <- bandit(dat = bivalves, width = 15,
+#                 xy = c('cellLng','cellLat'), centr = FALSE,
+#                 nSite = 8, iter = 10, absLat = FALSE
+#                 )
 ```
 
 # Analysis on subsampled data
 
-Exclude dominant for SQS: done in Close 2020 and Alroy 2008 but not Alroy 2014.
+The `sampMeta` function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. `sampMeta` also tallies taxa in a sample and performs coverage-based rarefaction (if `quotaQ` supplied) and classical rarefaction (if `quotaN` supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by `iNEXT`). 
 
+If coverage-based rarefaction is applied, sample coverage (Good's *u*) and Pielou's J evenness metric are also returned. Analysts should take care to choose a desired coverage level (`quotaQ`) appropriate for the estimated coverage of the original sample; any quota greater than *u* will require extrapolation. Additionally, if analysis will involve comparison of coverage-based rarefaction estimates (e.g. between two time intervals), it is wise to first compare evenness between samples because this type of rarefaction assumes constant evenness.
 ```{r meta data}
-smry <- sampMeta(dat = forrest[[1]], taxVar = 'genus',
-                 collections = 'collection_no',
-                 xy = c('cellLng','cellLat'),
-                 quotaQ = 0.2, quotaN = 10,
-                 omitDom = TRUE)
+smry <- sdsumry(dat = circOccs[[1]], 
+                taxVar = 'genus',
+                collections = 'collection_no',
+                xy = c('cellLng','cellLat'),
+                quotaQ = 0.2, quotaN = 50,
+                omitDom = TRUE)
 smry
+```
 
-# TODO range size per species and per sample
+Exclude dominant for SQS: done in Close 2020 and Alroy 2008 but not Alroy 2014.
+```{r}
+allTax <- sdsumry(dat = circOccs[[1]],
+                  taxVar = 'genus',
+                  collections = 'collection_no',
+                  xy = c('cellLng','cellLat'),
+                  quotaQ = 0.2, quotaN = 50,
+                  omitDom = FALSE) # changed from above
+allTax
 ```
 
 # References
