@@ -5,7 +5,7 @@
 \alias{bivalves}
 \title{Paleobiology Database occurrences of Pliocene fossil bivalves}
 \format{
-A data frame with 8084 rows and 8 variables:
+A data frame with 8072 rows and 10 variables:
 \describe{
 \item{genus}{Latin genus identification. Subgenera are not elevated.}
 \item{paleolng, paleolat}{Coordinates of an occurrence, rotated to
@@ -13,6 +13,8 @@ its palaeogeographic location with the tectonic plate model of
 \link[=https://www.earthbyte.org/]{GPlates}}
 \item{collection_no, reference_no}{Unique identifiers for the collection and published
 reference containing the occurrence}
+\item{environment} One of 23 marine environment categories
+\item{geology_comments} Verbatim geological description notes
 \item{max_ma, min_ma}{Bounds of the age estimate for an occurrence}
 \item{accepted_name}{Original identification, including subgenus and
 species epithet if applicable, according to the latest PBDB
@@ -29,8 +31,7 @@ bivalves
 A dataset containing the (palaeo)coordinates and genus identifications of
 8,000 marine bivalves from the Pliocene (ca. 5.3-2.6 Ma). Records with
 uncertain or unaccepted taxonomic names, non-marine palaeo-environments,
-or missing coordinates are excluded from the
-\link[=https://paleobiodb.org/data1.2/occs/list.csv?datainfo&rowcount&base_name=Bivalvia&taxon_reso=genus&idqual=certain&interval=Pliocene,Pliocene&time_rule=contain&envtype=marine&show=paleoloc,coll,ref,acconly]{original download}
-(20 April 2022).
+or missing coordinates are excluded from the original download
+(13 May 2022).
 }
 \keyword{datasets}
