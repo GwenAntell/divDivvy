@@ -14,8 +14,8 @@
 #'    \link[=https://www.earthbyte.org/]{GPlates}}
 #'   \item{collection_no, reference_no}{Unique identifiers for the collection and published
 #'   reference containing the occurrence}
-#'   \item{environment} One of 23 marine environment categories
-#'   \item{geology_comments} Verbatim geological description notes
+#'   \item{environment}{One of 23 marine environment categories}
+#'   \item{geology_comments}{Verbatim geological description notes}
 #'   \item{max_ma, min_ma}{Bounds of the age estimate for an occurrence}
 #'   \item{accepted_name}{Original identification, including subgenus and
 #'   species epithet if applicable, according to the latest PBDB
