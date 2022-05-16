@@ -102,13 +102,9 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 
 clustr <- function(dat, xy, distMax, nSite = NULL, iter,
                    nMin = 3, output = 'locs') {
-  # subset to unique locations and find dist matrix between all
   x <- xy[1]
   y <- xy[2]
-  coords <- dat[,xy]
-	dupes <- duplicated(coords)
-	coords <- coords[ !dupes, ]
-	coords <- coords[stats::complete.cases(coords), ]
+	coords <- uniqify(dat[,xy], xy = xy)
 	coords <- as.data.frame(coords) # in case data is given as a matrix
 	nLoc <- nrow(coords)
 	if ( !is.null(nSite) ){
@@ -149,8 +145,6 @@ clustr <- function(dat, xy, distMax, nSite = NULL, iter,
 	  if ( !is.null(nSite) ){
 	    seedTr <- sample(sample(seedTr), nSite, replace = FALSE)
 	  }
-	  # subsampling needs to happen BEFORE getting full df output
-	  # (which can contain duplicate coordinates from multitaxon sites)
 	  sampRows <- match(seedTr, coords$ID) # row location of sample pts in coord data
 	  sampPtStrg <- paste(coords[sampRows, x], coords[sampRows, y], sep = '/')
 	  datPtStrg  <- paste(dat[,x], dat[,y], sep = '/')

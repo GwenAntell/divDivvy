@@ -32,8 +32,7 @@ bandit <- function(dat, xy, width, iter, nSite,
                    output = 'locs'){
   x <- xy[1]
   y <- xy[2]
-  dupes <- duplicated(dat[,xy])
-  coords <- dat[ !dupes, ]
+  coords <- uniqify(dat[,xy], xy = xy)
   lat <- coords[, y]
   if (absLat){
     lat <- abs(lat)

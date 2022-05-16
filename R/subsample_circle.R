@@ -1,7 +1,6 @@
 # TODO option to pass on prj info to relevant function guts
 
 # return vector of cells that lie within buffer radius of given seed
-# internal fcn for findPool and cookie
 findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
                      ){
   seedRow <- which(dat[, siteId] == seed)[1]
@@ -28,10 +27,6 @@ findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
 # save the ID of any cells that contain given pool size within buffer
 findSeeds <- function(dat, siteId, xy, r, nSite # , prj
                       ){
-  # count unique sites (not taxon occurences) relative to subsample quota
-  # dupes <- duplicated(dat[,siteId]) # can leave out since in higher-nested fn
-  # dat <- dat[ !dupes, ]
-
   # test whether each occupied site/cell is viable for subsampling
   posSeeds <- dat[,siteId]
   posPools <- sapply(posSeeds, function(s){
@@ -43,8 +38,6 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
   # return pool site/cell IDs for each viable seed point
   # same overall list structure as cookies outputs; names = seed IDs
   Filter(Negate(is.null), posPools)
-  # posPools[!sapply(posPools, is.null)] # equivalent, base syntax
-
 }
 
 
@@ -70,7 +63,7 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #'
 #' @inheritParams clustr
 #' @param siteId The name or numeric position of the column in \code{dat}
-#' containing codes for unique spatial sites, e.g. raster cell names/positions.
+#' containing identifiers for unique spatial sites, e.g. raster cell names.
 #' @param xy A vector of two elements, specifying the name or numeric position
 #' of the columns in \code{dat} containing longitude and latitude coordinates.
 #' Coordinates for the same site ID should be identical, and where IDs are
@@ -92,8 +85,8 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #' \insertRef{Antell2020}{divvy}
 cookies <- function(dat, siteId, xy, r, nSite, # prj,
                     iter, weight = FALSE, output = 'locs'){
-  dupes <- duplicated(dat[,siteId])
-  coords <- dat[ !dupes, c(xy, siteId)]
+  locDat <- dat[, c(xy, siteId)]
+  coords <- uniqify(locDat, siteId = siteId)
 
   # this is the rate-limiting step (v slow), but overall
   # it's most efficient to construct all spatial buffers here at start
