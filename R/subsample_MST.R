@@ -100,8 +100,8 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 #' \insertRef{Scheiner2003}{divvy}
 #'
 
-clustr <- function(dat, xy, distMax, nSite = NULL, iter,
-                   nMin = 3, output = 'locs') {
+clustr <- function(dat, xy, iter, nSite = NULL,
+                   distMax, nMin = 3, output = 'locs'){
   x <- xy[1]
   y <- xy[2]
 	coords <- uniqify(dat[,xy], xy = xy)

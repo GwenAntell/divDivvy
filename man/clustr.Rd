@@ -4,7 +4,7 @@
 \alias{clustr}
 \title{Cluster localities within regions of nearest neighbours}
 \usage{
-clustr(dat, xy, distMax, nSite = NULL, iter, nMin = 3, output = "locs")
+clustr(dat, xy, iter, nSite = NULL, distMax, nMin = 3, output = "locs")
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing the
@@ -13,12 +13,12 @@ coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of the columns containing longitude and latitude coordinates, respectively.}
 
-\item{distMax}{Numeric value for maximum diameter (km) allowed across
-locations in a subsample}
+\item{iter}{The number of spatial subsamples to return}
 
 \item{nSite}{The quota of unique locations to include in each subsample.}
 
-\item{iter}{The number of spatial subsamples to return}
+\item{distMax}{Numeric value for maximum diameter (km) allowed across
+locations in a subsample}
 
 \item{nMin}{Numeric value for the minimum number of sites to be included in
 every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.}

@@ -4,26 +4,26 @@
 \alias{cookies}
 \title{Rarefy localities within circular regions of standard area}
 \usage{
-cookies(dat, siteId, xy, r, nSite, iter, weight = FALSE, output = "locs")
+cookies(dat, xy, iter, nSite, siteId, r, weight = FALSE, output = "locs")
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing the
 coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
-
-\item{siteId}{The name or numeric position of the column in \code{dat}
-containing codes for unique spatial sites, e.g. raster cell names/positions.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of the columns in \code{dat} containing longitude and latitude coordinates.
 Coordinates for the same site ID should be identical, and where IDs are
 raster cells the coordinates are usually expected to be cell centroids.}
 
-\item{r}{Numeric value for the radius (km) defining the circular extent
-of each spatial subsample.}
+\item{iter}{The number of spatial subsamples to return}
 
 \item{nSite}{The quota of unique locations to include in each subsample.}
 
-\item{iter}{The number of spatial subsamples to return}
+\item{siteId}{The name or numeric position of the column in \code{dat}
+containing identifiers for unique spatial sites, e.g. raster cell names.}
+
+\item{r}{Numeric value for the radius (km) defining the circular extent
+of each spatial subsample.}
 
 \item{weight}{Whether sites within the subsample radius should be drawn
 at random (\code{weight = FALSE}) or with probability inversely proportional

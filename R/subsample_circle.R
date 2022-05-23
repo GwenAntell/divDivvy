@@ -83,8 +83,8 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #' @references
 #'
 #' \insertRef{Antell2020}{divvy}
-cookies <- function(dat, siteId, xy, r, nSite, # prj,
-                    iter, weight = FALSE, output = 'locs'){
+cookies <- function(dat, xy, iter, nSite, siteId, r, # prj,
+                    weight = FALSE, output = 'locs'){
   locDat <- dat[, c(xy, siteId)]
   coords <- uniqify(locDat, siteId = siteId)
 
