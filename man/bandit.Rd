@@ -7,9 +7,9 @@
 bandit(
   dat,
   xy,
-  width,
   iter,
   nSite,
+  width,
   centr = FALSE,
   absLat = FALSE,
   output = "locs"
@@ -22,12 +22,12 @@ coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of the columns containing longitude and latitude coordinates, respectively.}
 
-\item{width}{A numeric value for the resolution of latitude bins, in degrees.}
-
 \item{iter}{The number of times to subsample localities within \strong{each}
 latitudinal band.}
 
 \item{nSite}{The quota of unique locations to include in each subsample.}
+
+\item{width}{A numeric value for the resolution of latitude bins, in degrees.}
 
 \item{centr}{Logical: should a bin center on and cover the equator
 (\code{TRUE}) or should the equator mark the boundary between the
@@ -44,6 +44,60 @@ from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 \code{bandit} subsamples spatial point data to a specified number of sites
 within bins of equal latitude
 }
+\details{
+\code{bandit} rarefies the number of spatial sites within latitudinal ranges
+of specified width. (Compare with \code{cookies} and \code{clustr}, which spatially
+subsample to a specified total extent but without regard to position.)
+Cases where it may be necessary to control for sampling site area by latitude
+include characterisations of latitudinal diversity gradients (e.g. Marcot 2016)
+or comparisons of environmental parameters that covary strongly with
+latitude (e.g. diversity in reefal vs. non-reefal habitats). If there are
+insufficient occurrences to draw a subsample in a given interval, that
+interval is omitted from output. The latitudinal bounds of each subsample
+are given by the name in the corresponding list element. Note that
+the total surface area of the Earth within equal latitudinal increments
+decreases from the equator towards the poles; \code{bandit} standardises only
+the amount of sites/area encompassed by each subsample, not the total area
+that could have been available for species to inhabit.
+}
+\examples{
+data(bivalves)
+# rasterise data into equal-area grid cells
+library(icosa)
+hgrid <- hexagrid( c(8,4) )
+coords <- c('cellLng','cellLat')
+faceIds <- locate(hgrid, bivalves[, c('paleolng','paleolat')] )
+bivalves[, coords] <- pos(hgrid, faceIds)
+
+n <- 20
+reps <- 100
+set.seed(11)
+# subsample within 10-degree bands of absolute latitude
+bandAbs <- bandit(dat = bivalves, xy = coords,
+iter = reps, nSite = n, output = 'full',
+width = 10, absLat = TRUE
+)
+# head(bandAbs[[1]])
+names(bandAbs)[1] # degree interval (absolute value)
+#> "[0,10)"
+unique(names(bandAbs)) # all intervals containing data
+#> [1] "[0,10)" "[10,20)" "[30,40)" "[40,50)"
+
+# central latitude band spans equator, width = 20 degrees (as in Allen 2020)
+# a finer-grain way to divide 180 degrees evenly into an odd number is width = 4
+bandCent <- bandit(dat = bivalves, xy = coords,
+iter = reps, nSite = n, output = 'full',
+width = 20, centr = TRUE, absLat = FALSE
+)
+# head(bandCent[[1]])
+names(bandCent)[1]
+#> "[-10,10)"
+unique(names(bandCent))
+#> "[-10,10)" "[10,30)" "[30,50)"
+
+}
 \references{
+\insertRef{Allen2020}{divvy}
+
 \insertRef{Marcot2016}{divvy}
 }
