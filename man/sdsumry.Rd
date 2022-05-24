@@ -37,9 +37,12 @@ in classical rarefaction.}
 is supplied, remove the most common taxon prior to rarefaction. The \code{nTax}
 and \code{evenness} returned are unaffected.}
 }
+\value{
+A numeric vector of spatial and optional diversity metrics
+}
 \description{
-Summarise the geographic scope and position of occurrence data, and
-optionally estimate richness and evenness
+Summarise the spatial extent and position of occurrence data, and
+optionally estimate diversity and evenness
 }
 \details{
 \code{sdsumry} compiles a variety of metadata about a (sub)sample,
