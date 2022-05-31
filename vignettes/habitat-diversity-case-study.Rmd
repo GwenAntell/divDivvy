@@ -1,0 +1,137 @@
+---
+title: "Environment and latitude standardisation case study"
+author: "G. S. Antell"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+devtools::load_all(".")
+library(terra) 
+# library(sf)
+```
+
+# Import data
+
+- Use someone else's dataset to skirt criticism of taxonomic vetting, age models, etc.
+Perhaps Nurnberg and Aberhan? - No supplement :'(
+Brachios dataset from fossilbrush? -Need to redownload bc no coordinates included
+
+```{r}
+collPath <- paste0('https://paleobiodb.org/data1.2/colls/list.csv?datainfo',
+  '&rowcount&interval=Silurian,Silurian&time_rule=contain&envtype=marine',
+  '&show=paleoloc,geo' # includes environment and geology notes fields
+)
+collRaw <- read.csv( url(collPath), skip = 18, header = TRUE)
+keepRows <- complete.cases(collRaw[, c('paleolng','paleolat')])
+collDat <- collRaw[keepRows,]
+# TODO use divDyn to bin and chronosphere to (re)calculate palaeo-coordinates
+```
+
+Clean up environmental classification of reefs:
+```{r data cleanup}
+# reassign environment in reef-containing localities (collections data)
+
+# rfNotes <- grep('reef', collDat$geology_comments)
+# rfTerms <- c('reef, buildup or bioherm',
+#             'basin reef', 'perireef or subreef')
+# nrfEnv <- which(! collDat$environment %in% rfTerms)
+# sus <- intersect(rfNotes, nrfEnv)
+# collDat$geology_comments[sus]
+fixIndet <- intersect(grep('Contains reef units', collDat$geology_comments),
+                      which(collDat$environment == 'marine indet.')
+                      )
+collDat$environment[fixIndet] <- 'incl. reef'
+
+# reassign environment in reef-containing localities (occurrence data)
+data('bivalves')
+
+rfNotes <- grep('reef', bivalves$geology_comments)
+rfTerms <- c('reef, buildup or bioherm',
+            'basin reef', 'perireef or subreef')
+nrfEnv <- which(! bivalves$environment %in% rfTerms)
+sus <- intersect(rfNotes, nrfEnv)
+
+# manually inspect geology notes that suggest conflict with assigned environment
+unique(bivalves$geology_comments[sus])
+makeRf <- c(intersect(grep('Contains reef units', bivalves$geology_comments),
+                      which(bivalves$environment == 'marine indet.')
+            ),
+            intersect(grep('presumably reefal', bivalves$geology_comments),
+            which(bivalves$environment == 'carbonate indet.')
+            )
+)
+bivalves$environment[makeRf] <- 'incl. reef'
+```
+
+# Standardise environmental categoisation
+
+```{r}
+rfTerms <- c(rfTerms, 'incl. reef')
+# c('basin reef', 'perireef or reef', 'reef, buildup or bioherm')
+
+# non-reef with high confidence
+nrfTerms <- c('lagoonal/restricted shallow subtidal', 
+             'transition zone/lower shoreface',
+             'estuary/bay', 'shoreface', 'coastal indet.', 
+             'offshore', 'deep subtidal shelf',
+             'open shallow subtidal', 'slope',
+             'deep-water indet.', 'shallow subtidal indet.', # ?
+             'paralic indet.', 'lagoonal', 'deltaic indet.',
+             'foreshore', 'offshore indet.', 'deep subtidal indet.'
+             )
+
+# indeterminate marine; draw no conclusions
+unk <- c('marginal marine indet.', 'marine indet.', 'carbonate indet.')
+
+assignEnv <- function(a){
+  quer <- c(match(a, rfTerms),
+          match(a, nrfTerms),
+          match(a, unk)
+          )
+  expr <- which( !is.na(quer) )
+  switch(expr, 'reef', 'nonreef', 'unk')
+}
+bivalves$reefal <- sapply(bivalves$environment, assignEnv)
+        
+table(bivalves$reefal)
+```
+
+
+# Determine environment in cells and environmental preferences in taxa
+
+- Omit duplicate occurrences?
+
+Rasterise occupancy points (should be equal area once projection supported)
+```{r rasterise}
+ll <- rast(resolution = 5, crs = 'epsg:4326')
+prj <- 'ESRI:54030' # Robinson 
+# 'EPSG:8858' # "+proj=moll" # 'EPSG:8857' equal earth
+rob <- project(ll, prj) 
+values(rob) <- 1:ncell(rob)
+
+llOccs <- vect(bivalves, geom = c('paleolng','paleolat'), crs = 'epsg:4326')
+robOccs <- project(llOccs, prj)
+cellMat <- cells(rob, robOccs) 
+bivalves$cell <- cellMat[,'cell']
+bivalves[,c('cellX','cellY')] <- xyFromCell(rob, bivalves$cell)
+```
+
+```{r}
+unkBool <- bivalves$reefal == 'unk'
+bivalves$reefal[unkBool] <- NA
+rfRast <- envirise(rob, dat = bivalves, cutoff = 0.8,
+                   xy = c('cellX','cellY'), env = 'reefal')
+plot(rfRast)
+# why are so few cells assigned environments??
+```
+
+# Spatial standardisation of area and latitude
+
+- Split data by enviro category
+- bandit on each occurrence subset
+
+# Compare diversity across environments
+
+- SQS if even, CR if not
