@@ -286,14 +286,16 @@ samp1
 
 To summarise variation across subsamples, we can apply `sdsumry` to all elements of a subsampling output list and calculate mean or median values. For instance, the code chunk below reveals the median taxon count in a subsample is 166, with an interquartile range between regions of 141--183 taxa.
 ```{r}
-sampSumry <- sapply(circOccs, sdsumry, 
-                    taxVar = 'genus',
-                    collections = 'collection_no',
-                    xy = c('cellLng','cellLat')
-                    )
-sampSumry <- data.frame( t(sampSumry) )
-colnames(sampSumry) <- colnames(samp1)[1:ncol(sampSumry)] # fewer columns without rarefaction
-quantile(sampSumry$nTax, c(0.25, 0.5, 0.75))
+# warning - it's slow to rarefy diversity for hundreds of subsamples!
+# this code chunk skips it for quick demonstration purposes
+sampsMeta <- sdsumry(dat = circOccs, 
+                     taxVar = 'genus',
+                     collections = 'collection_no',
+                     xy = c('cellLng','cellLat')
+                   # quotaQ = 0.2, quotaN = 50, 
+                   # omitDom = TRUE
+                     )
+quantile(sampsMeta$nTax, c(0.25, 0.5, 0.75))
 ```
 
 # References

@@ -24,7 +24,7 @@ rangeSizer <- function(coords){
 #' Summarise the spatial extent and position of occurrence data, and
 #' optionally estimate diversity and evenness
 #'
-#' \code{sdsumry} compiles a variety of metadata about a (sub)sample,
+#' \code{sdsumry} compiles a metadata about a sample or list of samples,
 #' before or after spatial subsampling. The function counts the number
 #' of unique spatial sites, collections (if requested), and taxa, and
 #' calculates the centroid coordinates, latitudinal range (degrees),
@@ -44,7 +44,7 @@ rangeSizer <- function(coords){
 #' rarefaction level, consult Chao and Jost (2012) and Hsieh *et al.* (2016).
 #'
 #' @param dat A \code{data.frame} or \code{matrix} containing taxon names,
-#' coordinates, and any associated variables.
+#' coordinates, and any associated variables; or a list of such structures.
 #' @param taxVar The name or numeric position of the column containing
 #' taxonomic identifications.
 #' @param xy A vector of two elements, specifying the name or numeric position
@@ -70,74 +70,88 @@ rangeSizer <- function(coords){
 #' \insertRef{Hsieh2016}{divvy}
 
 sdsumry <- function(dat, taxVar, xy,
-                     collections = NULL,
-                     quotaQ = NULL, quotaN = NULL,
-                     omitDom = FALSE){
-  out <- c()
-  # n. collections (PBDB data) may be useful to know if rarefying
-  if ( !is.null(collections) ){
-    collSamp <- unique( dat[,collections] )
-    out <- cbind(out, 'nColl' = length(collSamp))
+                    collections = NULL,
+                    quotaQ = NULL, quotaN = NULL,
+                    omitDom = FALSE){
+  dfsumry <- function(df){
+    out <- c()
+    # n. collections (PBDB data) may be useful to know if rarefying
+    if ( !is.null(collections) ){
+      collSamp <- unique( df[,collections] )
+      out <- cbind(out, 'nColl' = length(collSamp))
+    }
+    # comb out any duplicate occurrences of a taxon w/in single site.
+    # do this after counting collections in case a single taxon
+    # at a single site is recorded in multiple collections
+    df <- unique( df[,c(taxVar, xy)] )
+
+    df[,'site'] <- paste(df[, xy[1] ], df[, xy[2] ], sep = '/')
+    siteIds <- unique( df[,'site'] )
+    nSite <- length(siteIds)
+
+    # run range size fcn as if all occs were from a single taxon
+    # duplicate localities affect only occ count, nothing else
+    sites <- unique( df[,xy] )
+    spatSumry <- rangeSizer(coords = sites)
+    out <- cbind(out, 'nSite'= nSite, spatSumry)
+
+    # SCOR summed common occurrence rate (Hannisdal 2012)
+    freqs <- table( df[,taxVar] )
+    freqOrdr <- sort( as.numeric(freqs), decreasing = TRUE)
+    # rate probability of detection under Poisson
+    lambda <- -log(1 - freqOrdr/nSite) # natural log
+    scor <- sum(lambda)
+
+    # diversity metrics; optional coverage and/or classical rarefaction
+    taxSamp <-  unique( df[,taxVar] )
+    s <- length(taxSamp)
+    out <- cbind(out, 'SCOR' = scor, 'nTax' = s) # raw count of taxa
+
+    # Pielou's J evenness metric (calculate before omitting dom)
+    pTax <- freqOrdr / sum(freqOrdr)
+    h <- -sum(pTax * log(pTax))
+    # vegan::diversity('shannon', base = exp(1))
+    j <- h / log(s)
+
+    if (omitDom == TRUE){
+      freqOrdr <- freqOrdr[-1]
+    }
+
+    if ( !is.null(quotaQ) ){
+      sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
+                                  datatype = 'incidence_freq',
+                                  base = 'coverage', level = quotaQ # , conf=NULL # 95% CI or none
+                                  )
+      # q0 = richness, q1 = exp of Shannon's entropy index,
+      # q2 = inverse of Simpson's concentration index
+      sqsRich <- sqsFull[sqsFull$order == 0, c('SC','qD','qD.LCL','qD.UCL')]
+      names(sqsRich) <- c('u','SQSdiv','SQSlow95','SQSupr95')
+      # return sample coverage, richness estimate and 95% CI
+      out <- cbind(out, 'evenness' = j, sqsRich)
+    }
+    if ( !is.null(quotaN) ){
+      crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
+                                 datatype = 'incidence_freq',
+                                 base = 'size', level = quotaN # , conf=NULL # 95% CI or none
+                                 )
+      crRich <- crFull[crFull$order == 0, c('qD','qD.LCL','qD.UCL')]
+      names(crRich) <- c('CRdiv','CRlow95','CRupr95')
+      out <- cbind(out, crRich)
+    }
+    out
   }
-  # comb out any duplicate occurrences of a taxon w/in single site.
-  # do this after counting collections in case a single taxon
-  # at a single site is recorded in multiple collections
-  dat <- unique( dat[,c(taxVar, xy)] )
-
-  dat[,'site'] <- paste(dat[, xy[1] ], dat[, xy[2] ], sep = '/')
-  siteIds <- unique( dat[,'site'] )
-  nSite <- length(siteIds)
-
-  # run range size fcn as if all occs were from a single taxon
-  # duplicate localities affect only occ count, nothing else
-  sites <- unique( dat[,xy] )
-  spatSumry <- rangeSizer(coords = sites)
-  out <- cbind(out, 'nSite'= nSite, spatSumry)
-
-  # SCOR summed common occurrence rate (Hannisdal 2012)
-  freqs <- table( dat[,taxVar] )
-  freqOrdr <- sort( as.numeric(freqs), decreasing = TRUE)
-  # rate probability of detection under Poisson
-  lambda <- -log(1 - freqOrdr/nSite) # natural log
-  scor <- sum(lambda)
-
-  # diversity metrics; optional coverage and/or classical rarefaction
-  taxSamp <-  unique( dat[,taxVar] )
-  s <- length(taxSamp)
-  out <- cbind(out, 'SCOR' = scor, 'nTax' = s) # raw count of taxa
-
-  # Pielou's J evenness metric (calculate before omitting dom)
-  pTax <- freqOrdr / sum(freqOrdr)
-  h <- -sum(pTax * log(pTax))
-  # vegan::diversity('shannon', base = exp(1))
-  j <- h / log(s)
-
-  if (omitDom == TRUE){
-    freqOrdr <- freqOrdr[-1]
+  if (class(dat) == 'list'){
+    finL <- lapply(dat, dfsumry)
+    fin <- data.frame(do.call(rbind, finL))
+    # if original list has named elements e.g. latitudinal bands - keep them
+    if ( ! is.null(names(dat)) ){
+      fin$id <- names(dat)
+    }
   }
-
-  if ( !is.null(quotaQ) ){
-    sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
-                                datatype = 'incidence_freq',
-                                base = 'coverage', level = quotaQ # , conf=NULL # 95% CI or none
-                                )
-    # q0 = richness, q1 = exp of Shannon's entropy index,
-    # q2 = inverse of Simpson's concentration index
-    sqsRich <- sqsFull[sqsFull$order == 0, c('SC','qD','qD.LCL','qD.UCL')]
-    names(sqsRich) <- c('u','SQSdiv','SQSlow95','SQSupr95')
-    # return sample coverage, richness estimate and 95% CI
-    out <- cbind(out, 'evenness' = j, sqsRich)
+  if (class(dat) %in% c('matrix', 'data.frame')){
+    fin <- dfsumry(dat)
   }
-  if ( !is.null(quotaN) ){
-    crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
-                               datatype = 'incidence_freq',
-                               base = 'size', level = quotaN # , conf=NULL # 95% CI or none
-                               )
-    crRich <- crFull[crFull$order == 0, c('qD','qD.LCL','qD.UCL')]
-    names(crRich) <- c('CRdiv','CRlow95','CRupr95')
-    out <- cbind(out, crRich)
-  }
-  return(out)
+  return(fin)
 }
 
 # TODO return range sizes for all species in all subsamples
