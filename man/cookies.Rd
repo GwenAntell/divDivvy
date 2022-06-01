@@ -4,14 +4,24 @@
 \alias{cookies}
 \title{Rarefy localities within circular regions of standard area}
 \usage{
-cookies(dat, xy, iter, nSite, siteId, r, weight = FALSE, output = "locs")
+cookies(
+  dat,
+  xy,
+  iter,
+  nSite,
+  siteId,
+  r,
+  weight = FALSE,
+  crs = "epsg:4326",
+  output = "locs"
+)
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing the
 coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of the columns in \code{dat} containing longitude and latitude coordinates.
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
 Coordinates for the same site ID should be identical, and where IDs are
 raster cells the coordinates are usually expected to be cell centroids.}
 
@@ -29,6 +39,9 @@ of each spatial subsample.}
 at random (\code{weight = FALSE}) or with probability inversely proportional
 to the square of their distance from the centre of the subsample region.}
 
+\item{crs}{Coordinate reference system as a GDAL text string, numeric EPSG
+code, or object of class \code{crs}. Default is latitude-longitude (EPSG:4326).}
+
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}), with row names the
 site IDs, or the subset of rows from \code{dat} associated with those
@@ -43,16 +56,19 @@ circumscribes a buffer of \code{r} km around it. Buffer circles that span
 the antemeridian (180 deg longitude) are wrapped as a multipolygon
 to prevent artificial truncation. After standardising radial extent, sites
 are drawn within the circular extent until a quota of \code{nSite}.
-Sites are sampled without replacement, so a location is only used as a seed
-point if it is within \code{r} km distance of at least \code{nSite} locations.
+Sites are sampled without replacement, so a location is used as a seed point
+only if it is within \code{r} km distance of at least \code{nSite} locations.
+The method is introduced in Antell et al. (2020) and described in
+detail in Methods S1 therein.
 
 The probability of drawing each site within the standardised extent is
 either equal (\code{weight = FALSE}) or proportional to the inverse-square
 of its distance from the seed point (\code{weight = TRUE}), which clusters
 subsample locations more tightly.
 
-The method is introduced in Antell et al. (2020) and described in
-detail in Methods S1 therein.
+For geodetic coordinates (latitude-longitude), distances are calculated along
+great circle arcs. For Cartesian coordinates, distances are calculated in
+Euclidian space, in units associated with the projection CRS (e.g. metres).
 }
 \references{
 \insertRef{Antell2020}{divvy}

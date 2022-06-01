@@ -1,42 +1,40 @@
-# TODO option to pass on prj info to relevant function guts
-
 # return vector of cells that lie within buffer radius of given seed
-findPool <- function(seed, dat, siteId, xy, r, nSite # , prj
+findPool <- function(seed, dat, siteId, xy, r, nSite, crs = 'epsg:4326'
                      ){
+  datSf <- sf::st_as_sf(dat, coords = xy, crs = crs)
   seedRow <- which(dat[, siteId] == seed)[1]
-  # make sure coords are a 2-col, not-dataframe-class object to give to sf
-  seedxy <- as.matrix( dat[seedRow, xy] )
-  seedpt <- sf::st_point(seedxy)
-  # make sure to hard code the CRS for the buffer; sf can't infer lat-long
-  seedsfc <- sf::st_sfc(seedpt, crs = 'epsg:4326')
-  buf <- sf::st_buffer(seedsfc, dist = r*1000)
-  # split poly into multipolygon around antimeridian (patches 2020 bug)
+  seedpt <- datSf[seedRow, ]
+  # buffer will be more accurate if projected,
+  # but wrapping around antimeridian requires lat-long coordinates
+  r <- units::set_units(r, 'km')
+  buf <- sf::st_buffer(seedpt, dist = r)
+  if (crs != 'epsg:4326'){
+    buf   <- sf::st_transform(buf,   crs = 'epsg:4326')
+    datSf <- sf::st_transform(datSf, crs = 'epsg:4326')
+  }
   bufWrap <- sf::st_wrap_dateline(buf, options = c("WRAPDATELINE=YES"))
-  # identical results if st_union() applied to bufWrap.
-  # alternative way to construct buffer, but adding new pkg dependency:
-  # rangemap::geobuffer_points(seedxy, r*1000, wrap_antimeridian = TRUE)
 
   # find sites within radius of seed site/cell
-  datSf <- sf::st_as_sf(dat, coords = xy, crs = 'epsg:4326')
-  poolBool <-  sf::st_intersects(datSf, bufWrap, sparse = FALSE)
+  poolBool <- sf::st_intersects(datSf, bufWrap, sparse = FALSE)
   pool <- dat[poolBool, siteId]
   return(pool)
 }
 
 # function to try all possible starting pts (i.e. all occupied cells)
 # save the ID of any cells that contain given pool size within buffer
-findSeeds <- function(dat, siteId, xy, r, nSite # , prj
+findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
                       ){
   # test whether each occupied site/cell is viable for subsampling
   posSeeds <- dat[,siteId]
   posPools <- sapply(posSeeds, function(s){
-    sPool <- findPool(s, dat, siteId, xy, r, nSite)
+    sPool <- findPool(s, dat, siteId, xy, r, nSite, crs)
     n <- length(sPool)
     if (n >= nSite)
       sPool
   })
   # return pool site/cell IDs for each viable seed point
   # same overall list structure as cookies outputs; names = seed IDs
+  names(posPools) <- posSeeds
   Filter(Negate(is.null), posPools)
 }
 
@@ -50,22 +48,25 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #' the antemeridian (180 deg longitude) are wrapped as a multipolygon
 #' to prevent artificial truncation. After standardising radial extent, sites
 #' are drawn within the circular extent until a quota of \code{nSite}.
-#' Sites are sampled without replacement, so a location is only used as a seed
-#' point if it is within \code{r} km distance of at least \code{nSite} locations.
+#' Sites are sampled without replacement, so a location is used as a seed point
+#' only if it is within \code{r} km distance of at least \code{nSite} locations.
+#' The method is introduced in Antell et al. (2020) and described in
+#' detail in Methods S1 therein.
 #'
 #' The probability of drawing each site within the standardised extent is
 #' either equal (\code{weight = FALSE}) or proportional to the inverse-square
 #' of its distance from the seed point (\code{weight = TRUE}), which clusters
 #' subsample locations more tightly.
 #'
-#' The method is introduced in Antell et al. (2020) and described in
-#' detail in Methods S1 therein.
+#' For geodetic coordinates (latitude-longitude), distances are calculated along
+#' great circle arcs. For Cartesian coordinates, distances are calculated in
+#' Euclidian space, in units associated with the projection CRS (e.g. metres).
 #'
 #' @inheritParams clustr
 #' @param siteId The name or numeric position of the column in \code{dat}
 #' containing identifiers for unique spatial sites, e.g. raster cell names.
 #' @param xy A vector of two elements, specifying the name or numeric position
-#' of the columns in \code{dat} containing longitude and latitude coordinates.
+#' of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
 #' Coordinates for the same site ID should be identical, and where IDs are
 #' raster cells the coordinates are usually expected to be cell centroids.
 #' @param r Numeric value for the radius (km) defining the circular extent
@@ -73,6 +74,8 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #' @param weight Whether sites within the subsample radius should be drawn
 #' at random (\code{weight = FALSE}) or with probability inversely proportional
 #' to the square of their distance from the centre of the subsample region.
+#' @param crs Coordinate reference system as a GDAL text string, numeric EPSG
+#' code, or object of class `crs`. Default is latitude-longitude (EPSG:4326).
 #' @param output Whether the returned data should be a two-column matrix of
 #' subsample site coordinates (\code{output = 'locs'}), with row names the
 #' site IDs, or the subset of rows from \code{dat} associated with those
@@ -83,21 +86,17 @@ findSeeds <- function(dat, siteId, xy, r, nSite # , prj
 #' @references
 #'
 #' \insertRef{Antell2020}{divvy}
-cookies <- function(dat, xy, iter, nSite, siteId, r, # prj,
-                    weight = FALSE, output = 'locs'){
+cookies <- function(dat, xy, iter, nSite, siteId, r, weight = FALSE,
+                    crs = 'epsg:4326', output = 'locs'){
   locDat <- dat[, c(xy, siteId)]
   coords <- uniqify(locDat, siteId = siteId)
 
   # this is the rate-limiting step (v slow), but overall
   # it's most efficient to construct all spatial buffers here at start
   # and not repeat the calculations anywhere later!
-  allPools <- findSeeds(coords, siteId, xy, r, nSite)
+  allPools <- findSeeds(coords, siteId, xy, r, nSite, crs)
   if (length(allPools) < 1){
     stop('not enough close sites for any sample')
-  }
-  # convert to spatial features for distance calculations later
-  if (weight){
-    datSf <- sf::st_as_sf(coords, coords = xy, crs = 'epsg:4326')
   }
 
   # takes a subsample of sites/cells, w/o replacement, w/in buffered radius
@@ -113,6 +112,9 @@ cookies <- function(dat, xy, iter, nSite, siteId, r, # prj,
     pool <- allPools[seed][[1]]
 
     if (weight){
+      # convert to spatial features for distance calculations
+      datSf <- sf::st_as_sf(coords, coords = xy, crs = crs)
+
       # remove seed from probabilistic sampling - include it manually
       # (otherwise inverse distance will divide by zero)
       pool <- pool[ !pool == seed]
@@ -120,9 +122,11 @@ cookies <- function(dat, xy, iter, nSite, siteId, r, # prj,
       poolPts <- datSf[poolBool,]
 
       # squared inverse weight because inverse alone is too weak an effect
+      # great circle spherical distances for lon-lat coordinates (geodetic)
+      # Euclidian distances for Cartesian coordinates
       seedRow <- which(coords[, siteId] == seed)[1]
       seedPt <- datSf[seedRow,]
-      gcdists <- sf::st_distance(poolPts, seedPt) # spherical distances by default
+      gcdists <- sf::st_distance(poolPts, seedPt)
       wts <- sapply(gcdists, function(x) x^(-2))
       # sample() doesn't require wts sum = 1; identical results without rescaling
       samplIds <- c(seed,
