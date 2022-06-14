@@ -8,6 +8,7 @@ sdsumry(
   dat,
   taxVar,
   xy,
+  crs = "epsg:4326",
   collections = NULL,
   quotaQ = NULL,
   quotaN = NULL,
@@ -16,13 +17,17 @@ sdsumry(
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing taxon names,
-coordinates, and any associated variables.}
+coordinates, and any associated variables; or a list of such structures.}
 
 \item{taxVar}{The name or numeric position of the column containing
 taxonomic identifications.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of the columns containing longitude and latitude coordinates, respectively.}
+
+\item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
+or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).
+Projected coordinates will be transformed in latitudinal range calculations.}
 
 \item{collections}{The name or numeric position of the column containing
 unique collection IDs, e.g. 'collection_no' in PBDB data downloads.}
@@ -38,19 +43,34 @@ is supplied, remove the most common taxon prior to rarefaction. The \code{nTax}
 and \code{evenness} returned are unaffected.}
 }
 \value{
-A numeric vector of spatial and optional diversity metrics
+A \code{data.frame} of spatial and optional diversity metrics. If \code{dat}
+is a list of \code{data.frame} objects, output contains one row per list element.
 }
 \description{
 Summarise the spatial extent and position of occurrence data, and
 optionally estimate diversity and evenness
 }
 \details{
-\code{sdsumry} compiles a variety of metadata about a (sub)sample,
+\code{sdsumry} compiles metadata about a sample or list of samples,
 before or after spatial subsampling. The function counts the number
-of unique spatial sites, collections (if requested), and taxa, and
-calculates the centroid coordinates, latitudinal range (degrees),
-great circle distance (km), and summed minimum spanning tree length (km)
-for occurrences.
+of collections (if requested), unique spatial sites, and taxa
+presences (excluding repeat incidences of a taxon at a given site);
+it also calculates site centroid coordinates, latitudinal range (degrees),
+great circle distance (km), and summed minimum spanning tree length (km).
+Coordinates and their distances are calculated with respect to
+the original coordinate reference system if supplied, and otherwise
+calculated as spherical distances between points assumed to be given
+in degrees latitude-longitude.
+
+The first two diversity variables returned are the raw count of observed taxa
+and the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects
+the degree to which taxa are common/widespread and is decoupled from
+richness or abundance (Hannisdal \emph{et al.} 2012). SCOR is calculated as the
+sum across taxa of the log probability of incidence, \eqn{\lambda}.
+For a given taxon, \eqn{\lambda = -ln(1 - p)},
+where \eqn{p} is estimated as the fraction of occupied sites.
+Very widespread taxa make a large contribution to an assemblage SCOR,
+while rare taxa have relatively little influence.
 
 If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 given coverage value and returns the point estimate of richness (Hill number 0)
@@ -58,14 +78,15 @@ and its 95\% confidence interval as well as estimates of evenness (Pielou's J)
 and sample coverage (Good's \emph{u}). If \code{quotaN} is supplied,
 \code{sdsumry} rarefies richness to the given number of occurrence counts
 and returns the point estimate of richness and its 95\% confidence interval.
-
 Coverage-based and classical rarefaction are both calculated with
 \code{iNEXT::estimateD} internally. For details, such as how diversity
-is extrapolated if a sample is insufficient to achieve a specified
+is extrapolated if sample coverage is insufficient to achieve a specified
 rarefaction level, consult Chao and Jost (2012) and Hsieh \emph{et al.} (2016).
 }
 \references{
 \insertRef{Chao2012}{divvy}
+
+\insertRef{Hannisdal2012}{divvy}
 
 \insertRef{Hsieh2016}{divvy}
 }

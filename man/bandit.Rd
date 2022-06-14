@@ -9,9 +9,10 @@ bandit(
   xy,
   iter,
   nSite,
-  width,
+  bin,
   centr = FALSE,
   absLat = FALSE,
+  crs = "epsg:4326",
   output = "locs"
 )
 }
@@ -27,7 +28,7 @@ latitudinal band.}
 
 \item{nSite}{The quota of unique locations to include in each subsample.}
 
-\item{width}{A numeric value for the resolution of latitude bins, in degrees.}
+\item{bin}{A numeric value for the width of latitudinal bands, in degrees.}
 
 \item{centr}{Logical: should a bin center on and cover the equator
 (\code{TRUE}) or should the equator mark the boundary between the
@@ -36,9 +37,20 @@ lowest-latitude northern and southern bins (\code{FALSE}, default)?}
 \item{absLat}{Logical: should only the absolute values of latitude be
 evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.}
 
+\item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
+or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
+
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows
 from \code{dat} associated with those coordinates (\code{output = 'full'}).}
+}
+\value{
+A list of subsamples, each a \code{data.frame} containing
+coordinates of subsampled localities (if \code{output = 'locs'})
+or the subset of occurrences from \code{dat} associated with those coordinates
+(if \code{output = 'full'}). The latitudinal bounds of each subsample
+are specified by its name in the list. If there are too few localities
+in a given interval to draw a subsample, that interval is omitted from output.
 }
 \description{
 \code{bandit} subsamples spatial point data to a specified number of sites
@@ -46,15 +58,12 @@ within bins of equal latitude
 }
 \details{
 \code{bandit} rarefies the number of spatial sites within latitudinal ranges
-of specified width. (Compare with \code{cookies} and \code{clustr}, which spatially
-subsample to a specified total extent but without regard to position.)
-Cases where it may be necessary to control for sampling site area by latitude
+of specified bin width. (Compare with \code{cookies} and \code{clustr}, which spatially
+subsample to a specified extent without regard to latitudinal position.)
+Cases where it could be appropriate to control for variable locality latitude
 include characterisations of latitudinal diversity gradients (e.g. Marcot 2016)
 or comparisons of environmental parameters that covary strongly with
-latitude (e.g. diversity in reefal vs. non-reefal habitats). If there are
-insufficient occurrences to draw a subsample in a given interval, that
-interval is omitted from output. The latitudinal bounds of each subsample
-are given by the name in the corresponding list element. Note that
+latitude (e.g. diversity in reefal vs. non-reefal habitats). Note that
 the total surface area of the Earth within equal latitudinal increments
 decreases from the equator towards the poles; \code{bandit} standardises only
 the amount of sites/area encompassed by each subsample, not the total area
@@ -75,24 +84,26 @@ set.seed(11)
 # subsample within 10-degree bands of absolute latitude
 bandAbs <- bandit(dat = bivalves, xy = coords,
 iter = reps, nSite = n, output = 'full',
-width = 10, absLat = TRUE
+bin = 10, absLat = TRUE
 )
-# head(bandAbs[[1]])
-names(bandAbs)[1] # degree interval (absolute value)
+# head(bandAbs[[1]]) # inspect first subsample
+names(bandAbs)[1] # degree interval (absolute value) of first subsample
 #> "[0,10)"
 unique(names(bandAbs)) # all intervals containing data
 #> [1] "[0,10)" "[10,20)" "[30,40)" "[40,50)"
+# note insufficient coverage to subsample from 20-30 degrees or > 50 degrees
 
-# central latitude band spans equator, width = 20 degrees (as in Allen 2020)
-# a finer-grain way to divide 180 degrees evenly into an odd number is width = 4
+# central latitude band spans equator, bin = 20 degrees (as in Allen 2020)
+# (a finer-grain way to divide 180 degrees evenly into an odd number of
+# bands would be to set 'bin' = 4)
 bandCent <- bandit(dat = bivalves, xy = coords,
 iter = reps, nSite = n, output = 'full',
-width = 20, centr = TRUE, absLat = FALSE
+bin = 20, centr = TRUE, absLat = FALSE
 )
-# head(bandCent[[1]])
-names(bandCent)[1]
+# head(bandCent[[1]]) # inspect first subsample
+names(bandCent)[1] # degree interval of first subsample
 #> "[-10,10)"
-unique(names(bandCent))
+unique(names(bandCent)) # all intervals containing data
 #> "[-10,10)" "[10,30)" "[30,50)"
 
 }
@@ -100,4 +111,9 @@ unique(names(bandCent))
 \insertRef{Allen2020}{divvy}
 
 \insertRef{Marcot2016}{divvy}
+}
+\seealso{
+\code{\link[=cookies]{cookies()}}
+
+\code{\link[=clustr]{clustr()}}
 }

@@ -1,17 +1,26 @@
 
-rangeSizer <- function(coords){
+rangeSizer <- function(coords, crs){
+  sfPts <- sf::st_as_sf(coords, coords = 1:2, crs = crs)
+  if ( ! sf::st_is_longlat(sfPts)){
+    coords <- sf::sf_project(from = crs, to = 'epsg:4326', coords,
+                             keep = TRUE, warn = TRUE)
+    # ptsLL <- sf::st_transform(sfPts, 'epsg:4326')
+    # coords <- sf::st_coordinates(ptsLL)
+  }
   latDiff <- max(coords[,2]) - min(coords[,2])
   latRng <- abs(latDiff)
-  pts <- sf::st_as_sf(coords, coords = 1:2, crs = 'epsg:4326')
-  ptsGrp <- sf::st_union(pts)
+
+  # calculate all other spatial positions/distances w.r.t. original CRS
+  ptsGrp <- sf::st_union(sfPts)
+  # duplicate points (multiple taxa per site) don't affect centroid
   cntr <- unlist( sf::st_centroid(ptsGrp) )
-  gcdists <- sf::st_distance(pts) # returns units-class object (m)
+  gcdists <- sf::st_distance(sfPts) # returns units-class object
   gcdists <- units::set_units(gcdists, 'km')
   gcMax <- max(gcdists)
   mst <- vegan::spantree( units::drop_units(gcdists) )
   agg <- sum(mst$dist)
-  out <- cbind('centroidLng' = cntr[1],
-               'centroidLat' = cntr[2],
+  out <- cbind('centroidX' = cntr[1],
+               'centroidY' = cntr[2],
                'latRange' = latRng,
                'greatCircDist' = gcMax,
                'minSpanTree' = agg
@@ -24,12 +33,26 @@ rangeSizer <- function(coords){
 #' Summarise the spatial extent and position of occurrence data, and
 #' optionally estimate diversity and evenness
 #'
-#' \code{sdsumry} compiles a metadata about a sample or list of samples,
+#' \code{sdsumry} compiles metadata about a sample or list of samples,
 #' before or after spatial subsampling. The function counts the number
-#' of unique spatial sites, collections (if requested), and taxa, and
-#' calculates the centroid coordinates, latitudinal range (degrees),
-#' great circle distance (km), and summed minimum spanning tree length (km)
-#' for occurrences.
+#' of collections (if requested), unique spatial sites, and taxa
+#' presences (excluding repeat incidences of a taxon at a given site);
+#' it also calculates site centroid coordinates, latitudinal range (degrees),
+#' great circle distance (km), and summed minimum spanning tree length (km).
+#' Coordinates and their distances are calculated with respect to
+#' the original coordinate reference system if supplied, and otherwise
+#' calculated as spherical distances between points assumed to be given
+#' in degrees latitude-longitude.
+#'
+#' The first two diversity variables returned are the raw count of observed taxa
+#' and the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects
+#' the degree to which taxa are common/widespread and is decoupled from
+#' richness or abundance (Hannisdal *et al.* 2012). SCOR is calculated as the
+#' sum across taxa of the log probability of incidence, \eqn{\lambda}.
+#' For a given taxon, \eqn{\lambda = -ln(1 - p)},
+#' where \eqn{p} is estimated as the fraction of occupied sites.
+#' Very widespread taxa make a large contribution to an assemblage SCOR,
+#' while rare taxa have relatively little influence.
 #'
 #' If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 #' given coverage value and returns the point estimate of richness (Hill number 0)
@@ -37,10 +60,9 @@ rangeSizer <- function(coords){
 #' and sample coverage (Good's *u*). If \code{quotaN} is supplied,
 #' \code{sdsumry} rarefies richness to the given number of occurrence counts
 #' and returns the point estimate of richness and its 95% confidence interval.
-#'
 #' Coverage-based and classical rarefaction are both calculated with
 #' \code{iNEXT::estimateD} internally. For details, such as how diversity
-#' is extrapolated if a sample is insufficient to achieve a specified
+#' is extrapolated if sample coverage is insufficient to achieve a specified
 #' rarefaction level, consult Chao and Jost (2012) and Hsieh *et al.* (2016).
 #'
 #' @param dat A \code{data.frame} or \code{matrix} containing taxon names,
@@ -49,6 +71,9 @@ rangeSizer <- function(coords){
 #' taxonomic identifications.
 #' @param xy A vector of two elements, specifying the name or numeric position
 #' of the columns containing longitude and latitude coordinates, respectively.
+#' @param crs Coordinate reference system as a GDAL text string, EPSG code,
+#' or object of class `crs`. Default is latitude-longitude (`EPSG:4326`).
+#' Projected coordinates will be transformed in latitudinal range calculations.
 #' @param collections The name or numeric position of the column containing
 #' unique collection IDs, e.g. 'collection_no' in PBDB data downloads.
 #' @param quotaQ A numeric value for the coverage (quorum) level at which to
@@ -59,7 +84,8 @@ rangeSizer <- function(coords){
 #' is supplied, remove the most common taxon prior to rarefaction. The `nTax`
 #' and `evenness` returned are unaffected.
 #'
-#' @return A numeric vector of spatial and optional diversity metrics
+#' @return A `data.frame` of spatial and optional diversity metrics. If `dat`
+#' is a list of `data.frame` objects, output contains one row per list element.
 #'
 #' @export
 #'
@@ -67,9 +93,11 @@ rangeSizer <- function(coords){
 #'
 #' \insertRef{Chao2012}{divvy}
 #'
+#' \insertRef{Hannisdal2012}{divvy}
+#'
 #' \insertRef{Hsieh2016}{divvy}
 
-sdsumry <- function(dat, taxVar, xy,
+sdsumry <- function(dat, taxVar, xy, crs = 'epsg:4326',
                     collections = NULL,
                     quotaQ = NULL, quotaN = NULL,
                     omitDom = FALSE){
@@ -84,16 +112,14 @@ sdsumry <- function(dat, taxVar, xy,
     # do this after counting collections in case a single taxon
     # at a single site is recorded in multiple collections
     df <- unique( df[,c(taxVar, xy)] )
-
-    df[,'site'] <- paste(df[, xy[1] ], df[, xy[2] ], sep = '/')
-    siteIds <- unique( df[,'site'] )
-    nSite <- length(siteIds)
+    nOcc <- nrow(df)
 
     # run range size fcn as if all occs were from a single taxon
     # duplicate localities affect only occ count, nothing else
     sites <- unique( df[,xy] )
-    spatSumry <- rangeSizer(coords = sites)
-    out <- cbind(out, 'nSite'= nSite, spatSumry)
+    nSite <- nrow(sites)
+    spatSumry <- rangeSizer(coords = sites, crs = crs)
+    out <- cbind(out, 'nSite'= nSite, 'nOcc' = nOcc, spatSumry)
 
     # SCOR summed common occurrence rate (Hannisdal 2012)
     freqs <- table( df[,taxVar] )
@@ -116,7 +142,6 @@ sdsumry <- function(dat, taxVar, xy,
     if (omitDom == TRUE){
       freqOrdr <- freqOrdr[-1]
     }
-
     if ( !is.null(quotaQ) ){
       sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
                                   datatype = 'incidence_freq',
@@ -153,15 +178,3 @@ sdsumry <- function(dat, taxVar, xy,
   }
   return(fin)
 }
-
-# TODO return range sizes for all species in all subsamples
-# taxDists <- function(dat, taxVar, idVar, sampIds,
-#                      xy = NULL, omitSingles = FALSE){
-#   if (omitSingles == TRUE){
-#     freqs <- table( dat[,taxVar] )
-#     singles <- names(freqs[freqs == 1])
-#     rows2toss <- dat[,taxVar] %in% singles
-#     dat <- dat[ !rows2toss, ]
-#   }
-#   # apply rangeSizer to all taxa
-# }

@@ -74,8 +74,6 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #' @param weight Whether sites within the subsample radius should be drawn
 #' at random (\code{weight = FALSE}) or with probability inversely proportional
 #' to the square of their distance from the centre of the subsample region.
-#' @param crs Coordinate reference system as a GDAL text string, numeric EPSG
-#' code, or object of class `crs`. Default is latitude-longitude (EPSG:4326).
 #' @param output Whether the returned data should be a two-column matrix of
 #' subsample site coordinates (\code{output = 'locs'}), with row names the
 #' site IDs, or the subset of rows from \code{dat} associated with those

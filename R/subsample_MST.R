@@ -100,8 +100,8 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 #' \insertRef{Scheiner2003}{divvy}
 #'
 
-clustr <- function(dat, xy, iter, nSite = NULL,
-                   distMax, nMin = 3, output = 'locs'){
+clustr <- function(dat, xy, iter, nSite = NULL, distMax, nMin = 3,
+                   crs = 'epsg:4326', output = 'locs'){
   x <- xy[1]
   y <- xy[2]
 	coords <- uniqify(dat[,xy], xy = xy)
@@ -112,8 +112,10 @@ clustr <- function(dat, xy, iter, nSite = NULL,
 	} else {
 	  if (nLoc < nMin) stop('insufficient points for a cluster')
 	}
-	coordSf <- sf::st_as_sf(coords, coords = xy, crs = 'epsg:4326')
-	gcdists <- sf::st_distance(coordSf) # spherical distances (m) by default
+	# great circle spherical distances for lon-lat coordinates (geodetic)
+	# Euclidian distances for Cartesian coordinates
+	coordSf <- sf::st_as_sf(coords, coords = xy, crs = crs)
+	gcdists <- sf::st_distance(coordSf)
 	coords$ID <- paste0('loc', 1:nrow(coords))
 	colnames(gcdists) <- rownames(gcdists) <- coords$ID
 

@@ -4,7 +4,16 @@
 \alias{clustr}
 \title{Cluster localities within regions of nearest neighbours}
 \usage{
-clustr(dat, xy, iter, nSite = NULL, distMax, nMin = 3, output = "locs")
+clustr(
+  dat,
+  xy,
+  iter,
+  nSite = NULL,
+  distMax,
+  nMin = 3,
+  crs = "epsg:4326",
+  output = "locs"
+)
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing the
@@ -22,6 +31,9 @@ locations in a subsample}
 
 \item{nMin}{Numeric value for the minimum number of sites to be included in
 every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.}
+
+\item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
+or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows

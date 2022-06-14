@@ -39,8 +39,8 @@ of each spatial subsample.}
 at random (\code{weight = FALSE}) or with probability inversely proportional
 to the square of their distance from the centre of the subsample region.}
 
-\item{crs}{Coordinate reference system as a GDAL text string, numeric EPSG
-code, or object of class \code{crs}. Default is latitude-longitude (EPSG:4326).}
+\item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
+or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
 \item{output}{Whether the returned data should be a two-column matrix of
 subsample site coordinates (\code{output = 'locs'}), with row names the
