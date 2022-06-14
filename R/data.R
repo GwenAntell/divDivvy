@@ -11,7 +11,7 @@
 #'   \item{genus}{Latin genus identification. Subgenera are not elevated.}
 #'   \item{paleolng, paleolat}{Coordinates of an occurrence, rotated to
 #'   its palaeogeographic location with the tectonic plate model of
-#'    \link[=https://www.earthbyte.org/]{GPlates}}
+#'    \href{https://www.earthbyte.org/}{GPlates}}
 #'   \item{collection_no, reference_no}{Unique identifiers for the collection and published
 #'   reference containing the occurrence}
 #'   \item{environment}{One of 23 marine environment categories}
