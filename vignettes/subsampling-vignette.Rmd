@@ -247,12 +247,13 @@ nrow( nnAllSites[[1]] )
 
 Many biological and environmental variables of interest vary characteristically with latitude. Hence, depending on research question it may be exigent to control for latitudinal differences between items of comparison, e.g. occurrence data from a time step with predominantly low-latitude fossil localities vs. a time step with more mid-latitude localities.
 
-The `bandit` function returns subsamples of a given site quota within latitudinal bands of a given width. Optionally, the function will ignore hemisphere differences and consider absolute latitude. The `iter` argument in `bandit` species the number of subsamples to take within each band, rather than the total number globally. No subsamples are returned in bands containing fewer than `nSite` localities.
+The `bandit` function returns subsamples of a given site quota within latitudinal bands of a given bin resolution/width. Optionally, the function will ignore hemisphere differences and consider absolute latitude. The `iter` argument in `bandit` species the number of subsamples to take within each band, rather than the total number globally. No subsamples are returned in bands containing fewer than `nSite` localities.
 ```{r lat subsample}
 bandLocs <- bandit(dat = bivalves,
                   xy = c('cellLng','cellLat'),
                   iter = 100, nSite = 12, 
-                  width = 20 # ,absLat = TRUE
+                  bin = 20 # interval width in degrees
+                  # ,absLat = TRUE
                   )
 nrow(bandLocs[[1]]) # number of sites in one subsample
 length(bandLocs) # number of subsamples

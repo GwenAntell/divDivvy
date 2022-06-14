@@ -2,12 +2,12 @@
 title: "Environment and latitude standardisation case study"
 author: "G. S. Antell"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: rmarkdown::html_vignette
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-devtools::load_all(".")
+library(divvy) 
 library(terra) 
 library(sf)
 ```
@@ -17,6 +17,7 @@ library(sf)
 See separate script (format-silurian-data.R) for download and cleaning of raw data.
 ```{r}
 load(file = "C:/Users/sjoh4751/Dropbox/OxfordPDRA/divvy/data/silur.rda")
+# data(silur)
 ```
 
 # Standardise environmental categorisation
@@ -55,8 +56,8 @@ deep <- c("basinal (carbonate)", "basinal (siliceous)", "basinal (siliciclastic)
 
 # Bathymetry
 collDat$bath <- NA
-collDat$bath[collDat$environment %in% shallow] <- "p" # p = proximal = shallow
-collDat$bath[collDat$environment %in% deep]    <- "d"
+collDat$bath[collDat$environment %in% shallow] <- 'prox.' 
+collDat$bath[collDat$environment %in% deep]    <- 'deep'
 ```
 
 # Determine environment in cells and environmental preferences in taxa
@@ -76,19 +77,20 @@ robOccs <- project(llOccs, prj)
 cellMat <- cells(rob, robOccs) 
 collDat$cell <- cellMat[,'cell']
 xyRob <- xyFromCell(rob, collDat$cell)
-collDat[,c('cellX','cellY')] <- xyRob
+cellXY <- c('cellX','cellY')
+collDat[,cellXY] <- xyRob
 
 # convert centroids back to lat-long to feed to bandit
 # until projected coordinates are supported
-xyRobSf <- st_as_sf(data.frame(xyRob), coords = c('x','y'), crs='ESRI:54030') 
-llCellSf <- st_transform(xyRobSf, 'epsg:4326')
-llCellMat <- st_coordinates(llCellSf)
-collDat[,c('cellLng','cellLat')] <- llCellMat
+  # xyRobSf <- st_as_sf(data.frame(xyRob), coords = c('x','y'), crs='ESRI:54030') 
+  # llCellSf <- st_transform(xyRobSf, 'epsg:4326')
+  # llCellMat <- st_coordinates(llCellSf)
+  # collDat[,c('cellLng','cellLat')] <- llCellMat
 ```
 
 ```{r}
 rfRast <- envirise(rob, dat = collDat, cutoff = 0.8,
-                   xy = c('cellX','cellY'), env = 'bath')
+                   xy = cellXY, env = 'bath')
 plot(rfRast)
 ```
 
@@ -97,22 +99,27 @@ plot(rfRast)
 Split data by enviro category
 ```{r split occs by enviro class}
 # TODO use occ data instead of coll
-deepPos <- which(collDat$bath == 'd')
-proxPos <- which(collDat$bath == 'p')
+deepPos <- which(collDat$bath == 'deep')
+proxPos <- which(collDat$bath == 'prox.')
 deep <- collDat[deepPos,]
 prox <- collDat[proxPos,]
 ```
 
 Subsample within latitudinal bands on each occurrence subset
 ```{r}
-bandsD <- bandit(deep, xy = c('cellLng','cellLat'), 
-                 iter = 100, nSite = 15, width = 10, 
-                 absLat = TRUE, output = 'full')
+reps <- 100
+siteQuota <- 15
+binRes <- 10
+bandsD <- bandit(dat = deep, 
+                 xy = cellXY, iter = reps, 
+                 nSite = siteQuota, bin = binRes, 
+                 absLat = TRUE, crs = prj, output = 'full')
 unique(names(bandsD))
 
-bandsP <- bandit(prox, xy = c('cellLng','cellLat'), 
-                 iter = 100, nSite = 15, width = 10, 
-                 absLat = TRUE, output = 'full')
+bandsP <- bandit(dat = prox, # different dataset
+                 xy = cellXY, iter = reps, 
+                 nSite = siteQuota, bin = binRes, 
+                 absLat = TRUE, crs = prj, output = 'full')
 unique(names(bandsP))
 ```
 Mercifully, the two datasets have data in the same bands.
@@ -124,6 +131,6 @@ Boxplot colored by depth, x-axis by latitude category
 gamma diversity ~ latitude midpoint + depth
 
 ```{r}
-metaD <- sdsumry(dat = bandsD, taxVar = 'formation', xy = c('cellLng','cellLat'))
+metaD <- sdsumry(dat = bandsD, taxVar = 'formation', xy = cellXY, crs = prj)
 ```
 
