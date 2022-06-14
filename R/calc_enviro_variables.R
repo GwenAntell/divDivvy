@@ -41,14 +41,14 @@ classRast <- function(grid, dat = NULL, xy, env, cutoff){
 
   # change NA cells to indet. if they do have occurrence data
   # but no single environmental class exceeds cutoff
+  lvls <- c(lvls, 'indet.')
+  nLvl <- nLvl + 1
+  reclass <- cbind(1, nLvl)
   anydat <- terra::rasterize( data.matrix(xy), grid)
-  reclass <- cbind(1, nLvl+1)
   anydat <- terra::classify(anydat, reclass)
   grid <- terra::cover(grid, anydat)
-
-  lvls <- c(lvls, 'indet.')
   attrs <- data.frame('num' = 1:nLvl)
   attrs$mainClass <- lvls
-  terra::levels(grid) <- attrs
+  levels(grid) <- attrs
   return(grid)
 }
