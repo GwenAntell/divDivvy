@@ -6,13 +6,13 @@ Authors@R:
            comment = c(ORCID = "0000-0002-1948-6624"))
 Depends: R (>= 4.0)
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 
 	iNEXT, 
 	Rdpack, 
 	sf, 
+	terra,
 	units, 
 	vegan
 RdMacros: Rdpack
@@ -21,6 +21,8 @@ RoxygenNote: 7.2.0
 LazyData: true
 Suggests: 
     knitr,
-	icosa,
-    rmarkdown
+    icosa,
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
+Config/testthat/edition: 3
