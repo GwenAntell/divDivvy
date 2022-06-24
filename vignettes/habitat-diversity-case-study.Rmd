@@ -36,19 +36,19 @@ load(file = "C:/Users/sjoh4751/Dropbox/OxfordPDRA/divvy/data/silur.rda")
   #           "wackestone")
   # clast <- c("\"shale\"", "\"siliciclastic\"", "\"volcaniclastic\"", "claystone", "conglomerate",  
   #            "mudstone", "phyllite", "quartzite", "sandstone", "siltstone", "slate", "schist")
-shallow <- c("coastal indet.", "delta front", "delta plain",
-             "deltaic indet.", "estuary/bay", "foreshore", "interdistributary bay",
-             "lagoonal", "lagoonal/restricted shallow subtidal",
-             "marginal marine indet.", "open shallow subtidal", "fluvial-deltaic indet.",
-             "paralic indet.", "peritidal", "prodelta", "sand shoal",
-             "shallow subtidal indet.", "shoreface", "transition zone/lower shoreface",
-             "intrashelf/intraplatform reef", "reef, buildup or bioherm",
-             "perireef or subreef", "platform/shelf-margin reef") # last 2 lines include reefs
-deep <- c("basinal (carbonate)", "basinal (siliceous)", "basinal (siliciclastic)",
-          "deep-water indet.", "deep subtidal indet.", "deep subtidal ramp",
-          "deep subtidal shelf", "offshore", "offshore indet.",
-          "offshore shelf", "slope", "submarine fan", "offshore ramp", 
-          "basin reef", "slope/ramp reef") # last line includes deep water reefs
+proxTerms <- c("coastal indet.", "delta front", "delta plain",
+               "deltaic indet.", "estuary/bay", "foreshore", "interdistributary bay",
+               "lagoonal", "lagoonal/restricted shallow subtidal",
+               "marginal marine indet.", "open shallow subtidal", "fluvial-deltaic indet.",
+               "paralic indet.", "peritidal", "prodelta", "sand shoal",
+               "shallow subtidal indet.", "shoreface", "transition zone/lower shoreface",
+               "intrashelf/intraplatform reef", "reef, buildup or bioherm",
+               "perireef or subreef", "platform/shelf-margin reef") # last 2 lines include reefs
+deepTerms <- c("basinal (carbonate)", "basinal (siliceous)", "basinal (siliciclastic)",
+               "deep-water indet.", "deep subtidal indet.", "deep subtidal ramp",
+               "deep subtidal shelf", "offshore", "offshore indet.",
+               "offshore shelf", "slope", "submarine fan", "offshore ramp", 
+               "basin reef", "slope/ramp reef") # last line includes deep water reefs
 
 # Lithology
   # l[binned$lithology1 %in% carb] <- "c"  
@@ -56,8 +56,8 @@ deep <- c("basinal (carbonate)", "basinal (siliceous)", "basinal (siliciclastic)
 
 # Bathymetry
 collDat$bath <- NA
-collDat$bath[collDat$environment %in% shallow] <- 'prox.' 
-collDat$bath[collDat$environment %in% deep]    <- 'deep'
+collDat$bath[collDat$environment %in% proxTerms] <- 'prox.' 
+collDat$bath[collDat$environment %in% deepTerms] <- 'deep'
 ```
 
 # Determine environment in cells and environmental preferences in taxa
@@ -79,17 +79,10 @@ collDat$cell <- cellMat[,'cell']
 xyRob <- xyFromCell(rob, collDat$cell)
 cellXY <- c('cellX','cellY')
 collDat[,cellXY] <- xyRob
-
-# convert centroids back to lat-long to feed to bandit
-# until projected coordinates are supported
-  # xyRobSf <- st_as_sf(data.frame(xyRob), coords = c('x','y'), crs='ESRI:54030') 
-  # llCellSf <- st_transform(xyRobSf, 'epsg:4326')
-  # llCellMat <- st_coordinates(llCellSf)
-  # collDat[,c('cellLng','cellLat')] <- llCellMat
 ```
 
-```{r}
-rfRast <- envirise(rob, dat = collDat, cutoff = 0.8,
+```{r plot enviro raster, fig.width=5.5, fig.align='center'}
+rfRast <- classRast(rob, dat = collDat, cutoff = 0.8,
                    xy = cellXY, env = 'bath')
 plot(rfRast)
 ```
@@ -132,5 +125,18 @@ gamma diversity ~ latitude midpoint + depth
 
 ```{r}
 metaD <- sdsumry(dat = bandsD, taxVar = 'formation', xy = cellXY, crs = prj)
+metaP <- sdsumry(dat = bandsP, taxVar = 'formation', xy = cellXY, crs = prj)
+```
+
+```{r boxplots, message = FALSE}
+library(ggplot2)
+plotDat <- rbind(metaD, metaP)
+plotDat$bath <- c(rep('deep', nrow(metaD)), 
+                  rep('prox', nrow(metaP)))
+pBase <- ggplot(plotDat, aes(x = bath))
+
+pBase + geom_boxplot(aes(x = bath, y = centroidY))
+pBase + geom_boxplot(aes(x = bath, y = nTax))
+pBase + geom_boxplot(aes(x = bath, y = SCOR))
 ```
 
