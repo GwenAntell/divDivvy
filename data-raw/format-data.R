@@ -75,8 +75,7 @@ use_data(bivalves, internal = FALSE, overwrite = TRUE)
 
 data(sepkoski)
 # trim the Sepkoski Compendium to the relevant entries
-sepkoski <- within(sepkoski, PHYLUM == "Brachiopoda")
-  # sepkoski[which(sepkoski$PHYLUM == "Brachiopoda"),] # equivalent
+sepkoski <- sepkoski[which(sepkoski$PHYLUM == "Brachiopoda"),]
 
 # convert ICS2013 to GTS2020 timescale
 brachios <- chrono_scale(brachRaw, srt = "early_interval", end = "late_interval",
