@@ -7,17 +7,17 @@ output: rmarkdown::html_vignette
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(divvy) 
-library(terra) 
-library(sf)
 ```
 
 # Import data
 
 See separate script (format-silurian-data.R) for download and cleaning of raw data.
-```{r}
-load(file = "C:/Users/sjoh4751/Dropbox/OxfordPDRA/divvy/data/silur.rda")
-# data(silur)
+```{r imports, message=FALSE}
+library(divvy) 
+library(terra) 
+library(sf)
+data(collSilur)
+data(occSilur)
 ```
 
 # Standardise environmental categorisation
@@ -55,9 +55,9 @@ deepTerms <- c("basinal (carbonate)", "basinal (siliceous)", "basinal (silicicla
   # l[binned$lithology1 %in% clast] <- "s"
 
 # Bathymetry
-collDat$bath <- NA
-collDat$bath[collDat$environment %in% proxTerms] <- 'prox.' 
-collDat$bath[collDat$environment %in% deepTerms] <- 'deep'
+collSilur$bath <- NA
+collSilur$bath[collSilur$environment %in% proxTerms] <- 'prox.' 
+collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
 ```
 
 # Determine environment in cells and environmental preferences in taxa
@@ -72,60 +72,73 @@ prj <- 'ESRI:54030' # Robinson
 rob <- project(ll, prj) 
 values(rob) <- 1:ncell(rob)
 
-llOccs <- vect(collDat, geom = c('paleolng','paleolat'), crs = 'epsg:4326')
-robOccs <- project(llOccs, prj)
-cellMat <- cells(rob, robOccs) 
-collDat$cell <- cellMat[,'cell']
-xyRob <- xyFromCell(rob, collDat$cell)
+xyCartes <- c('paleolng','paleolat')
+llColl <- vect(collSilur, geom = xyCartes, crs = 'epsg:4326')
+robColl <- project(llColl, prj)
+cellMat <- cells(rob, robColl) 
+collSilur$cell <- cellMat[,'cell']
+xyRob <- xyFromCell(rob, collSilur$cell)
 cellXY <- c('cellX','cellY')
-collDat[,cellXY] <- xyRob
+collSilur[,cellXY] <- xyRob
 ```
 
 ```{r plot enviro raster, fig.width=5.5, fig.align='center'}
-rfRast <- classRast(rob, dat = collDat, cutoff = 0.8,
-                   xy = cellXY, env = 'bath')
-plot(rfRast)
+bathRast <- classRast(rob, dat = collSilur, cutoff = 0.8,
+                      xy = cellXY, env = 'bath')
+plot(bathRast)
 ```
 
 # Spatial standardisation of area and latitude
 
 Split data by enviro category
 ```{r split occs by enviro class}
-# TODO use occ data instead of coll
-deepPos <- which(collDat$bath == 'deep')
-proxPos <- which(collDat$bath == 'prox.')
-deep <- collDat[deepPos,]
-prox <- collDat[proxPos,]
+# infer environment of each occurrence
+llOccs <- vect(occSilur, geom = xyCartes, crs = 'epsg:4326')
+robOccs <- project(llOccs, prj)
+occSilur$cell <- cells(rob, robOccs)[,'cell']
+occSilur[,cellXY] <- xyFromCell(rob, occSilur$cell)
+occSilur$bath <- extract(bathRast, robOccs)[['mainClass']] |> as.character()
+deep <- occSilur[occSilur$bath == 'deep',]
+prox <- occSilur[occSilur$bath == 'prox.',]
 ```
 
-Subsample within latitudinal bands on each occurrence subset
-```{r}
-reps <- 100
-siteQuota <- 15
-binRes <- 10
-bandsD <- bandit(dat = deep, 
+Regionally subsample each occurrence subset. 
+Don't weight - not enough pool cells to matter much anyway.
+```{r, error=TRUE}
+reps <- 500
+siteQuota <- 10
+siteCol <- 'cell'
+r <- 1000 # radial distance in km
+sampD <- cookies(dat = deep, 
+                  xy = cellXY, iter = reps, 
+                  nSite = siteQuota, 
+                  siteId = siteCol, r = r, 
+                  crs = prj, output = 'full')
+# we have to expand the subsample bounds to get enough sites!
+r <- 1500
+sampD <- cookies(dat = deep, 
                  xy = cellXY, iter = reps, 
-                 nSite = siteQuota, bin = binRes, 
-                 absLat = TRUE, crs = prj, output = 'full')
-unique(names(bandsD))
+                 nSite = siteQuota, 
+                 siteId = siteCol, r = r, 
+                 crs = prj, output = 'full')
 
-bandsP <- bandit(dat = prox, # different dataset
+# plot(bathRast)
+# proxPts <- robOccs[robOccs$bath=='prox.',]
+# points(proxPts)
+sampP <- cookies(dat = prox, 
                  xy = cellXY, iter = reps, 
-                 nSite = siteQuota, bin = binRes, 
-                 absLat = TRUE, crs = prj, output = 'full')
-unique(names(bandsP))
+                 nSite = siteQuota, 
+                 siteId = siteCol, r = r, 
+                 crs = prj, output = 'full')
 ```
-Mercifully, the two datasets have data in the same bands.
 
-# Compare diversity across environments
-
-SQS if even, CR if not?
-Boxplot colored by depth, x-axis by latitude category
-gamma diversity ~ latitude midpoint + depth
+# Compare geographic range size across environments
 
 ```{r}
-metaD <- sdsumry(dat = bandsD, taxVar = 'formation', xy = cellXY, crs = prj)
-metaP <- sdsumry(dat = bandsP, taxVar = 'formation', xy = cellXY, crs = prj)
+metaD <- sdsumry(dat = sampD, taxVar = 'genus', xy = cellXY, crs = prj)
+metaP <- sdsumry(dat = sampP, taxVar = 'genus', xy = cellXY, crs = prj)
+metaD$occAvg <- metaD$nOcc/metaD$nTax
+metaP$occAvg <- metaP$nOcc/metaP$nTax
 ```
 
 ```{r boxplots, message = FALSE}
@@ -134,9 +147,68 @@ plotDat <- rbind(metaD, metaP)
 plotDat$bath <- c(rep('deep', nrow(metaD)), 
                   rep('prox', nrow(metaP)))
 pBase <- ggplot(plotDat, aes(x = bath))
+pBase + geom_boxplot(aes(x = bath, y = occAvg))
+```
 
-pBase + geom_boxplot(aes(x = bath, y = centroidY))
-pBase + geom_boxplot(aes(x = bath, y = nTax))
-pBase + geom_boxplot(aes(x = bath, y = SCOR))
+```{r deep-prox comparison}
+# check out correlations betweeen all pairs of variables
+vars <- c('minSpanTree','SCOR','occAvg','nTax')
+cor(metaD[,vars], method = 'kendall')
+
+# order subsample pairs by agg for fairer comparison?
+# sample agg correlates with richness, for example
+ordrD <- order(metaD$minSpanTree)
+ordrP <- order(metaP$minSpanTree)
+metaD <- metaD[ordrD,]
+metaP <- metaP[ordrP,]
+
+richPair <- sum(metaP$nTax > metaD$nTax) # H: prox > deep
+richTestStat <- richPair / reps
+
+# are ranges broader in the deep?
+occPair <- sum(metaD$occAvg > metaP$occAvg) # H: deep > prox
+occTestStat <- occPair / reps
+```
+
+```{r null distribution}
+# NB: sorting strongly condenses the range of test statistic values
+# and shifts from 0.5 to slightly less (because introduces ties (?))
+nullSim <- function(dat1, dat2, vTest, vSort = NULL){
+  # shuffle labels between test groups
+  allDat <- rbind(dat1, dat2)
+  n <- nrow(allDat) / 2
+  hlf <- sample(sample(1:n*2), n, replace = FALSE)
+  dat1null <- allDat[ hlf,]
+  dat2null <- allDat[-hlf,]
+  
+  # optionally sort by second (sampling) variable
+  if (! is.null(vSort)){
+    ordr1 <- order(dat1null[, vSort])
+    ordr2 <- order(dat2null[, vSort])
+    dat1null <- dat1null[ordr1,]
+    dat2null <- dat2null[ordr2,]
+  }
+  
+  # (re)calculate test statistic
+  v1null <- dat1null[, vTest]
+  v2null <- dat2null[, vTest]
+  sum(v2null > v1null) / n
+}
+
+# direction of test hypothesis (above code) assumes group 2 values > group 1
+nullN <- 1000
+nullTax <- replicate(nullN, nullSim(metaD, metaP, vTest = 'nTax')) # , vSort = 'minSpanTree'
+hist(nullTax, xlim = c(0.4, 0.7))
+abline(v = richTestStat, col = 'blue')
+# test distribution shifted slightly left because there can be ties between groups
+ci95 <- c(0.025, 0.975)
+quantile(nullTax, ci95) 
+sum(richTestStat > nullTax) / nullN
+
+nullOcc <- replicate(nullN, nullSim(metaP, metaD, vTest = 'nOcc')) # , vSort = 'minSpanTree'
+hist(nullOcc, xlim = c(0.4, 0.7))
+abline(v = occTestStat, col = 'blue')
+quantile(nullOcc, ci95)
+sum(occTestStat > nullOcc) / nullN
 ```
 
