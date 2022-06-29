@@ -62,8 +62,6 @@ collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
 
 # Determine environment in cells and environmental preferences in taxa
 
-- Omit duplicate occurrences?
-
 Rasterise points (should be equal area once projection supported)
 ```{r rasterise}
 ll <- rast(resolution = 5, crs = 'epsg:4326')
@@ -134,11 +132,11 @@ sampP <- cookies(dat = prox,
 
 # Compare geographic range size across environments
 
-```{r}
+```{r estimate vars from subsamples}
 metaD <- sdsumry(dat = sampD, taxVar = 'genus', xy = cellXY, crs = prj)
 metaP <- sdsumry(dat = sampP, taxVar = 'genus', xy = cellXY, crs = prj)
-metaD$occAvg <- metaD$nOcc/metaD$nTax
-metaP$occAvg <- metaP$nOcc/metaP$nTax
+metaD$occAvg <- metaD$nOcc / metaD$nTax
+metaP$occAvg <- metaP$nOcc / metaP$nTax
 ```
 
 ```{r boxplots, message = FALSE}
@@ -150,27 +148,13 @@ pBase <- ggplot(plotDat, aes(x = bath))
 pBase + geom_boxplot(aes(x = bath, y = occAvg))
 ```
 
-```{r deep-prox comparison}
+```{r var corrs}
 # check out correlations betweeen all pairs of variables
 vars <- c('minSpanTree','SCOR','occAvg','nTax')
 cor(metaD[,vars], method = 'kendall')
-
-# order subsample pairs by agg for fairer comparison?
-# sample agg correlates with richness, for example
-ordrD <- order(metaD$minSpanTree)
-ordrP <- order(metaP$minSpanTree)
-metaD <- metaD[ordrD,]
-metaP <- metaP[ordrP,]
-
-richPair <- sum(metaP$nTax > metaD$nTax) # H: prox > deep
-richTestStat <- richPair / reps
-
-# are ranges broader in the deep?
-occPair <- sum(metaD$occAvg > metaP$occAvg) # H: deep > prox
-occTestStat <- occPair / reps
 ```
 
-```{r null distribution}
+```{r test diffs by enviro}
 # NB: sorting strongly condenses the range of test statistic values
 # and shifts from 0.5 to slightly less (because introduces ties (?))
 nullSim <- function(dat1, dat2, vTest, vSort = NULL){
@@ -194,21 +178,69 @@ nullSim <- function(dat1, dat2, vTest, vSort = NULL){
   v2null <- dat2null[, vTest]
   sum(v2null > v1null) / n
 }
+# direction of test hypothesis here assumes group 2 values > group 1
+# simulation also assumes groups 1 and 2 have equal sample size (n subsamples)
 
-# direction of test hypothesis (above code) assumes group 2 values > group 1
-nullN <- 1000
-nullTax <- replicate(nullN, nullSim(metaD, metaP, vTest = 'nTax')) # , vSort = 'minSpanTree'
-hist(nullTax, xlim = c(0.4, 0.7))
-abline(v = richTestStat, col = 'blue')
-# test distribution shifted slightly left because there can be ties between groups
-ci95 <- c(0.025, 0.975)
-quantile(nullTax, ci95) 
-sum(richTestStat > nullTax) / nullN
+obsVsNull <- function(dat1, dat2, vTest, vSort = NULL, nullN){
+  if ( !is.null(vSort) ){
+    ordr1 <- order(dat1[, vSort])
+    ordr2 <- order(dat2[, vSort])
+    dat1 <- dat1[ordr1,]
+    dat2 <- dat2[ordr2,]
+  }
+  h1obs <- dat2[, vTest] > dat1[, vTest]
+  obsTestStat <- sum(h1obs) / nrow(dat1)
+  nullDist <- replicate(nullN, nullSim(dat1, dat2, vTest, vSort))
+  
+  # hist(nullDist, xlim = c(0.4, 0.7)) # plot
+  # abline(v = obsTestStat, col = 'blue')
+  ci95 <- c(0.025, 0.975)
+  null95 <- quantile(nullDist, ci95)
+  names(null95) <- c('nullLwrCI', 'nullUprCI')
+  # at what quantile of the null dist does the empirical test statistic lie?
+  testQuantl <- sum(obsTestStat > nullDist) / nullN
+  c(null95, 'obsTestStat' = obsTestStat, 'obsQuantl' = testQuantl)
+}
 
-nullOcc <- replicate(nullN, nullSim(metaP, metaD, vTest = 'nOcc')) # , vSort = 'minSpanTree'
-hist(nullOcc, xlim = c(0.4, 0.7))
-abline(v = occTestStat, col = 'blue')
-quantile(nullOcc, ci95)
-sum(occTestStat > nullOcc) / nullN
+# are shallows more diverse? (H: prox > deep) - yes
+obsVsNull(metaD, metaP, vTest = 'nTax', nullN = 1000) # vSort = 'minSpanTree'
+
+# are ranges broader in the deep? (H: deep > prox) - yes
+obsVsNull(metaP, metaD, vTest = 'occAvg', nullN = 1000)
+
+# can range-vs-enviro differences be explained by systematic differences
+# in sampling between enviros? (H: deep > prox) - no
+obsVsNull(metaP, metaD, vTest = 'minSpanTree', nullN = 1000)
 ```
 
+```{r custom range size metrics}
+# for testing purposes
+  # taxa <- unique(occSilur$genus)
+  # df <- sampD[[10]]
+  # taxCol <- 'genus'
+  # coordCols <- cellXY
+  # crs <- prj
+  #taxon <- 'Zygospiraella'
+
+subsampRange <- function(taxa, df, taxCol, coordCols, crs){
+  taxRange <- function(taxon){
+    taxBool <- df[, taxCol] == taxon
+    if (sum(taxBool) == 0){ # case where taxon unsampled
+      rep(NA, 6)
+    } else {
+      taxCoords <- df[taxBool, coordCols]
+      rangeSizer(taxCoords, crs)
+    }
+  }
+  rngMat <- sapply(taxa, taxRange)
+  rownames(rngMat) <- c('nOcc', 'centroidX', 'centroidY', 'latRange',
+                        'greatCircDist', 'minSpanTree')
+  rngDf <- data.frame(rngMat) |> t()
+  rngMeans <- colMeans(rngDf, na.rm = TRUE)
+  rngMeans[c('latRange', 'greatCircDist', 'minSpanTree')]
+}
+taxa <- unique(occSilur$genus)
+# temp <- subsampRange(taxa, sampP[[1]], 'genus', cellXY, prj)
+
+# TODO apply over all subsamples and add to other sdsumry data
+```
