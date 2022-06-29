@@ -155,6 +155,11 @@ noFlag <- brachios_c$errcode %in% c('000', 'R1R')
 brachios_c <- brachios_c[ noFlag, ]
 # option to prune with pacmacro or interpeak thresholding too
 
+# there are weirdly some PBDB accepted genera converted to NA -
+# contacted fossilbrush maintainer about this 29 June 2022
+noName <- is.na(brachios_c$genus)
+brachios_c <- brachios_c[ !noName, ]
+
 # geology comments only necessary if manually correct enviro classes
 occCols <- c('order', 'family', keepCols)
 occSilur <- brachios_c[, occCols]

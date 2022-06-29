@@ -5,7 +5,7 @@
 \alias{occSilur}
 \title{Paleobiology Database occurrences of Silurian fossil brachiopods}
 \format{
-A data frame with 15909 rows and 11 variables:
+A data frame with 15903 rows and 11 variables:
 \describe{
 \item{order, family, genus}{Latin order, family, and genus name,
 as synonymised against Sepkoski database}

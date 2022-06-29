@@ -52,7 +52,7 @@
 #' follows the `fossilbrush` vignette example of cross-correlation with the
 #' Sepkoski range-through database (`fossilbrush::sepkoski`).
 #'
-#' @format A data frame with 15909 rows and 11 variables:
+#' @format A data frame with 15903 rows and 11 variables:
 #' \describe{
 #'   \item{order, family, genus}{Latin order, family, and genus name,
 #'   as synonymised against Sepkoski database}
