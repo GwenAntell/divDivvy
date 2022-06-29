@@ -8,13 +8,15 @@ uniqify(dat, taxVar = NULL, xy = NULL, siteId = NULL, na.rm = TRUE)
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing taxon names,
-coordinates, and any associated variables.}
+coordinates, and any associated variables; or a list of such structures.}
 
 \item{taxVar}{The name or numeric position of the column containing
 taxonomic identifications.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of the columns containing longitude and latitude coordinates, respectively.}
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
+Coordinates for the same site ID should be identical, and where IDs are
+raster cells the coordinates are usually expected to be cell centroids.}
 
 \item{siteId}{The name or numeric position of the column containing
 identifiers for unique spatial sites, e.g. raster cell names.

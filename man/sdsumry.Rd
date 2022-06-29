@@ -8,6 +8,7 @@ sdsumry(
   dat,
   taxVar,
   xy,
+  siteId = NULL,
   crs = "epsg:4326",
   collections = NULL,
   quotaQ = NULL,
@@ -23,11 +24,15 @@ coordinates, and any associated variables; or a list of such structures.}
 taxonomic identifications.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of the columns containing longitude and latitude coordinates, respectively.}
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
+Coordinates for the same site ID should be identical, and where IDs are
+raster cells the coordinates are usually expected to be cell centroids.}
+
+\item{siteId}{The name or numeric position of the column in \code{dat}
+containing identifiers for unique spatial sites, e.g. raster cell names.}
 
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
-or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).
-Projected coordinates will be transformed in latitudinal range calculations.}
+or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
 \item{collections}{The name or numeric position of the column containing
 unique collection IDs, e.g. 'collection_no' in PBDB data downloads.}
@@ -60,7 +65,8 @@ great circle distance (km), and summed minimum spanning tree length (km).
 Coordinates and their distances are calculated with respect to
 the original coordinate reference system if supplied, and otherwise
 calculated as spherical distances between points assumed to be given
-in degrees latitude-longitude.
+in degrees latitude-longitude. Projected coordinates will be transformed
+to calculate latitudinal range in degrees.
 
 The first two diversity variables returned are the raw count of observed taxa
 and the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects
@@ -89,4 +95,7 @@ rarefaction level, consult Chao and Jost (2012) and Hsieh \emph{et al.} (2016).
 \insertRef{Hannisdal2012}{divvy}
 
 \insertRef{Hsieh2016}{divvy}
+}
+\seealso{
+\code{\link[=rangeSizer]{rangeSizer()}}
 }
