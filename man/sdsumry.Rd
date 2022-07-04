@@ -61,12 +61,13 @@ before or after spatial subsampling. The function counts the number
 of collections (if requested), unique spatial sites, and taxa
 presences (excluding repeat incidences of a taxon at a given site);
 it also calculates site centroid coordinates, latitudinal range (degrees),
-great circle distance (km), and summed minimum spanning tree length (km).
-Coordinates and their distances are calculated with respect to
-the original coordinate reference system if supplied, and otherwise
-calculated as spherical distances between points assumed to be given
-in degrees latitude-longitude. Projected coordinates will be transformed
-to calculate latitudinal range in degrees.
+great circle distance (km), mean pairwise distance (km), and summed
+minimum spanning tree length (km).
+Coordinates and their distances are computed with respect to the original
+coordinate reference system if supplied, except in calculation of latitudinal
+range, for which projected coordinates are transformed to geodetic ones.
+If \code{crs} is unspecified, by default points are assumed to be given in
+latitude-longitude and distances are calculated with spherical geometry.
 
 The first two diversity variables returned are the raw count of observed taxa
 and the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects

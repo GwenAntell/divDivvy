@@ -1,48 +1,64 @@
 #' Calculate common metrics of spatial distribution
 #'
-#' Coordinates and their distances are calculated with respect to
-#' the original coordinate reference system if supplied, and otherwise
-#' calculated as spherical distances between points assumed to be given
-#' in degrees latitude-longitude. Projected coordinates will be transformed
-#' to calculate latitudinal range in degrees.
+#' Calculate centroid coordinates, latitudinal range (degrees),
+#' great circle distance (km), mean pairwise distance (km), and
+#' summed minimum spanning tree length (km) for spatial point coordinates.
+#'
+#' Coordinates and their distances are computed with respect to the original
+#' coordinate reference system if supplied, except in calculation of latitudinal
+#' range, for which projected coordinates are transformed to geodetic ones.
+#' If `crs` is unspecified, by default points are assumed to be given in
+#' latitude-longitude and distances are calculated with spherical geometry.
+#'
+#' Duplicate coordinates will be removed. If a single unique point is supplied,
+#' all distance measures returned will be `NA`.
 #'
 #' @param coords 2-column `data.frame` or `matrix` containing
 #' x- and y-coordinates, respectively (e.g. longitude and latitude).
 #' @inheritParams bandit
 #'
-#' @return A 1-row `data.frame` listing: count of spatial occurrences (including
-#' duplicates) and their centroid coordinates, latitudinal range (degrees),
-#' great circle distance (km), and summed minimum spanning tree length (km).
+#' @return A 1-row `data.frame`
 #'
 #' @export
 
-rangeSizer <- function(coords, crs){
-  nOcc <- nrow(coords)
+rangeSizer <- function(coords, crs = 'epsg:4326'){
   coords <- unique(coords)
-  sfPts <- sf::st_as_sf(coords, coords = 1:2, crs = crs)
-  if ( ! sf::st_is_longlat(sfPts)){
-    coords <- sf::sf_project(from = crs, to = 'epsg:4326', coords,
-                             keep = TRUE, warn = TRUE)
-  }
-  latDiff <- max(coords[,2]) - min(coords[,2])
-  latRng <- abs(latDiff)
+  if (nrow(coords) == 1){
+    out <- cbind('centroidX' = coords[, 1],
+                 'centroidY' = coords[, 2],
+                 'latRange' = NA,
+                 'greatCircDist' = NA,
+                 'meanPairDist' = NA,
+                 'minSpanTree' = NA
+    )
+  } else {
+    sfPts <- sf::st_as_sf(coords, coords = 1:2, crs = crs)
+    if ( ! sf::st_is_longlat(sfPts)){
+      coords <- sf::sf_project(from = crs, to = 'epsg:4326', coords,
+                               keep = TRUE, warn = TRUE)
+    }
+    latDiff <- max(coords[,2]) - min(coords[,2])
+    latRng <- abs(latDiff)
 
-  # calculate all other spatial positions/distances w.r.t. original CRS
-  ptsGrp <- sf::st_union(sfPts)
-  # duplicate points (multiple taxa per site) don't affect centroid
-  cntr <- unlist( sf::st_centroid(ptsGrp) )
-  gcdists <- sf::st_distance(sfPts) # returns units-class object
-  gcdists <- units::set_units(gcdists, 'km')
-  gcMax <- max(gcdists)
-  mst <- vegan::spantree( units::drop_units(gcdists) )
-  agg <- sum(mst$dist)
-  out <- cbind('nOcc' = nOcc,
-               'centroidX' = cntr[1],
-               'centroidY' = cntr[2],
-               'latRange' = latRng,
-               'greatCircDist' = gcMax,
-               'minSpanTree' = agg
-  )
+    # calculate all other spatial positions/distances w.r.t. original CRS
+    ptsGrp <- sf::st_union(sfPts)
+    # duplicate points (multiple taxa per site) don't affect centroid
+    cntr <- unlist( sf::st_centroid(ptsGrp) )
+    gcdists <- sf::st_distance(sfPts) # returns units-class object
+    gcdists <- units::set_units(gcdists, 'km')
+    gcMax <- max(gcdists)
+    mst <- vegan::spantree( units::drop_units(gcdists) )
+    agg <- sum(mst$dist)
+    diag(gcdists) <- NA
+    mpd <- mean(gcdists, na.rm = TRUE)
+    out <- cbind('centroidX' = cntr[1],
+                 'centroidY' = cntr[2],
+                 'latRange' = latRng,
+                 'greatCircDist' = gcMax,
+                 'meanPairDist' = mpd,
+                 'minSpanTree' = agg
+    )
+  } # end case for >1 spatial point
   return(out)
 }
 
@@ -56,12 +72,13 @@ rangeSizer <- function(coords, crs){
 #' of collections (if requested), unique spatial sites, and taxa
 #' presences (excluding repeat incidences of a taxon at a given site);
 #' it also calculates site centroid coordinates, latitudinal range (degrees),
-#' great circle distance (km), and summed minimum spanning tree length (km).
-#' Coordinates and their distances are calculated with respect to
-#' the original coordinate reference system if supplied, and otherwise
-#' calculated as spherical distances between points assumed to be given
-#' in degrees latitude-longitude. Projected coordinates will be transformed
-#' to calculate latitudinal range in degrees.
+#' great circle distance (km), mean pairwise distance (km), and summed
+#' minimum spanning tree length (km).
+#' Coordinates and their distances are computed with respect to the original
+#' coordinate reference system if supplied, except in calculation of latitudinal
+#' range, for which projected coordinates are transformed to geodetic ones.
+#' If `crs` is unspecified, by default points are assumed to be given in
+#' latitude-longitude and distances are calculated with spherical geometry.
 #'
 #' The first two diversity variables returned are the raw count of observed taxa
 #' and the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects
@@ -130,12 +147,13 @@ sdsumry <- function(dat, taxVar, xy, siteId = NULL,
     # at a single site is recorded in multiple collections
     if (is.null(siteId)){ siteId <- xy }
     df <- uniqify(df, taxVar, siteId)
+    nOcc <- nrow(df)
 
     # run range size fcn as if all occs were from a single taxon
-    # duplicate localities affect only occ count, nothing else
     locs <- unique( df[,xy] )
-    spatSumry <- rangeSizer(coords = df[,xy], crs = crs)
-    out <- cbind(out, 'nSite'= nrow(locs), spatSumry)
+    nSite <- nrow(locs)
+    spatSumry <- rangeSizer(coords = locs, crs = crs)
+    out <- cbind(out, 'nSite'= nSite, 'nOcc' = nOcc, spatSumry)
 
     # SCOR summed common occurrence rate (Hannisdal 2012)
     freqs <- table( df[,taxVar] )

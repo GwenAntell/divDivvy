@@ -4,7 +4,7 @@
 \alias{rangeSizer}
 \title{Calculate common metrics of spatial distribution}
 \usage{
-rangeSizer(coords, crs)
+rangeSizer(coords, crs = "epsg:4326")
 }
 \arguments{
 \item{coords}{2-column \code{data.frame} or \code{matrix} containing
@@ -14,14 +14,20 @@ x- and y-coordinates, respectively (e.g. longitude and latitude).}
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 }
 \value{
-A 1-row \code{data.frame} listing: count of spatial occurrences (including
-duplicates) and their centroid coordinates, latitudinal range (degrees),
-great circle distance (km), and summed minimum spanning tree length (km).
+A 1-row \code{data.frame}
 }
 \description{
-Coordinates and their distances are calculated with respect to
-the original coordinate reference system if supplied, and otherwise
-calculated as spherical distances between points assumed to be given
-in degrees latitude-longitude. Projected coordinates will be transformed
-to calculate latitudinal range in degrees.
+Calculate centroid coordinates, latitudinal range (degrees),
+great circle distance (km), mean pairwise distance (km), and
+summed minimum spanning tree length (km) for spatial point coordinates.
+}
+\details{
+Coordinates and their distances are computed with respect to the original
+coordinate reference system if supplied, except in calculation of latitudinal
+range, for which projected coordinates are transformed to geodetic ones.
+If \code{crs} is unspecified, by default points are assumed to be given in
+latitude-longitude and distances are calculated with spherical geometry.
+
+Duplicate coordinates will be removed. If a single unique point is supplied,
+all distance measures returned will be \code{NA}.
 }
