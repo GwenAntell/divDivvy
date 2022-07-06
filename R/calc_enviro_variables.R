@@ -1,9 +1,48 @@
-# values of unknown env should be specified as NA, not e.g. 'unknown'
-# dat can be df in which case xy and env should be col names
-# or, omit dat arg and xy should be coords, env should be vector
-# cutoff is inclusive, e.g. values >= cutoff will be assigned to class
-
+#' Convert point environment data to a raster of majority-environment classes
+#'
+#' Given point occurrences of environmental categories, `classRast` generates
+#' a raster grid with cell values specifying the majority environment therein.
+#'
+#' The `cutoff` threshold is an inclusive bound: environmental incidence
+#' proportions greater than or equal to the `cutoff` will assign cell values
+#' to the majority environmental class. If no single category attains a
+#' sufficient majority in a cell, the cell value is indeterminate (`indet.`).
+#' Cells lacking environmental occurrences altogether have `NA` values.
+#'
+#' Missing environment values in the point data should be coded as `NA`,
+#' not e.g. `'unknown'`. `classRast` ignores `NA` occurrences when tallying
+#' environmental occurrences against the `cutoff`. However, `NA` occurrences
+#' still count when determining `NA` status of cells in the raster: a cell
+#' containing occurrences of only `NA` value is classified as `indet.`, not `NA`.
+#' That is, any grid cell encompassing original point data is non-`NA`.
+#'
+#' Antell and others (2020) set a `cutoff` of 0.8, based on the same threshold
+#' Nürnberg and Aberhan (2013) used to classify environmental preferences for taxa.
+#'
+#' @param grid A `SpatRaster` to use as a template for the
+#' resolution, extent, and coordinate reference system of the returned object.
+#' Values can be empty.
+#' @param dat Either a `data.frame` or `matrix` for which `xy` and `env` are
+#' column names, or an empty argument.
+#' @param xy A vector specifying the name or numeric position of columns
+#' in `dat` containing coordinates, if `dat` is supplied, or a 2-column
+#' `data.frame` or `matrix` of coordinate values.
+#' @param env The name or numeric position of the column in `dat` containing a
+#' categorical environmental variable, if `dat` is supplied, or a vector of
+#' environmental values.
+#' @param cutoff The (decimal) proportion of incidences of an environmental
+#' category above which a cell will be assigned as that category.
+#' `cutoff` must be greater than 0.5.
+#'
+#' @return A raster of class `SpatRaster` defined by the `terra` package
+#'
+#' @references
+#' \insertRef{Antell2020}{divvy}
+#'
+#' \insertRef{Nurnberg2013}{divvy}
+#'
 #' @export
+
 classRast <- function(grid, dat = NULL, xy, env, cutoff){
   if (! is.null(dat)){
     xy  <- dat[, xy]
