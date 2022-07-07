@@ -1,68 +1,62 @@
 ---
-title: "Environment and latitude standardisation case study"
+title: "Environmental and geographic standardisation case study"
 author: "G. S. Antell"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
+bibliography: habitat-case-study-refs.bib
+vignette: >
+  %\VignetteIndexEntry{Environmental and geographic standardisation case study}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Import data
+# Background
 
-See separate script (format-silurian-data.R) for download and cleaning of raw data.
+Spatial standardisation is necessary to make fair comparisons of ecological parameters between environments or habitat types, even if data occur within one time step instead of being split across a time series. For instance, consider two habitat types that cover different geographic extents. To determine fairly which habitat hosts more diverse communities, one must account for the difference in spatial coverage. By first subsampling each habitat type into equivalent spatial units, one could then directly and fairly compare richness or other ecological metrics between environments.
+
+In the marine realm, one of the most important environmental axes of ecological differentiation is water depth. Diversity, geographic range size, and other aspects of community structure vary along a gradient of near-shore to deep-water environments. Here, we divide this environmental spectrum coarsely into shallow (proximal) vs. deep (distal) marine habitats. 'Shallow' habitats encompass deltaic, (sub)tidal, and shelf margin environments. 'Deep' habitats include continental slope and offshore settings, generally beginning at 140 m [@Duran2018].
+
+The ecological attribute this case study focusses on is geographic range size, a trait with widespread importance. For instance, range size determines extinction risk to a large degree [@Harnik2012; @Saupe2015]. Range size might influence origination propensity as well, although researchers dispute whether this relationship is positive [@Rosenzweig1995; @Maurer2001], negative [@Hansen1980; @Jablonski2003], or unimodal [@Gaston2003; @Allmon2014]. 
+
+The environmental niche breadth of a taxon strongly controls its geographic distribution; the maximum attainable extent of a taxon's range size is the extent of occurrence of that taxon's suitable habitat. Therefore, for environments within a given ecological niche breadth, a larger geographic distribution of those habitats permits taxa to occupy larger ranges. Taxa may be more restricted than suitable environmental conditions would predict (realised niche breadth), due to biotic or historic factors, but taxa cannot exceed the bounds set by environmental suitability. Since environmental characteristics are more homogeneous in the cold, dark waters of the deep sea than in the topologic complexity of shallow settings, ecologists have long theorised geographic ranges to be larger for deep-dwelling than shallow-water species [@Coe1946; @McClain2010; @Costello2017]. Most empirical tests of this hypothesis have relied upon modern data, however, with relatively little evidence from periods of Earth history when ocean circulation and continental configuration were entirely unlike those of today.
+
+We walk through an analysis below to test the expectation geographic ranges are wider for deep- than shallow-water benthic taxa, using brachiopod occurrences from the Silurian (444-419 Ma) recorded in the [Paleobiology Database](https://paleobiodb.org/) (PBDB). Brachiopoda was a diverse clade that made up a large component of Paleozoic benthic communities [@Close2020; @Rojas2021]. Much of the world's landmass had coalesced at southermost latitudes into Gondwana, with the remaining continents scattered at the equator and separated by the Iapetus, Paleo-Tethys, Rheic, and Panthalassic oceans (map below). Hence, the geometry of a cosmopolitan marine species' range from the Silurian would differ distinctly from a cosmopolitan range today.
+
+![Silurian palaeogeography, as reconstructed by the PALEOMAP PaleoAtlas project [@Scotese2016].](PALEOMAP_atlas_map75a_Llandovery_430.png)
+
+The ensuing code chunks walk through a reproducible analysis of geographic range size differences between marine environments using functions from the `divvy` package. The document consists of the following sections:
+
+1. Formatting occurrences (point data)
+1. Developing environmental categories (raster data)
+1. Spatially subsampling to regions of equal area and dispersion
+1. Hypothesis testing using bootstrapped null simulations
+
+# Prepare data
+
+PBDB downloads of all marine collections and of all Brachiopoda occurrences with accepted names at genus-ranking or below are available as attached datasets in the `divvy` package. Both datasets are subset to relevant columns and are cleaned to remove records missing coordinates. For more information, load the package and query the data objects from the console with `?collSilur` and `?occSilur`. The script to download and vet the raw data is available as `format-silurian-data.R` within the GitHub repository [data-raw folder (link)](https://github.com/GwenAntell/divvy/tree/main/data-raw).
+
 ```{r imports, message=FALSE}
-library(divvy) 
+# terra and sf have all the necessary helper functions for spatial operations
 library(terra) 
 library(sf)
+library(divvy) 
 data(collSilur)
 data(occSilur)
 ```
 
-# Standardise environmental categorisation
-
-```{r data cleanup}
-# do not make inference for mixed lithologies
-# otherwise, mixed lithology will be overwritten as siliciclastic
-  # binned$lithology1[grep('mixed', binned$lithology1)] <- NA 
-
-# The following section is modified from Nurnberg and Aberhan (2013)
-# and as written in Antell et al (2020)
-
-# Define variables for search 
-  # carb <- c("\"carbonate\"", "\"limestone\"", "\"reef rocks\"", "bafflestone", "bindstone", "dolomite", 
-  #           "framestone", "grainstone", "lime mudstone", "packstone", "rudstone", "floatstone",
-  #           "wackestone")
-  # clast <- c("\"shale\"", "\"siliciclastic\"", "\"volcaniclastic\"", "claystone", "conglomerate",  
-  #            "mudstone", "phyllite", "quartzite", "sandstone", "siltstone", "slate", "schist")
-proxTerms <- c("coastal indet.", "delta front", "delta plain",
-               "deltaic indet.", "estuary/bay", "foreshore", "interdistributary bay",
-               "lagoonal", "lagoonal/restricted shallow subtidal",
-               "marginal marine indet.", "open shallow subtidal", "fluvial-deltaic indet.",
-               "paralic indet.", "peritidal", "prodelta", "sand shoal",
-               "shallow subtidal indet.", "shoreface", "transition zone/lower shoreface",
-               "intrashelf/intraplatform reef", "reef, buildup or bioherm",
-               "perireef or subreef", "platform/shelf-margin reef") # last 2 lines include reefs
-deepTerms <- c("basinal (carbonate)", "basinal (siliceous)", "basinal (siliciclastic)",
-               "deep-water indet.", "deep subtidal indet.", "deep subtidal ramp",
-               "deep subtidal shelf", "offshore", "offshore indet.",
-               "offshore shelf", "slope", "submarine fan", "offshore ramp", 
-               "basin reef", "slope/ramp reef") # last line includes deep water reefs
-
-# Lithology
-  # l[binned$lithology1 %in% carb] <- "c"  
-  # l[binned$lithology1 %in% clast] <- "s"
-
-# Bathymetry
-collSilur$bath <- NA
-collSilur$bath[collSilur$environment %in% proxTerms] <- 'prox.' 
-collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
+The taxonomic hierarchy and stratigraphic ranges of the occurrence data are standardised against the Sepkoski Compendium already, following the `fossilbrush` package vignette [@fossilbrush]. A further element of cleaning is removal of taxa that occur only once ('space-time singletons' *sensu* @Antell2020). These records contain insufficient information to contribute to geographic range-size calculations.
+```{r}
+nmFreq <- table(occSilur$genus)
+sss <- nmFreq[nmFreq == 1] |> names()
+sssRows <- occSilur$genus %in% sss
+occSilur <- occSilur[ !sssRows, ]
 ```
 
-# Determine environment in cells and environmental preferences in taxa
-
-Rasterise points (should be equal area once projection supported)
+To disregard trivial differences in coordinate values between points from the same or adjacent localities, the next data treatment is conversion of vector (point) data to raster grid cells. For each PBDB record, the ID and centroid coordinates of its encompassing raster cell are saved in new columns. These cell values will be used in spatial calculations later to improve computation time substantially compared to operations on vector point data.
 ```{r rasterise}
 ll <- rast(resolution = 5, crs = 'epsg:4326')
 prj <- 'ESRI:54030' # Robinson 
@@ -80,13 +74,40 @@ cellXY <- c('cellX','cellY')
 collSilur[,cellXY] <- xyRob
 ```
 
+# Determine environment
+
+The purpose of the collections-based dataset is to determine habitat type locally across sites, so spatial subsampling can target sites of each type. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate and contains fields for affiliated geological and environmental information. Therefore, collections are a rich source of environment data that is largely independent of occurrences for an individual clade. To map sites according to deep vs. shallow habitat types, however, the 23 categories in the `environment` field must first be reclassified. The following division of marine environments is copied from scripts of @Antell2020, who adapted the classification of @Nurnberg2013.
+```{r data cleanup}
+proxTerms <- c("coastal indet.", "delta front", "delta plain",
+               "deltaic indet.", "estuary/bay", "foreshore", "interdistributary bay",
+               "lagoonal", "lagoonal/restricted shallow subtidal",
+               "marginal marine indet.", "open shallow subtidal", 
+               "fluvial-deltaic indet.", "paralic indet.", 
+               "peritidal", "prodelta", "sand shoal",
+               "shallow subtidal indet.", "shoreface", 
+               "transition zone/lower shoreface",
+               "intrashelf/intraplatform reef", "reef, buildup or bioherm",
+               "perireef or subreef", "platform/shelf-margin reef") 
+deepTerms <- c("basinal (carbonate)", "basinal (siliceous)", 
+               "basinal (siliciclastic)", "deep-water indet.", 
+               "deep subtidal indet.", "deep subtidal ramp",
+               "deep subtidal shelf", "offshore", "offshore indet.",
+               "offshore shelf", "slope", "submarine fan", "offshore ramp", 
+               "basin reef", "slope/ramp reef") 
+collSilur$bath <- NA
+collSilur$bath[collSilur$environment %in% proxTerms] <- 'prox.' 
+collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
+```
+
+`divvy` provides the `classRast` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. The template raster passed to `classRast` here has the same resolution, extent, and coordinate reference system as the data.
 ```{r plot enviro raster, fig.width=5.5, fig.align='center'}
 bathRast <- classRast(rob, dat = collSilur, cutoff = 0.8,
                       xy = cellXY, env = 'bath')
 plot(bathRast)
 ```
+A plot of the environmental distribution inferred from collection data traces the mid-latitude continents, albeit with gaps. Very few occurrences appear along the coasts of Gondwana, perhaps largely due to the under-sampling and under-reporting of the corresponding modern continents.
 
-# Spatial standardisation of area and latitude
+# Spatial standardisation
 
 Split data by enviro category
 ```{r split occs by enviro class}
@@ -98,6 +119,16 @@ occSilur[,cellXY] <- xyFromCell(rob, occSilur$cell)
 occSilur$bath <- extract(bathRast, robOccs)[['mainClass']] |> as.character()
 deep <- occSilur[occSilur$bath == 'deep',]
 prox <- occSilur[occSilur$bath == 'prox.',]
+```
+
+A quick inspection reveals roughly equal numbers of occurrences (ca. 5,000) in each environment. However, restricting consideration to places containing brachiopod occurrences, there are twice as many shallow as deep cells.
+```{r}
+nrow(deep); nrow(prox)
+
+anyDat <- rasterize( data.matrix(occSilur[, cellXY]), rob)
+bathMask <- mask(bathRast, anyDat)
+# bathMask <- mask(bathRast, robOccs) # fatal error, maybe a memory issue
+freq(bathMask)
 ```
 
 Regionally subsample each occurrence subset. 
@@ -114,6 +145,8 @@ sampD <- cookies(dat = deep,
                   crs = prj, output = 'full')
 # we have to expand the subsample bounds to get enough sites!
 r <- 1500
+
+set.seed(8)
 sampD <- cookies(dat = deep, 
                  xy = cellXY, iter = reps, 
                  nSite = siteQuota, 
@@ -123,6 +156,8 @@ sampD <- cookies(dat = deep,
 # plot(bathRast)
 # proxPts <- robOccs[robOccs$bath=='prox.',]
 # points(proxPts)
+
+set.seed(9)
 sampP <- cookies(dat = prox, 
                  xy = cellXY, iter = reps, 
                  nSite = siteQuota, 
@@ -130,13 +165,18 @@ sampP <- cookies(dat = prox,
                  crs = prj, output = 'full')
 ```
 
-# Compare geographic range size across environments
+# Analysis across environments
 
-```{r estimate vars from subsamples}
+```{r estimate vars from subsamples, eval = FALSE}
 metaD <- sdsumry(dat = sampD, taxVar = 'genus', xy = cellXY, crs = prj)
 metaP <- sdsumry(dat = sampP, taxVar = 'genus', xy = cellXY, crs = prj)
 metaD$occAvg <- metaD$nOcc / metaD$nTax
 metaP$occAvg <- metaP$nOcc / metaP$nTax
+```
+
+```{r save/load intermediate data, include = FALSE}
+# save(metaD, metaP, file = 'DP-meta-data.RData')
+load('DP-meta-data.RData')
 ```
 
 ```{r boxplots, message = FALSE}
@@ -147,10 +187,69 @@ plotDat$bath <- c(rep('deep', nrow(metaD)),
 pBase <- ggplot(plotDat, aes(x = bath))
 pBase + geom_boxplot(aes(x = bath, y = occAvg))
 ```
+A first look indicates broader ranges in deep environments, but we'll test that against a null expectation formally later.
 
+Calculate average taxon range size in additional ways: latitudinal range, great circle distance, mean pairwise distance (RB's suggestion, GSA agrees), and MST.
+```{r fcns for custom range size}
+subsampRange <- function(taxa, df, taxCol, coordCols, crs){
+  taxRange <- function(taxon){
+    taxBool <- df[, taxCol] == taxon
+    if (sum(taxBool) == 0){ # case where taxon unsampled
+      rep(NA, 6)
+    } else {
+      taxCoords <- df[taxBool, coordCols]
+      rangeSizer(taxCoords, crs)
+    }
+  }
+  rngMat <- sapply(taxa, taxRange)
+  rownames(rngMat) <- c('centroidX', 'centroidY', 'latRange',
+                        'greatCircDist', 'meanPairDist', 'minSpanTree')
+  rngDf <- data.frame(rngMat) |> t()
+  rngMeans <- colMeans(rngDf, na.rm = TRUE)
+  rngMeans[c('latRange', 'greatCircDist', 'meanPairDist', 'minSpanTree')]
+}
+```
+
+```{r parallel range calculations, eval = FALSE}
+# put this in parallel because otherwise very slow
+library(foreach)
+library(iterators)
+library(doParallel)
+
+taxa <- unique(occSilur$genus)
+
+nCore <- detectCores() - 1
+pt1 <- proc.time()
+registerDoParallel(nCore)
+
+rngD <- foreach(df = sampD, .combine = rbind, .packages = 'divvy') %dopar%
+  subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
+               coordCols = cellXY, crs = prj)
+
+rngP <- foreach(df = sampP, .combine = rbind, .packages = 'divvy') %dopar%
+  subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
+               coordCols = cellXY, crs = prj)
+# if combining output with that of sdsumry, don't set .inorder = FALSE
+
+stopImplicitCluster()
+pt2 <- proc.time()
+pt2-pt1
+```
+```{r load range size data, include = FALSE}
+# even in parallel, the run-time is 1 hr. (58 min elapsed)
+
+# save(rngD, rngP, file = 'DP-range-data.RData')
+load('DP-range-data.RData')
+```
+
+Check how well different range metrics correlate with each other and with other (sub)sample summary information, e.g. total number of occurrences or taxa, or MST of subsample sites. Average occupied grid cells has little to no relation with sampling MST (-0.08), but unfortunately the other metrics of range size (mean pairwise distance, taxon MST) strongly do (>0.4).
 ```{r var corrs}
+colnames(rngD) <- colnames(rngP) <- paste0(colnames(rngD), 'Tax') # average taxon range metrics
+metaD <- cbind(metaD, rngD)
+metaP <- cbind(metaP, rngP)
+
 # check out correlations betweeen all pairs of variables
-vars <- c('minSpanTree','SCOR','occAvg','nTax')
+vars <- c('nTax','nOcc','occAvg','minSpanTree','meanPairDistTax','minSpanTreeTax')
 cor(metaD[,vars], method = 'kendall')
 ```
 
@@ -205,42 +304,22 @@ obsVsNull <- function(dat1, dat2, vTest, vSort = NULL, nullN){
 # are shallows more diverse? (H: prox > deep) - yes
 obsVsNull(metaD, metaP, vTest = 'nTax', nullN = 1000) # vSort = 'minSpanTree'
 
-# are ranges broader in the deep? (H: deep > prox) - yes
+# are ranges broader in the deep? (H: deep > prox) 
+
+# yes, according to occupancy
 obsVsNull(metaP, metaD, vTest = 'occAvg', nullN = 1000)
 
+# no, according to distance-based range metrics
+obsVsNull(metaP, metaD, vTest = 'greatCircDistTax', nullN = 1000)
+obsVsNull(metaP, metaD, vTest = 'meanPairDistTax', nullN = 1000)
+obsVsNull(metaP, metaD, vTest = 'minSpanTreeTax', nullN = 1000)
+
 # can range-vs-enviro differences be explained by systematic differences
-# in sampling between enviros? (H: deep > prox) - no
+# in sampling between enviros? (H: deep > prox) 
 obsVsNull(metaP, metaD, vTest = 'minSpanTree', nullN = 1000)
 ```
+It turns out that the answer to our question depends on the way we measure range size. If we stick with occupancy, which is independent of site aggregation within subsamples, then one might confidently assert ranges were broader in deep water. If using a distance-based range metric (GCD, MPD, MST), the measurement is correlated with systemic differences in site aggregation between shallow and deep subsamples. Shallow ranges appear larger, but it's unclear if that's only because shallow subsamples tend to have more dispersed sites even within a standard regional radius.
 
-```{r custom range size metrics}
-# for testing purposes
-  # taxa <- unique(occSilur$genus)
-  # df <- sampD[[10]]
-  # taxCol <- 'genus'
-  # coordCols <- cellXY
-  # crs <- prj
-  #taxon <- 'Zygospiraella'
+Can occupancy be trusted alone, and/or is there a way to better correct taxon ranges measured with GCD, MPD, and MST?
 
-subsampRange <- function(taxa, df, taxCol, coordCols, crs){
-  taxRange <- function(taxon){
-    taxBool <- df[, taxCol] == taxon
-    if (sum(taxBool) == 0){ # case where taxon unsampled
-      rep(NA, 6)
-    } else {
-      taxCoords <- df[taxBool, coordCols]
-      rangeSizer(taxCoords, crs)
-    }
-  }
-  rngMat <- sapply(taxa, taxRange)
-  rownames(rngMat) <- c('nOcc', 'centroidX', 'centroidY', 'latRange',
-                        'greatCircDist', 'minSpanTree')
-  rngDf <- data.frame(rngMat) |> t()
-  rngMeans <- colMeans(rngDf, na.rm = TRUE)
-  rngMeans[c('latRange', 'greatCircDist', 'minSpanTree')]
-}
-taxa <- unique(occSilur$genus)
-# temp <- subsampRange(taxa, sampP[[1]], 'genus', cellXY, prj)
-
-# TODO apply over all subsamples and add to other sdsumry data
-```
+# References
