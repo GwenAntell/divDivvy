@@ -45,14 +45,14 @@
 #' Paleobiology Database occurrences of Silurian fossil brachiopods
 #'
 #' A dataset containing the (palaeo)coordinates and genus identifications of
-#' 16,000 marine brachiopods from the Silurian (443.1-419 Ma). Records with
+#' 13,500 marine brachiopods from the Silurian (443.1-419 Ma). Records with
 #' uncertain or unaccepted taxonomic names, non-marine palaeo-environments,
-#' or missing coordinates are excluded from the original download (24 June 2022).
+#' or missing coordinates are excluded from the original download (29 July 2022).
 #' Taxonomic synonymisation and removal of stratigraphic outliers
 #' follows the `fossilbrush` vignette example of cross-correlation with the
 #' Sepkoski range-through database (`fossilbrush::sepkoski`).
 #'
-#' @format A data frame with 15903 rows and 11 variables:
+#' @format A data frame with 13502 rows and 11 variables:
 #' \describe{
 #'   \item{order, family, genus}{Latin order, family, and genus name,
 #'   as synonymised against Sepkoski database}

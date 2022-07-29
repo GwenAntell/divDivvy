@@ -126,37 +126,25 @@ sepkoski_c <- occs_c$data[(nrow(brachios) + 1):nrow(occs_c$data),]
 brachios_c <- occs_c$data[1:nrow(brachios),]
 # drop occurrences with older LADs than FADs
 brachios_c <- brachios_c[brachios_c$max_ma > brachios_c$min_ma,]
-# flag and resolve against the Sepkoski Compendium, collection-wise
-revrng <- revise_ranges(x = brachios_c, y = sepkoski_c, do.flag = TRUE, verbose = F,
-                        taxon = "genus", assemblage = "collection_no",
-                        srt = "max_ma", end = "min_ma")
-# append the revised occurrence ages and error codes to the dataset
-brachios_c$newfad <- brachios_c$newlad <- brachios_c$errcode <- NA
-brachios_c$newfad <- revrng$occurrence$FAD
-brachios_c$newlad <- revrng$occurrence$LAD
-brachios_c$errcode <- revrng$occurrence$tax_flag
 
+# flag and resolve against the Sepkoski Compendium, collection-wise
+revrng <- flag_ranges(x = brachios_c, y = sepkoski_c,
+                      xcols = c("genus", "max_ma", "min_ma"),
+                      verbose = F
+                      )
 # Error flag codes from revise_ranges documentation:
 # "000" - unchecked, "R1R" - valid,
 # "0R0" - both FAD and LAD exceeded,
 # "00R" - totally older than range,
 # "R00" - totally younger than range,
 # "01R" - FAD exceeded, "1R0" - LAD exceeded
-
-# GSA note: Sepkoski considers Lingula to be Cenozoic-only (56-33.9 Ma),
-# so it seems sketchy to trust range truncation from Sepkoski data.
-# Plus: Lingula is given flag R1R, indicating valid record within FAD and LAD!
-
-# If trusting fossilbrush/Sepkoski, then the way to cull records would be:
-
-outOfRng <- brachios_c$newfad < 419 | brachios_c$newlad > 443.1
-brachios_c <- brachios_c[ !outOfRng, ]
+brachios_c$errcode <- revrng$occurrence$status
 noFlag <- brachios_c$errcode %in% c('000', 'R1R')
 brachios_c <- brachios_c[ noFlag, ]
-# option to prune with pacmacro or interpeak thresholding too
 
 # there are weirdly some PBDB accepted genera converted to NA -
-# contacted fossilbrush maintainer about this 29 June 2022
+# Flannery-Sutherland attributes to inconsistencies in those occurrences'
+# taxonomy fields in original PBDB entries
 noName <- is.na(brachios_c$genus)
 brachios_c <- brachios_c[ !noName, ]
 
