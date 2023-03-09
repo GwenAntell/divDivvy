@@ -1,11 +1,13 @@
 Package: divvy
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Spatial Subsampling of Biodiversity Occurrence Data
+Version: 0.1.0.9000
 Authors@R: 
-    person("Gwen", "Antell", , "gwenantell@gmail.com", role = c("aut", "cre"),
+    person("Gwen", "Antell", , "gwenantell@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-1948-6624"))
 Depends: R (>= 4.0)
-Description: What the package does (one paragraph).
+Description: Divide taxonomic occurrence data into geographic regions of fair 
+    comparison, according to three customizable standardization methods. 
+    Calculate common biodiversity and range-size metrics on subsampled data.
 License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 
@@ -17,7 +19,7 @@ Imports:
 	vegan
 RdMacros: Rdpack
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.3
 LazyData: true
 Suggests: 
     knitr,
