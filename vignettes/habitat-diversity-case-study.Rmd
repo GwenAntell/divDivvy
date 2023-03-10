@@ -121,7 +121,7 @@ deep <- occSilur[occSilur$bath == 'deep',]
 prox <- occSilur[occSilur$bath == 'prox.',]
 ```
 
-A quick inspection reveals roughly equal numbers of occurrences (ca. 5,000) in each environment. However, restricting consideration to places containing brachiopod occurrences, there are twice as many shallow as deep cells.
+A quick inspection reveals roughly equal numbers of occurrences in each environment. However, restricting consideration to places containing brachiopod occurrences, there are twice as many shallow as deep cells.
 ```{r}
 nrow(deep); nrow(prox)
 
@@ -132,66 +132,54 @@ freq(bathMask)
 ```
 
 Regionally subsample each occurrence subset. 
-Don't weight - not enough pool cells to matter much anyway.
+Don't weight? if not enough pool cells to matter much
 ```{r, error=TRUE}
 reps <- 500
 siteQuota <- 10
 siteCol <- 'cell'
 r <- 1000 # radial distance in km
 sampD <- cookies(dat = deep, 
-                  xy = cellXY, iter = reps, 
-                  nSite = siteQuota, 
-                  siteId = siteCol, r = r, 
-                  crs = prj, output = 'full')
+                 xy = cellXY, iter = reps, 
+                 nSite = siteQuota, 
+                 siteId = siteCol, r = r, 
+                 crs = prj, output = 'full')
 # we have to expand the subsample bounds to get enough sites!
 r <- 1500
 
 set.seed(8)
-sampD <- cookies(dat = deep, 
-                 xy = cellXY, iter = reps, 
-                 nSite = siteQuota, 
-                 siteId = siteCol, r = r, 
+sampD <- cookies(dat = deep,
+                 xy = cellXY, iter = reps,
+                 nSite = siteQuota,
+                 siteId = siteCol, r = r,
+                 weight = TRUE,
                  crs = prj, output = 'full')
-
-# plot(bathRast)
-# proxPts <- robOccs[robOccs$bath=='prox.',]
-# points(proxPts)
+# sampD <- clustr(dat = deep, 
+#                 xy = cellXY, iter = reps, 
+#                 nSite = siteQuota, 
+#                 distMax = r*2,
+#                 crs = prj, output = 'full')
 
 set.seed(9)
-sampP <- cookies(dat = prox, 
-                 xy = cellXY, iter = reps, 
-                 nSite = siteQuota, 
-                 siteId = siteCol, r = r, 
+sampP <- cookies(dat = prox,
+                 xy = cellXY, iter = reps,
+                 nSite = siteQuota,
+                 siteId = siteCol, r = r,
+                 weight = TRUE,
                  crs = prj, output = 'full')
+# sampP <- clustr(dat = prox, 
+#                 xy = cellXY, iter = reps, 
+#                 nSite = siteQuota, 
+#                 distMax = r*2,
+#                 crs = prj, output = 'full')
+
+# TODO also subsample all cells - for taxa with no preference/across depths
 ```
+# Range size calculation
 
-# Analysis across environments
-
-```{r estimate vars from subsamples, eval = FALSE}
-metaD <- sdsumry(dat = sampD, taxVar = 'genus', xy = cellXY, crs = prj)
-metaP <- sdsumry(dat = sampP, taxVar = 'genus', xy = cellXY, crs = prj)
-metaD$occAvg <- metaD$nOcc / metaD$nTax
-metaP$occAvg <- metaP$nOcc / metaP$nTax
-```
-
-```{r save/load intermediate data, include = FALSE}
-# save(metaD, metaP, file = 'DP-meta-data.RData')
-load('DP-meta-data.RData')
-```
-
-```{r boxplots, message = FALSE}
-library(ggplot2)
-plotDat <- rbind(metaD, metaP)
-plotDat$bath <- c(rep('deep', nrow(metaD)), 
-                  rep('prox', nrow(metaP)))
-pBase <- ggplot(plotDat, aes(x = bath))
-pBase + geom_boxplot(aes(x = bath, y = occAvg))
-```
-A first look indicates broader ranges in deep environments, but we'll test that against a null expectation formally later.
-
-Calculate average taxon range size in additional ways: latitudinal range, great circle distance, mean pairwise distance (RB's suggestion, GSA agrees), and MST.
 ```{r fcns for custom range size}
 subsampRange <- function(taxa, df, taxCol, coordCols, crs){
+  # remove multiple occs of a single taxon within a cell, for accurate occ count
+  df <- uniqify(df, taxVar = taxCol, xy = coordCols)
   taxRange <- function(taxon){
     taxBool <- df[, taxCol] == taxon
     if (sum(taxBool) == 0){ # case where taxon unsampled
@@ -201,20 +189,31 @@ subsampRange <- function(taxa, df, taxCol, coordCols, crs){
       rangeSizer(taxCoords, crs)
     }
   }
+  taxa <- sort(taxa)
   rngMat <- sapply(taxa, taxRange)
   rownames(rngMat) <- c('centroidX', 'centroidY', 'latRange',
                         'greatCircDist', 'meanPairDist', 'minSpanTree')
-  rngDf <- data.frame(rngMat) |> t()
-  rngMeans <- colMeans(rngDf, na.rm = TRUE)
-  rngMeans[c('latRange', 'greatCircDist', 'meanPairDist', 'minSpanTree')]
+  rngDf <- t(rngMat) |> data.frame()
+  # also count unique occurrences
+  rngDf$occ <- NA
+  freq <- table(df[ ,taxCol ])
+  occPos <- match(names(freq), taxa)
+  rngDf$occ[occPos] <- as.numeric(freq)
+  return(rngDf)
 }
+
+# taxa <- unique(occSilur$genus)
+# tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus', 
+#                coordCols = cellXY, crs = prj)
 ```
+
 
 ```{r parallel range calculations, eval = FALSE}
 # put this in parallel because otherwise very slow
 library(foreach)
 library(iterators)
 library(doParallel)
+library(beepr) # for notification when code finishes running
 
 taxa <- unique(occSilur$genus)
 
@@ -222,25 +221,54 @@ nCore <- detectCores() - 1
 pt1 <- proc.time()
 registerDoParallel(nCore)
 
-rngD <- foreach(df = sampD, .combine = rbind, .packages = 'divvy') %dopar%
+rngD <- foreach(df = sampD, .inorder = FALSE, .packages = 'divvy') %dopar%
   subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
                coordCols = cellXY, crs = prj)
 
-rngP <- foreach(df = sampP, .combine = rbind, .packages = 'divvy') %dopar%
+rngP <- foreach(df = sampP, .inorder = FALSE, .packages = 'divvy') %dopar%
   subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
                coordCols = cellXY, crs = prj)
-# if combining output with that of sdsumry, don't set .inorder = FALSE
 
 stopImplicitCluster()
 pt2 <- proc.time()
-pt2-pt1
+(pt2-pt1)/60
+beep()
+ #       user      system     elapsed 
+ # 0.01666667  0.01583333 47.82000000 
 ```
+
 ```{r load range size data, include = FALSE}
 # even in parallel, the run-time is 1 hr. (58 min elapsed)
-
+# save(rngD, rngP, file = 'DP-range-data-xtaxon.Rdata')
 # save(rngD, rngP, file = 'DP-range-data.RData')
-load('DP-range-data.RData')
+# save(rngD, rngP, file = 'DP-range-data-weighted.RData')
+# save(rngD, rngP, file = 'DP-range-data-clustr.RData')
+load('DP-range-data-xtaxon.RData')
 ```
+
+```{r}
+taxRange <- function(a, rngL, singletons = FALSE){
+  tmp <- lapply(rngL, function(x){
+    aBool <- row.names(x) == a
+    x[ aBool, ]
+  })
+  aDf <- do.call(rbind, tmp)
+  if (singletons = FALSE){
+    singl <- aDf$occ == 1
+    aDf <- aDf[ !singl, ]
+  }
+  colMeans(aDf, na.rm = TRUE)
+}
+
+a <- 'Trimerella' # 'Atrypa'
+taxRange(a)
+rngL <- rngD
+
+# TODO apply over all taxa of each PE class in subsamples of preferred enviro
+```
+
+
+# Analysis across environments
 
 Check how well different range metrics correlate with each other and with other (sub)sample summary information, e.g. total number of occurrences or taxa, or MST of subsample sites. Average occupied grid cells has little to no relation with sampling MST (-0.08), but unfortunately the other metrics of range size (mean pairwise distance, taxon MST) strongly do (>0.4).
 ```{r var corrs}
@@ -248,9 +276,10 @@ colnames(rngD) <- colnames(rngP) <- paste0(colnames(rngD), 'Tax') # average taxo
 metaD <- cbind(metaD, rngD)
 metaP <- cbind(metaP, rngP)
 
-# check out correlations betweeen all pairs of variables
+# check out correlations between all pairs of variables
 vars <- c('nTax','nOcc','occAvg','minSpanTree','meanPairDistTax','minSpanTreeTax')
 cor(metaD[,vars], method = 'kendall')
+cor(metaP[,vars], method = 'kendall')
 ```
 
 ```{r test diffs by enviro}
