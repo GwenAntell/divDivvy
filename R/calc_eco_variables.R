@@ -183,7 +183,7 @@ sdsumry <- function(dat, taxVar, xy, siteId = NULL,
                                   )
       # q0 = richness, q1 = exp of Shannon's entropy index,
       # q2 = inverse of Simpson's concentration index
-      sqsRich <- sqsFull[sqsFull$order == 0, c('SC','qD','qD.LCL','qD.UCL')]
+      sqsRich <- sqsFull[sqsFull$Order.q == 0, c('SC','qD','qD.LCL','qD.UCL')]
       names(sqsRich) <- c('u','SQSdiv','SQSlow95','SQSupr95')
       # return sample coverage, richness estimate and 95% CI
       out <- cbind(out, 'evenness' = j, sqsRich)
@@ -193,7 +193,7 @@ sdsumry <- function(dat, taxVar, xy, siteId = NULL,
                                  datatype = 'incidence_freq',
                                  base = 'size', level = quotaN # , conf=NULL # 95% CI or none
                                  )
-      crRich <- crFull[crFull$order == 0, c('qD','qD.LCL','qD.UCL')]
+      crRich <- crFull[crFull$Order.q == 0, c('qD','qD.LCL','qD.UCL')]
       names(crRich) <- c('CRdiv','CRlow95','CRupr95')
       out <- cbind(out, crRich)
     }

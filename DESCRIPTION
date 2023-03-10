@@ -11,7 +11,7 @@ Description: Divide taxonomic occurrence data into geographic regions of fair
 License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 
-	iNEXT, 
+	iNEXT (>= 3.0.0), 
 	Rdpack, 
 	sf, 
 	terra,
