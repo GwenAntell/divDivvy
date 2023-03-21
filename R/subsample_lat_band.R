@@ -15,8 +15,8 @@
 #' the amount of sites/area encompassed by each subsample, not the total area
 #' that could have been available for species to inhabit.
 #'
-#' @param dat A \code{data.frame} or \code{matrix} containing the
-#' coordinate columns \code{xy} and any associated variables, e.g. taxon names.
+#' @param dat A \code{data.frame} or \code{matrix} containing the coordinate
+#' columns \code{xy} and any associated variables, e.g. taxon names.
 #' @param xy A vector of two elements, specifying the name or numeric position
 #' of the columns containing longitude and latitude coordinates, respectively.
 #' @param crs Coordinate reference system as a GDAL text string, EPSG code,
@@ -30,7 +30,7 @@
 #' lowest-latitude northern and southern bins (\code{FALSE}, default)?
 #' @param absLat Logical: should only the absolute values of latitude be
 #' evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.
-#' @param output Whether the returned data should be a two-column matrix of
+#' @param output Whether the returned data should be two columns of
 #' subsample site coordinates (\code{output = 'locs'}) or the subset of rows
 #' from \code{dat} associated with those coordinates (\code{output = 'full'}).
 #'

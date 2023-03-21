@@ -16,8 +16,8 @@ clustr(
 )
 }
 \arguments{
-\item{dat}{A \code{data.frame} or \code{matrix} containing the
-coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
+\item{dat}{A \code{data.frame} or \code{matrix} containing the coordinate
+columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of the columns containing longitude and latitude coordinates, respectively.}
@@ -35,9 +35,18 @@ every returned subsample. If \code{nSite} supplied, \code{nMin} ignored.}
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
-\item{output}{Whether the returned data should be a two-column matrix of
+\item{output}{Whether the returned data should be two columns of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows
 from \code{dat} associated with those coordinates (\code{output = 'full'}).}
+}
+\value{
+A list of length \code{iter}. Each element is a \code{data.frame}
+(or \code{matrix}, if \code{dat} is a \code{matrix} and \code{output = 'full'}).
+If \code{nSite} is supplied, each element contains \code{nSite} observations.
+If \code{output = 'locs'} (default), only the coordinates of subsampling
+locations are returned.
+If \code{output = 'full'}, all \code{dat} columns are returned for the
+rows associated with the subsampled locations.
 }
 \description{
 Spatially subsample a dataset based on minimum spanning trees connecting
@@ -60,28 +69,38 @@ The location that has the shortest distance to any points already within the
 cluster is grouped in next, and its distance (branch) is added to the sum
 tree length. This iterative process continues until the largest distance
 between any two points in the cluster would exceed \code{distMax} km.
-In the very rare case multiple candidate points are tied for minimum distance
+In the rare case multiple candidate points are tied for minimum distance
 from the cluster, one point is selected at random as the next to include.
 Any tree with fewer than \code{nMin} points is prohibited.
 
 In the case that \code{nSite} is supplied, \code{nMin} argument is ignored,
 and any tree with fewer than \code{nSite} points is prohibited.
 After building a tree as described above, a random set of \code{nSite} points
-within the cluster is taken (without replacement). The returned output is
-the coordinates of subsampled points if \code{output = 'locs'} or the subset
-of \code{dat} associated with those coordinates if \code{output = 'full'}.
+within the cluster is taken (without replacement).
 The \code{nSite} argument makes \code{clustr} comparable with \code{cookies}
 in that it spatially standardises both extent and area/locality number.
 
 The performance of \code{clustr} is designed on the assumption \code{iter}
 is much larger than the number of unique localities. Internal code first
 calculates the full minimum spanning tree at every viable starting point
-before it then samples those trees (i.e. resamples and optionally subsamples)
+before it then samples those trees (i.e. resamples and optionally rarefies)
 for the specified number of iterations. This sequence means the total
 run-time increases only marginally even as \code{iter} increases greatly.
 However, if there are a large number of sites, particularly a large number
 of densely-spaced sites, the calculations will be slow even for a
 small number of iterations.
+}
+\examples{
+# generate occurrences: 10 lat-long points in modern Australia
+n <- 10
+x <- seq(from = 140, to = 145, length.out = n)
+y <- seq(from = -20, to = -25, length.out = n)
+pts <- data.frame(x, y, id = 1:n)
+
+# sample 5 sets of 4 locations no more than 400km across
+clustr(dat = pts, xy = 1:2, iter = 5,
+       nSite = 4, distMax = 400)
+
 }
 \references{
 \insertRef{Antell2020}{divvy}

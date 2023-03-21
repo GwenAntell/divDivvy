@@ -1,6 +1,7 @@
 # return vector of cells that lie within buffer radius of given seed
 findPool <- function(seed, dat, siteId, xy, r, nSite, crs = 'epsg:4326'
                      ){
+  dat <- as.data.frame(dat)
   datSf <- sf::st_as_sf(dat, coords = xy, crs = crs)
   seedRow <- which(dat[, siteId] == seed)[1]
   seedpt <- datSf[seedRow, ]
@@ -26,7 +27,9 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
                       ){
   # test whether each occupied site/cell is viable for subsampling
   posSeeds <- dat[,siteId]
-  posPools <- sapply(posSeeds, function(s){
+  # don't use sapply or object will condense from list to matrix
+  # in the special case all pool lengths are equal:
+  posPools <- lapply(posSeeds, function(s){
     sPool <- findPool(s, dat, siteId, xy, r, nSite, crs)
     n <- length(sPool)
     if (n >= nSite)
@@ -47,9 +50,9 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #' circumscribes a buffer of \code{r} km around it. Buffer circles that span
 #' the antemeridian (180 deg longitude) are wrapped as a multipolygon
 #' to prevent artificial truncation. After standardising radial extent, sites
-#' are drawn within the circular extent until a quota of \code{nSite}.
+#' are drawn within the circular extent until a quota of \code{nSite} is met.
 #' Sites are sampled without replacement, so a location is used as a seed point
-#' only if it is within \code{r} km distance of at least \code{nSite} locations.
+#' only if it is within \code{r} km distance of at least \code{nSite-1} locations.
 #' The method is introduced in Antell et al. (2020) and described in
 #' detail in Methods S1 therein.
 #'
@@ -65,6 +68,8 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #' @inheritParams clustr
 #' @param siteId The name or numeric position of the column in \code{dat}
 #' containing identifiers for unique spatial sites, e.g. raster cell names.
+#' \code{siteID} must be of same class as \code{xy}, e.g. a numeric column
+#' position if \code{xy} is given as a vector of numeric column positions.
 #' @param xy A vector of two elements, specifying the name or numeric position
 #' of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
 #' Coordinates for the same site ID should be identical, and where IDs are
@@ -72,12 +77,35 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #' @param r Numeric value for the radius (km) defining the circular extent
 #' of each spatial subsample.
 #' @param weight Whether sites within the subsample radius should be drawn
-#' at random (\code{weight = FALSE}) or with probability inversely proportional
-#' to the square of their distance from the centre of the subsample region.
-#' @param output Whether the returned data should be a two-column matrix of
-#' subsample site coordinates (\code{output = 'locs'}), with row names the
+#' at random (\code{weight = FALSE}, default) or with probability inversely
+#' proportional to the square of their distance from the centre of the
+#' subsample region (\code{weight = TRUE}).
+#' @param output Whether returned value should be two columns of subsample
+#' site coordinates (\code{output = 'locs'}), with row names the
 #' site IDs, or the subset of rows from \code{dat} associated with those
 #' coordinates (\code{output = 'full'}).
+#'
+#' @returns A list of length \code{iter}. Each list element is a
+#' \code{data.frame} or \code{matrix} (matching the class of \code{dat})
+#' with \code{nSite} observations. If \code{output = 'locs'}
+#' (default), only the coordinates of subsampling locations are returned.
+#' If \code{output = 'full'}, all \code{dat} columns are returned for the
+#' rows associated with the subsampled locations.
+#'
+#' If \code{weight = TRUE}, the first observation in each returned subsample
+#' \code{data.frame} corresponds to the seed point. If \code{weight = FALSE},
+#' observations are listed in the random order of which they were drawn.
+#'
+#' @examples
+#' # generate occurrences: 10 lat-long points in modern Australia
+#' n <- 10
+#' x <- seq(from = 140, to = 145, length.out = n)
+#' y <- seq(from = -20, to = -25, length.out = n)
+#' pts <- data.frame(x, y, id = 1:n)
+#'
+#' # sample 5 sets of 3 occurrences within 200km radius
+#' cookies(dat = pts, xy = 1:2, iter = 5,
+#'         nSite = 3, siteId = 3, r = 200)
 #'
 #' @seealso [clustr()]
 #' @export

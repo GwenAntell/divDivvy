@@ -17,8 +17,8 @@ cookies(
 )
 }
 \arguments{
-\item{dat}{A \code{data.frame} or \code{matrix} containing the
-coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
+\item{dat}{A \code{data.frame} or \code{matrix} containing the coordinate
+columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
@@ -30,22 +30,37 @@ raster cells the coordinates are usually expected to be cell centroids.}
 \item{nSite}{The quota of unique locations to include in each subsample.}
 
 \item{siteId}{The name or numeric position of the column in \code{dat}
-containing identifiers for unique spatial sites, e.g. raster cell names.}
+containing identifiers for unique spatial sites, e.g. raster cell names.
+\code{siteID} must be of same class as \code{xy}, e.g. a numeric column
+position if \code{xy} is given as a vector of numeric column positions.}
 
 \item{r}{Numeric value for the radius (km) defining the circular extent
 of each spatial subsample.}
 
 \item{weight}{Whether sites within the subsample radius should be drawn
-at random (\code{weight = FALSE}) or with probability inversely proportional
-to the square of their distance from the centre of the subsample region.}
+at random (\code{weight = FALSE}, default) or with probability inversely
+proportional to the square of their distance from the centre of the
+subsample region (\code{weight = TRUE}).}
 
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
-\item{output}{Whether the returned data should be a two-column matrix of
-subsample site coordinates (\code{output = 'locs'}), with row names the
+\item{output}{Whether returned value should be two columns of subsample
+site coordinates (\code{output = 'locs'}), with row names the
 site IDs, or the subset of rows from \code{dat} associated with those
 coordinates (\code{output = 'full'}).}
+}
+\value{
+A list of length \code{iter}. Each list element is a
+\code{data.frame} or \code{matrix} (matching the class of \code{dat})
+with \code{nSite} observations. If \code{output = 'locs'}
+(default), only the coordinates of subsampling locations are returned.
+If \code{output = 'full'}, all \code{dat} columns are returned for the
+rows associated with the subsampled locations.
+
+If \code{weight = TRUE}, the first observation in each returned subsample
+\code{data.frame} corresponds to the seed point. If \code{weight = FALSE},
+observations are listed in the random order of which they were drawn.
 }
 \description{
 Spatially subsample a dataset to produce samples of standard area and extent.
@@ -55,9 +70,9 @@ The function takes a single location as a starting (seed) point and
 circumscribes a buffer of \code{r} km around it. Buffer circles that span
 the antemeridian (180 deg longitude) are wrapped as a multipolygon
 to prevent artificial truncation. After standardising radial extent, sites
-are drawn within the circular extent until a quota of \code{nSite}.
+are drawn within the circular extent until a quota of \code{nSite} is met.
 Sites are sampled without replacement, so a location is used as a seed point
-only if it is within \code{r} km distance of at least \code{nSite} locations.
+only if it is within \code{r} km distance of at least \code{nSite-1} locations.
 The method is introduced in Antell et al. (2020) and described in
 detail in Methods S1 therein.
 
@@ -69,6 +84,18 @@ subsample locations more tightly.
 For geodetic coordinates (latitude-longitude), distances are calculated along
 great circle arcs. For Cartesian coordinates, distances are calculated in
 Euclidian space, in units associated with the projection CRS (e.g. metres).
+}
+\examples{
+# generate occurrences: 10 lat-long points in modern Australia
+n <- 10
+x <- seq(from = 140, to = 145, length.out = n)
+y <- seq(from = -20, to = -25, length.out = n)
+pts <- data.frame(x, y, id = 1:n)
+
+# sample 5 sets of 3 occurrences within 200km radius
+cookies(dat = pts, xy = 1:2, iter = 5,
+        nSite = 3, siteId = 3, r = 200)
+
 }
 \references{
 \insertRef{Antell2020}{divvy}

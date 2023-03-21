@@ -17,8 +17,8 @@ bandit(
 )
 }
 \arguments{
-\item{dat}{A \code{data.frame} or \code{matrix} containing the
-coordinate columns \code{xy} and any associated variables, e.g. taxon names.}
+\item{dat}{A \code{data.frame} or \code{matrix} containing the coordinate
+columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of the columns containing longitude and latitude coordinates, respectively.}
@@ -40,7 +40,7 @@ evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.}
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
-\item{output}{Whether the returned data should be a two-column matrix of
+\item{output}{Whether the returned data should be two columns of
 subsample site coordinates (\code{output = 'locs'}) or the subset of rows
 from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 }
