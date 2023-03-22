@@ -5,15 +5,37 @@
 #' @inheritParams sdsumry
 #' @param siteId The name or numeric position of the column containing
 #' identifiers for unique spatial sites, e.g. raster cell names.
-#' If `siteId` supplied, `xy` is ignored.
+#' If `siteId` supplied, `xy` is ignored. One of `siteId` or `xy` is required.
 #' @param na.rm Should records missing spatial information be removed?
 #' Default is yes.
 #'
 #' @return An object with the same class and columns as `dat`, containing the
 #' subset of rows representing unique localities (if `siteId` supplied),
 #' coordinates (if `xy` supplied), or taxon-site combinations
-#' (if `taxVar supplied`). The first record at each spatial locality is retained,
+#' (if `taxVar` supplied). The first record at each spatial locality is retained,
 #' or if `taxVar` is specified, the first record of each taxon at a locality.
+#'
+#' @examples
+#' # generate occurrence data
+#' x  <- rep(1, 10)
+#' y  <- c(rep(1, 5), 2:6)
+#' sp <- c(rep(letters[1:3], 2),
+#'         rep(letters[4:5], 2))
+#' obs <- data.frame(x, y, sp)
+#'
+#' # compare original and unique datasets:
+#' # rows 4 and 5 removed as duplicates of 1 and 2, respectively
+#' obs
+#' uniqify(obs, taxVar = 3, xy = 1:2)
+#'
+#' # using taxon identifications or other third variable is optional
+#' uniqify(obs, xy = c('x', 'y'))
+#'
+#' # caution - data outside the taxon and occurrence variables
+#' # will be lost where associated with duplicate occurrences
+#' obs$notes <- letters[11:20]
+#' uniqify(obs, taxVar = 3, xy = 1:2)
+#' # the notes 'n' and 'o' are absent in the output data
 #'
 #' @export
 
