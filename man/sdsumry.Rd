@@ -8,7 +8,6 @@ sdsumry(
   dat,
   taxVar,
   xy,
-  siteId = NULL,
   crs = "epsg:4326",
   collections = NULL,
   quotaQ = NULL,
@@ -21,15 +20,13 @@ sdsumry(
 coordinates, and any associated variables; or a list of such structures.}
 
 \item{taxVar}{The name or numeric position of the column containing
-taxonomic identifications.}
+taxonomic identifications. \code{taxVar} must be of same class as \code{xy}, e.g. a
+numeric column position if \code{xy} is given as a vector of numeric positions.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
 Coordinates for the same site ID should be identical, and where IDs are
 raster cells the coordinates are usually expected to be cell centroids.}
-
-\item{siteId}{The name or numeric position of the column in \code{dat}
-containing identifiers for unique spatial sites, e.g. raster cell names.}
 
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
@@ -48,8 +45,8 @@ is supplied, remove the most common taxon prior to rarefaction. The \code{nTax}
 and \code{evenness} returned are unaffected.}
 }
 \value{
-A \code{data.frame} of spatial and optional diversity metrics. If \code{dat}
-is a list of \code{data.frame} objects, output contains one row per list element.
+A \code{data.frame} of spatial and optional diversity metrics. If \code{dat} is
+a \code{list} of \code{data.frame} objects, output rows correspond to input elements.
 }
 \description{
 Summarise the spatial extent and position of occurrence data, and
@@ -82,13 +79,30 @@ while rare taxa have relatively little influence.
 If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 given coverage value and returns the point estimate of richness (Hill number 0)
 and its 95\% confidence interval as well as estimates of evenness (Pielou's J)
-and sample coverage (Good's \emph{u}). If \code{quotaN} is supplied,
+and sample coverage (given by \code{iNEXT$DataInfo}). If \code{quotaN} is supplied,
 \code{sdsumry} rarefies richness to the given number of occurrence counts
 and returns the point estimate of richness and its 95\% confidence interval.
 Coverage-based and classical rarefaction are both calculated with
 \code{iNEXT::estimateD} internally. For details, such as how diversity
 is extrapolated if sample coverage is insufficient to achieve a specified
 rarefaction level, consult Chao and Jost (2012) and Hsieh \emph{et al.} (2016).
+}
+\examples{
+# generate occurrences
+set.seed(9)
+x  <- sample(rep(1:5, 10))
+y  <- sample(rep(1:5, 10))
+# make some species 2x or 4x as common
+abund <- c(rep(4, 5), rep(2, 5), rep(1, 10))
+sp <- sample(letters[1:20], 50, replace = TRUE, prob = abund)
+obs <- data.frame(x, y, sp)
+
+# minimum sample data returned
+sdsumry(obs, taxVar = 'sp', xy = c('x','y'))
+
+# also calculate evenness and coverage-based rarefaction diversity estimates
+sdsumry(obs, taxVar = 'sp', xy = c('x','y'), quotaQ = 0.7)
+
 }
 \references{
 \insertRef{Chao2012}{divvy}

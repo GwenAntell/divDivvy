@@ -17,7 +17,7 @@
 #' x- and y-coordinates, respectively (e.g. longitude and latitude).
 #' @inheritParams bandit
 #'
-#' @return A 1-row `data.frame`
+#' @returns A 1-row `data.frame`
 #'
 #' @export
 
@@ -93,7 +93,7 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 #' given coverage value and returns the point estimate of richness (Hill number 0)
 #' and its 95% confidence interval as well as estimates of evenness (Pielou's J)
-#' and sample coverage (Good's *u*). If \code{quotaN} is supplied,
+#' and sample coverage (given by `iNEXT$DataInfo`). If \code{quotaN} is supplied,
 #' \code{sdsumry} rarefies richness to the given number of occurrence counts
 #' and returns the point estimate of richness and its 95% confidence interval.
 #' Coverage-based and classical rarefaction are both calculated with
@@ -105,7 +105,8 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' @param dat A \code{data.frame} or \code{matrix} containing taxon names,
 #' coordinates, and any associated variables; or a list of such structures.
 #' @param taxVar The name or numeric position of the column containing
-#' taxonomic identifications.
+#' taxonomic identifications. `taxVar` must be of same class as `xy`, e.g. a
+#' numeric column position if `xy` is given as a vector of numeric positions.
 #' @param collections The name or numeric position of the column containing
 #' unique collection IDs, e.g. 'collection_no' in PBDB data downloads.
 #' @param quotaQ A numeric value for the coverage (quorum) level at which to
@@ -116,8 +117,24 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' is supplied, remove the most common taxon prior to rarefaction. The `nTax`
 #' and `evenness` returned are unaffected.
 #'
-#' @return A `data.frame` of spatial and optional diversity metrics. If `dat`
-#' is a list of `data.frame` objects, output contains one row per list element.
+#' @returns A `data.frame` of spatial and optional diversity metrics. If `dat` is
+#' a `list` of `data.frame` objects, output rows correspond to input elements.
+#'
+#' @examples
+#' # generate occurrences
+#' set.seed(9)
+#' x  <- sample(rep(1:5, 10))
+#' y  <- sample(rep(1:5, 10))
+#' # make some species 2x or 4x as common
+#' abund <- c(rep(4, 5), rep(2, 5), rep(1, 10))
+#' sp <- sample(letters[1:20], 50, replace = TRUE, prob = abund)
+#' obs <- data.frame(x, y, sp)
+#'
+#' # minimum sample data returned
+#' sdsumry(obs, taxVar = 'sp', xy = c('x','y'))
+#'
+#' # also calculate evenness and coverage-based rarefaction diversity estimates
+#' sdsumry(obs, taxVar = 'sp', xy = c('x','y'), quotaQ = 0.7)
 #'
 #' @seealso [rangeSizer()]
 #'
@@ -131,7 +148,7 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #'
 #' \insertRef{Hsieh2016}{divvy}
 
-sdsumry <- function(dat, taxVar, xy, siteId = NULL,
+sdsumry <- function(dat, taxVar, xy,
                     crs = 'epsg:4326', collections = NULL,
                     quotaQ = NULL, quotaN = NULL,
                     omitDom = FALSE){
@@ -145,8 +162,7 @@ sdsumry <- function(dat, taxVar, xy, siteId = NULL,
     # comb out any duplicate occurrences of a taxon w/in single site.
     # do this after counting collections in case a single taxon
     # at a single site is recorded in multiple collections
-    if (is.null(siteId)){ siteId <- xy }
-    df <- uniqify(df, taxVar, siteId)
+    df <- uniqify(df, taxVar = taxVar, xy = xy)
     nOcc <- nrow(df)
 
     # run range size fcn as if all occs were from a single taxon
@@ -177,16 +193,20 @@ sdsumry <- function(dat, taxVar, xy, siteId = NULL,
       freqOrdr <- freqOrdr[-1]
     }
     if ( !is.null(quotaQ) ){
+      sqsInfo <-  iNEXT::iNEXT(list( c(nSite, freqOrdr) ),
+                               datatype = 'incidence_freq')
+      u <- sqsInfo$DataInfo$SC
       sqsFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
                                   datatype = 'incidence_freq',
-                                  base = 'coverage', level = quotaQ # , conf=NULL # 95% CI or none
+                                  base = 'coverage', level = quotaQ
+                                  # conf=NULL # 95% CI or none
                                   )
       # q0 = richness, q1 = exp of Shannon's entropy index,
       # q2 = inverse of Simpson's concentration index
-      sqsRich <- sqsFull[sqsFull$Order.q == 0, c('SC','qD','qD.LCL','qD.UCL')]
-      names(sqsRich) <- c('u','SQSdiv','SQSlow95','SQSupr95')
+      sqsRich <- sqsFull[sqsFull$Order.q == 0, c('qD','qD.LCL','qD.UCL')]
+      names(sqsRich) <- c('SQSdiv','SQSlow95','SQSupr95')
       # return sample coverage, richness estimate and 95% CI
-      out <- cbind(out, 'evenness' = j, sqsRich)
+      out <- cbind(out, 'evenness' = j, u, sqsRich)
     }
     if ( !is.null(quotaN) ){
       crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),
@@ -199,7 +219,7 @@ sdsumry <- function(dat, taxVar, xy, siteId = NULL,
     }
     out
   }
-  if (class(dat) == 'list'){
+  if ( isa(dat, 'list') ){
     finL <- lapply(dat, dfsumry)
     fin <- data.frame(do.call(rbind, finL))
     # if original list has named elements e.g. latitudinal bands - keep them
