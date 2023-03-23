@@ -1,7 +1,7 @@
 #' Calculate common metrics of spatial distribution
 #'
-#' Calculate centroid coordinates, latitudinal range (degrees),
-#' great circle distance (km), mean pairwise distance (km), and
+#' Calculate occurrence count, centroid coordinates, latitudinal range
+#' (degrees), great circle distance (km), mean pairwise distance (km), and
 #' summed minimum spanning tree length (km) for spatial point coordinates.
 #'
 #' Coordinates and their distances are computed with respect to the original
@@ -17,14 +17,29 @@
 #' x- and y-coordinates, respectively (e.g. longitude and latitude).
 #' @inheritParams bandit
 #'
-#' @returns A 1-row `data.frame`
+#' @returns A 1-row, 7-column `matrix`
+#'
+#' @examples
+#' # generate 20 occurrences for a pseudo-species
+#' # centred on Yellowstone National Park (latitude-longitude)
+#' # normally distributed with a standard deviation ~110 km
+#' set.seed(2)
+#' x <- rnorm(20, 110.5885, 2)
+#' y <- rnorm(20,  44.4280, 1)
+#' pts <- cbind(x,y)
+#'
+#' rangeSizer(pts)
 #'
 #' @export
 
 rangeSizer <- function(coords, crs = 'epsg:4326'){
   coords <- unique(coords)
+  if ( !isa(coords, 'data.frame') ){
+    coords <- as.data.frame(coords)
+  }
   if (nrow(coords) == 1){
-    out <- cbind('centroidX' = coords[, 1],
+    out <- cbind('nLoc' = 1,
+                 'centroidX' = coords[, 1],
                  'centroidY' = coords[, 2],
                  'latRange' = NA,
                  'greatCircDist' = NA,
@@ -32,6 +47,7 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
                  'minSpanTree' = NA
     )
   } else {
+    n <- nrow(coords)
     sfPts <- sf::st_as_sf(coords, coords = 1:2, crs = crs)
     if ( ! sf::st_is_longlat(sfPts)){
       coords <- sf::sf_project(from = crs, to = 'epsg:4326', coords,
@@ -51,7 +67,8 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
     agg <- sum(mst$dist)
     diag(gcdists) <- NA
     mpd <- mean(gcdists, na.rm = TRUE)
-    out <- cbind('centroidX' = cntr[1],
+    out <- cbind('nLoc' = n,
+                 'centroidX' = cntr[1],
                  'centroidY' = cntr[2],
                  'latRange' = latRng,
                  'greatCircDist' = gcMax,
@@ -64,13 +81,13 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 
 #' Calculate basic spatial coverage and diversity metrics
 #'
-#' Summarise the spatial extent and position of occurrence data, and
+#' Summarise the geographic scope and position of occurrence data, and
 #' optionally estimate diversity and evenness
 #'
 #' \code{sdsumry} compiles metadata about a sample or list of samples,
 #' before or after spatial subsampling. The function counts the number
-#' of collections (if requested), unique spatial sites, and taxa
-#' presences (excluding repeat incidences of a taxon at a given site);
+#' of collections (if requested), taxon presences (excluding repeat incidences
+#' of a taxon at a given site), and unique spatial sites;
 #' it also calculates site centroid coordinates, latitudinal range (degrees),
 #' great circle distance (km), mean pairwise distance (km), and summed
 #' minimum spanning tree length (km).
@@ -92,10 +109,11 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #'
 #' If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 #' given coverage value and returns the point estimate of richness (Hill number 0)
-#' and its 95% confidence interval as well as estimates of evenness (Pielou's J)
-#' and sample coverage (given by `iNEXT$DataInfo`). If \code{quotaN} is supplied,
-#' \code{sdsumry} rarefies richness to the given number of occurrence counts
-#' and returns the point estimate of richness and its 95% confidence interval.
+#' and its 95% confidence interval, as well as estimates of evenness (Pielou's J)
+#' and frequency-distribution sample coverage (given by `iNEXT$DataInfo`).
+#' If \code{quotaN} is supplied, \code{sdsumry} rarefies richness to the given
+#' number of occurrence counts and returns the point estimate of richness
+#' and its 95% confidence interval.
 #' Coverage-based and classical rarefaction are both calculated with
 #' \code{iNEXT::estimateD} internally. For details, such as how diversity
 #' is extrapolated if sample coverage is insufficient to achieve a specified
@@ -117,8 +135,8 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' is supplied, remove the most common taxon prior to rarefaction. The `nTax`
 #' and `evenness` returned are unaffected.
 #'
-#' @returns A `data.frame` of spatial and optional diversity metrics. If `dat` is
-#' a `list` of `data.frame` objects, output rows correspond to input elements.
+#' @returns A `matrix` of spatial and optional diversity metrics. If `dat` is a
+#' `list` of `data.frame` objects, output rows correspond to input elements.
 #'
 #' @examples
 #' # generate occurrences
@@ -169,7 +187,7 @@ sdsumry <- function(dat, taxVar, xy,
     locs <- unique( df[,xy] )
     nSite <- nrow(locs)
     spatSumry <- rangeSizer(coords = locs, crs = crs)
-    out <- cbind(out, 'nSite'= nSite, 'nOcc' = nOcc, spatSumry)
+    out <- cbind(out, 'nOcc' = nOcc, spatSumry)
 
     # SCOR summed common occurrence rate (Hannisdal 2012)
     freqs <- table( df[,taxVar] )
@@ -206,7 +224,7 @@ sdsumry <- function(dat, taxVar, xy,
       sqsRich <- sqsFull[sqsFull$Order.q == 0, c('qD','qD.LCL','qD.UCL')]
       names(sqsRich) <- c('SQSdiv','SQSlow95','SQSupr95')
       # return sample coverage, richness estimate and 95% CI
-      out <- cbind(out, 'evenness' = j, u, sqsRich)
+      out <- cbind(out, 'evenness' = j, 'coverage' = u, sqsRich)
     }
     if ( !is.null(quotaN) ){
       crFull <- iNEXT::estimateD(list( c(nSite, freqOrdr) ),

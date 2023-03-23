@@ -45,18 +45,18 @@ is supplied, remove the most common taxon prior to rarefaction. The \code{nTax}
 and \code{evenness} returned are unaffected.}
 }
 \value{
-A \code{data.frame} of spatial and optional diversity metrics. If \code{dat} is
-a \code{list} of \code{data.frame} objects, output rows correspond to input elements.
+A \code{matrix} of spatial and optional diversity metrics. If \code{dat} is a
+\code{list} of \code{data.frame} objects, output rows correspond to input elements.
 }
 \description{
-Summarise the spatial extent and position of occurrence data, and
+Summarise the geographic scope and position of occurrence data, and
 optionally estimate diversity and evenness
 }
 \details{
 \code{sdsumry} compiles metadata about a sample or list of samples,
 before or after spatial subsampling. The function counts the number
-of collections (if requested), unique spatial sites, and taxa
-presences (excluding repeat incidences of a taxon at a given site);
+of collections (if requested), taxon presences (excluding repeat incidences
+of a taxon at a given site), and unique spatial sites;
 it also calculates site centroid coordinates, latitudinal range (degrees),
 great circle distance (km), mean pairwise distance (km), and summed
 minimum spanning tree length (km).
@@ -78,10 +78,11 @@ while rare taxa have relatively little influence.
 
 If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
 given coverage value and returns the point estimate of richness (Hill number 0)
-and its 95\% confidence interval as well as estimates of evenness (Pielou's J)
-and sample coverage (given by \code{iNEXT$DataInfo}). If \code{quotaN} is supplied,
-\code{sdsumry} rarefies richness to the given number of occurrence counts
-and returns the point estimate of richness and its 95\% confidence interval.
+and its 95\% confidence interval, as well as estimates of evenness (Pielou's J)
+and frequency-distribution sample coverage (given by \code{iNEXT$DataInfo}).
+If \code{quotaN} is supplied, \code{sdsumry} rarefies richness to the given
+number of occurrence counts and returns the point estimate of richness
+and its 95\% confidence interval.
 Coverage-based and classical rarefaction are both calculated with
 \code{iNEXT::estimateD} internally. For details, such as how diversity
 is extrapolated if sample coverage is insufficient to achieve a specified
