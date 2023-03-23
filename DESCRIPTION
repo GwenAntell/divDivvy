@@ -24,6 +24,7 @@ LazyData: true
 Suggests: 
     knitr,
     icosa,
+    spData,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
