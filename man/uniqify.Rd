@@ -11,7 +11,8 @@ uniqify(dat, taxVar = NULL, xy = NULL, siteId = NULL, na.rm = TRUE)
 coordinates, and any associated variables; or a list of such structures.}
 
 \item{taxVar}{The name or numeric position of the column containing
-taxonomic identifications.}
+taxonomic identifications. \code{taxVar} must be of same class as \code{xy}, e.g. a
+numeric column position if \code{xy} is given as a vector of numeric positions.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
@@ -20,7 +21,7 @@ raster cells the coordinates are usually expected to be cell centroids.}
 
 \item{siteId}{The name or numeric position of the column containing
 identifiers for unique spatial sites, e.g. raster cell names.
-If \code{siteId} supplied, \code{xy} is ignored.}
+If \code{siteId} supplied, \code{xy} is ignored. One of \code{siteId} or \code{xy} is required.}
 
 \item{na.rm}{Should records missing spatial information be removed?
 Default is yes.}
@@ -29,9 +30,32 @@ Default is yes.}
 An object with the same class and columns as \code{dat}, containing the
 subset of rows representing unique localities (if \code{siteId} supplied),
 coordinates (if \code{xy} supplied), or taxon-site combinations
-(if \verb{taxVar supplied}). The first record at each spatial locality is retained,
+(if \code{taxVar} supplied). The first record at each spatial locality is retained,
 or if \code{taxVar} is specified, the first record of each taxon at a locality.
 }
 \description{
 Subset a dataset to unique spatial localities or locality-taxon combinations.
+}
+\examples{
+# generate occurrence data
+x  <- rep(1, 10)
+y  <- c(rep(1, 5), 2:6)
+sp <- c(rep(letters[1:3], 2),
+        rep(letters[4:5], 2))
+obs <- data.frame(x, y, sp)
+
+# compare original and unique datasets:
+# rows 4 and 5 removed as duplicates of 1 and 2, respectively
+obs
+uniqify(obs, taxVar = 3, xy = 1:2)
+
+# using taxon identifications or other third variable is optional
+uniqify(obs, xy = c('x', 'y'))
+
+# caution - data outside the taxon and occurrence variables
+# will be lost where associated with duplicate occurrences
+obs$notes <- letters[11:20]
+uniqify(obs, taxVar = 3, xy = 1:2)
+# the notes 'n' and 'o' are absent in the output data
+
 }

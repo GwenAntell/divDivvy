@@ -15,8 +15,8 @@
 #' the amount of sites/area encompassed by each subsample, not the total area
 #' that could have been available for species to inhabit.
 #'
-#' @param dat A \code{data.frame} or \code{matrix} containing the
-#' coordinate columns \code{xy} and any associated variables, e.g. taxon names.
+#' @param dat A \code{data.frame} or \code{matrix} containing the coordinate
+#' columns \code{xy} and any associated variables, e.g. taxon names.
 #' @param xy A vector of two elements, specifying the name or numeric position
 #' of the columns containing longitude and latitude coordinates, respectively.
 #' @param crs Coordinate reference system as a GDAL text string, EPSG code,
@@ -30,7 +30,7 @@
 #' lowest-latitude northern and southern bins (\code{FALSE}, default)?
 #' @param absLat Logical: should only the absolute values of latitude be
 #' evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.
-#' @param output Whether the returned data should be a two-column matrix of
+#' @param output Whether the returned data should be two columns of
 #' subsample site coordinates (\code{output = 'locs'}) or the subset of rows
 #' from \code{dat} associated with those coordinates (\code{output = 'full'}).
 #'
@@ -46,42 +46,39 @@
 #' @export
 #'
 #' @examples
+#' # rasterise bivalve occurrences with Equal Earth projection
+#' library(terra)
 #' data(bivalves)
-
-#' # rasterise data into equal-area grid cells
-#' library(icosa)
-#' hgrid <- hexagrid( c(8,4) )
-#' coords <- c('cellLng','cellLat')
-#' faceIds <- locate(hgrid, bivalves[, c('paleolng','paleolat')] )
-#' bivalves[, coords] <- pos(hgrid, faceIds)
+#' r <- rast(resolution = 1, crs = 'EPSG:8857')
+#' oldCoordCols <- c('paleolng', 'paleolat')
+#' newCoordCols <- c('centroidX','centroidY')
+#' cellIds <- cellFromXY(r, bivalves[, oldCoordCols])
+#' bivalves[, newCoordCols] <- xyFromCell(r, cellIds)
 #'
+#' # subsample 20 equal-area sites within 10-degree bands of absolute latitude
 #' n <- 20
 #' reps <- 100
 #' set.seed(11)
-#' # subsample within 10-degree bands of absolute latitude
-#' bandAbs <- bandit(dat = bivalves, xy = coords,
-#' iter = reps, nSite = n, output = 'full',
-#' bin = 10, absLat = TRUE
-#' )
-#' # head(bandAbs[[1]]) # inspect first subsample
+#' bandAbs <- bandit(dat = bivalves, xy = newCoordCols,
+#'                   iter = reps, nSite = n, output = 'full',
+#'                   bin = 10, absLat = TRUE
+#'                   )
+#' head(bandAbs[[1]]) # inspect first subsample
 #' names(bandAbs)[1] # degree interval (absolute value) of first subsample
-#' #> "[0,10)"
-#' unique(names(bandAbs)) # all intervals containing data
-#' #> [1] "[0,10)" "[10,20)" "[30,40)" "[40,50)"
-#' # note insufficient coverage to subsample from 20-30 degrees or > 50 degrees
+#' #> [1] "[0,10)"
+#' unique(names(bandAbs)) # all intervals containing sufficient data
+#' #> [1] "[0,10)"  "[10,20)" "[20,30)" "[30,40)" "[40,50)"
+#' # note insufficient coverage to subsample above 50 degrees
 #'
-#' # central latitude band spans equator, bin = 20 degrees (as in Allen 2020)
+#' # subsample 20-deg bands, central band spaning equator, as in Allen et al. (2020)
 #' # (a finer-grain way to divide 180 degrees evenly into an odd number of
 #' # bands would be to set 'bin' = 4)
-#' bandCent <- bandit(dat = bivalves, xy = coords,
-#' iter = reps, nSite = n, output = 'full',
-#' bin = 20, centr = TRUE, absLat = FALSE
-#' )
-#' # head(bandCent[[1]]) # inspect first subsample
-#' names(bandCent)[1] # degree interval of first subsample
-#' #> "[-10,10)"
-#' unique(names(bandCent)) # all intervals containing data
-#' #> "[-10,10)" "[10,30)" "[30,50)"
+#' bandCent <- bandit(dat = bivalves, xy = newCoordCols,
+#'                    iter = reps, nSite = n, output = 'full',
+#'                    bin = 20, centr = TRUE, absLat = FALSE
+#'                    )
+#' unique(names(bandCent)) # all intervals containing sufficient data
+#' #> [1] "[-50,-30)" "[-10,10)"  "[10,30)"   "[30,50)"
 #'
 #' @references
 #'
@@ -89,13 +86,11 @@
 #'
 #' \insertRef{Marcot2016}{divvy}
 
-# TODO option for user-specified breaks
-
 bandit <- function(dat, xy, iter, nSite, bin,
                    centr = FALSE, absLat = FALSE,
                    crs = 'epsg:4326', output = 'locs'){
-
   coords <- uniqify(dat[,xy], xy = xy)
+  coords <- as.data.frame(coords) # in case data is given as a matrix
   sfCoords <- sf::st_as_sf(coords, coords = xy, crs = crs)
   if ( ! sf::st_is_longlat(sfCoords) ){
     ll <- sf::sf_project(from = crs, to = 'epsg:4326', coords,

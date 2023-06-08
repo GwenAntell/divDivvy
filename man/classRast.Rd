@@ -50,6 +50,34 @@ That is, any grid cell encompassing original point data is non-\code{NA}.
 Antell and others (2020) set a \code{cutoff} of 0.8, based on the same threshold
 Nürnberg and Aberhan (2013) used to classify environmental preferences for taxa.
 }
+\examples{
+library(terra)
+# work in Equal Earth projected coordinates
+prj <- 'EPSG:8857'
+# generate point occurrences in Northern Africa
+n <- 100
+set.seed(5)
+x <- runif(n,  0, 30)
+y <- runif(n, 10, 30)
+# create an environmental variable with a latitudinal gradient
+# more habitat type '0' near equator, more '1' northward
+env <- rbinom(n, 1, prob = (y-10)/20)
+ptsDf <- data.frame(x, y, env)
+# rasterise at 5-degree resolution
+r <- terra::rast(resolution = 5, crs = prj,
+                 xmin = 0, xmax = 30, ymin = 10, ymax = 30)
+
+binRast <- classRast(grid = r, dat = ptsDf, xy = c('x','y'),
+                     env = 'env', cutoff = 0.6)
+binRast
+
+# plot environment classification vs. original points
+plot(binRast, col = c('lightgreen','grey60','white'))
+points(ptsDf[env==0,], pch =  1, cex = 1.2) # occurrences of habitat type '0'
+points(ptsDf[env==1,], pch = 16, cex = 1.2) # occurrences of habitat type '1'
+
+
+}
 \references{
 \insertRef{Antell2020}{divvy}
 

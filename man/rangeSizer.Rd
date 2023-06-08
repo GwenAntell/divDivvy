@@ -14,11 +14,11 @@ x- and y-coordinates, respectively (e.g. longitude and latitude).}
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 }
 \value{
-A 1-row \code{data.frame}
+A 1-row, 7-column \code{matrix}
 }
 \description{
-Calculate centroid coordinates, latitudinal range (degrees),
-great circle distance (km), mean pairwise distance (km), and
+Calculate occurrence count, centroid coordinates, latitudinal range
+(degrees), great circle distance (km), mean pairwise distance (km), and
 summed minimum spanning tree length (km) for spatial point coordinates.
 }
 \details{
@@ -30,4 +30,16 @@ latitude-longitude and distances are calculated with spherical geometry.
 
 Duplicate coordinates will be removed. If a single unique point is supplied,
 all distance measures returned will be \code{NA}.
+}
+\examples{
+# generate 20 occurrences for a pseudo-species
+# centred on Yellowstone National Park (latitude-longitude)
+# normally distributed with a standard deviation ~110 km
+set.seed(2)
+x <- rnorm(20, 110.5885, 2)
+y <- rnorm(20,  44.4280, 1)
+pts <- cbind(x,y)
+
+rangeSizer(pts)
+
 }

@@ -1,6 +1,6 @@
 Package: divvy
 Title: Spatial Subsampling of Biodiversity Occurrence Data
-Version: 0.1.0.9000
+Version: 0.1.1.9000
 Authors@R: 
     person("Gwen", "Antell", , "gwenantell@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-1948-6624"))
@@ -11,7 +11,7 @@ Description: Divide taxonomic occurrence data into geographic regions of fair
 License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 
-	iNEXT, 
+	iNEXT (>= 3.0.0), 
 	Rdpack, 
 	sf, 
 	terra,
@@ -24,6 +24,7 @@ LazyData: true
 Suggests: 
     knitr,
     icosa,
+    spData,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
