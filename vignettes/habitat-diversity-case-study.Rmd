@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Background
 
-Spatial standardisation is necessary to make fair comparisons of ecological parameters between environments or habitat types, even if data occur within one time step instead of being split across a time series. For instance, consider two habitat types that cover different geographic extents. To determine fairly which habitat hosts more diverse communities, one must account for the difference in spatial coverage. By first subsampling each habitat type into equivalent spatial units, one could then directly and fairly compare richness or other ecological metrics between environments.
+Palaeobiologists often track ecological parameters through time, where, as the package vignette illustrates, it is crucial to standardise differences in spatial coverage between time steps. However, it is equally important to apply spatial standardisation for comparisons between environment or habitat types, even if data occur within one time step.  For instance, consider two habitat types that cover different geographic extents. To determine fairly which habitat hosts more diverse communities, one must account for the difference in spatial coverage. By first subsampling each habitat type into equivalent spatial units, one could then directly and fairly compare richness or other ecological metrics between environments.
 
 In the marine realm, one of the most important environmental axes of ecological differentiation is water depth. Diversity, geographic range size, and other aspects of community structure vary along a gradient of near-shore to deep-water environments. Here, we divide this environmental spectrum coarsely into shallow (proximal) vs. deep (distal) marine habitats. 'Shallow' habitats encompass deltaic, (sub)tidal, and shelf margin environments. 'Deep' habitats include continental slope and offshore settings, generally beginning at 140 m [@Duran2018].
 
@@ -24,11 +24,11 @@ The ecological attribute this case study focusses on is geographic range size, a
 
 The environmental niche breadth of a taxon strongly controls its geographic distribution; the maximum attainable extent of a taxon's range size is the extent of occurrence of that taxon's suitable habitat. Therefore, for environments within a given ecological niche breadth, a larger geographic distribution of those habitats permits taxa to occupy larger ranges. Taxa may be more restricted than suitable environmental conditions would predict (realised niche breadth), due to biotic or historic factors, but taxa cannot exceed the bounds set by environmental suitability. Since environmental characteristics are more homogeneous in the cold, dark waters of the deep sea than in the topologic complexity of shallow settings, ecologists have long theorised geographic ranges to be larger for deep-dwelling than shallow-water species [@Coe1946; @McClain2010; @Costello2017]. Most empirical tests of this hypothesis have relied upon modern data, however, with relatively little evidence from periods of Earth history when ocean circulation and continental configuration were entirely unlike those of today.
 
-We walk through an analysis below to test the expectation geographic ranges are wider for deep- than shallow-water benthic taxa, using brachiopod occurrences from the Silurian (444-419 Ma) recorded in the [Paleobiology Database](https://paleobiodb.org/) (PBDB). Brachiopoda was a diverse clade that made up a large component of Paleozoic benthic communities [@Close2020; @Rojas2021]. Much of the world's landmass had coalesced at southermost latitudes into Gondwana, with the remaining continents scattered at the equator and separated by the Iapetus, Paleo-Tethys, Rheic, and Panthalassic oceans (map below). Hence, the geometry of a cosmopolitan marine species' range from the Silurian would differ distinctly from a cosmopolitan range today.
+The following sections walk through an analysis to test the expectation geographic ranges are wider for deep- than shallow-water benthic taxa, using brachiopod occurrences from the Silurian (444-419 Ma) recorded in the [Paleobiology Database](https://paleobiodb.org/) (PBDB). Brachiopoda was a diverse clade that made up a large component of Paleozoic benthic communities [@Close2020; @Rojas2021]. In the Paleozoic, much of the world's landmass had coalesced at southermost latitudes into Gondwana, with the remaining continents scattered at the equator and separated by the Iapetus, Paleo-Tethys, Rheic, and Panthalassic oceans (map below). Hence, the geometry of a cosmopolitan marine species' range from the Silurian would differ distinctly from a cosmopolitan range today.
 
 ![Silurian palaeogeography, as reconstructed by the PALEOMAP PaleoAtlas project [@Scotese2016].](PALEOMAP_atlas_map75a_Llandovery_430.png)
 
-The ensuing code chunks walk through a reproducible analysis of geographic range size differences between marine environments using functions from the `divvy` package. The document consists of the following sections:
+This document consists of four parts, with `divvy` helper functions in `R` code chunks to analyse geographic range size disparities between marine environments.
 
 1. Formatting occurrences (point data)
 1. Developing environmental categories (raster data)
@@ -37,7 +37,7 @@ The ensuing code chunks walk through a reproducible analysis of geographic range
 
 # Prepare data
 
-PBDB downloads of all marine collections and of all Brachiopoda occurrences with accepted names at genus-ranking or below are available as attached datasets in the `divvy` package. Both datasets are subset to relevant columns and are cleaned to remove records missing coordinates. For more information, load the package and query the data objects from the console with `?collSilur` and `?occSilur`. The script to download and vet the raw data is available as `format-silurian-data.R` within the GitHub repository [data-raw folder (link)](https://github.com/GwenAntell/divvy/tree/main/data-raw).
+PBDB downloads of 1) all marine collections and 2) all Brachiopoda occurrences with accepted names at genus-ranking or below are available as attached datasets in the `divvy` package. Both datasets are subset to relevant columns and are cleaned to remove records missing coordinates. For more information, load the package and query the data objects from the console with `?collSilur` and `?occSilur`. The script to download and vet the raw data is available as `format-data.R` within the GitHub repository [data-raw folder (link)](https://github.com/GwenAntell/divvy/tree/main/data-raw).
 
 ```{r imports, message=FALSE}
 # terra and sf have all the necessary helper functions for spatial operations
@@ -49,7 +49,7 @@ data(occSilur)
 ```
 
 The taxonomic hierarchy and stratigraphic ranges of the occurrence data are standardised against the Sepkoski Compendium already, following the `fossilbrush` package vignette [@fossilbrush]. A further element of cleaning is removal of taxa that occur only once ('space-time singletons' *sensu* @Antell2020). These records contain insufficient information to contribute to geographic range-size calculations.
-```{r}
+```{r remove singletons}
 nmFreq <- table(occSilur$genus)
 sss <- nmFreq[nmFreq == 1] |> names()
 sssRows <- occSilur$genus %in% sss
@@ -58,20 +58,20 @@ occSilur <- occSilur[ !sssRows, ]
 
 To disregard trivial differences in coordinate values between points from the same or adjacent localities, the next data treatment is conversion of vector (point) data to raster grid cells. For each PBDB record, the ID and centroid coordinates of its encompassing raster cell are saved in new columns. These cell values will be used in spatial calculations later to improve computation time substantially compared to operations on vector point data.
 ```{r rasterise}
-ll <- rast(resolution = 5, crs = 'epsg:4326')
-prj <- 'ESRI:54030' # Robinson 
-# 'EPSG:8858' # "+proj=moll" # 'EPSG:8857' equal earth
-rob <- project(ll, prj) 
-values(rob) <- 1:ncell(rob)
+# work in Equal Earth projected coordinates
+rWorld <- rast()
+prj <- 'EPSG:8857'
+rPrj <- project(rWorld, prj, res = 200000)
+values(rPrj) <- 1:ncell(rPrj)
 
 xyCartes <- c('paleolng','paleolat')
 llColl <- vect(collSilur, geom = xyCartes, crs = 'epsg:4326')
-robColl <- project(llColl, prj)
-cellMat <- cells(rob, robColl) 
+prjColl <- project(llColl, prj)
+cellMat <- cells(rPrj, prjColl) 
 collSilur$cell <- cellMat[,'cell']
-xyRob <- xyFromCell(rob, collSilur$cell)
-cellXY <- c('cellX','cellY')
-collSilur[,cellXY] <- xyRob
+xyPrj <- xyFromCell(rPrj, collSilur$cell)
+xyCell <- c('cellX','cellY')
+collSilur[, xyCell] <- xyPrj
 ```
 
 # Determine environment
@@ -101,9 +101,9 @@ collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
 
 `divvy` provides the `classRast` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. The template raster passed to `classRast` here has the same resolution, extent, and coordinate reference system as the data.
 ```{r plot enviro raster, fig.width=5.5, fig.align='center'}
-bathRast <- classRast(rob, dat = collSilur, cutoff = 0.8,
-                      xy = cellXY, env = 'bath')
-plot(bathRast)
+bathRast <- classRast(rPrj, dat = collSilur, cutoff = 0.8,
+                      xy = xyCell, env = 'bath')
+plot(bathRast, col = c("#1B9E77", "#D95F02", "black"))
 ```
 A plot of the environmental distribution inferred from collection data traces the mid-latitude continents, albeit with gaps. Very few occurrences appear along the coasts of Gondwana, perhaps largely due to the under-sampling and under-reporting of the corresponding modern continents.
 
@@ -113,10 +113,10 @@ Split data by enviro category
 ```{r split occs by enviro class}
 # infer environment of each occurrence
 llOccs <- vect(occSilur, geom = xyCartes, crs = 'epsg:4326')
-robOccs <- project(llOccs, prj)
-occSilur$cell <- cells(rob, robOccs)[,'cell']
-occSilur[,cellXY] <- xyFromCell(rob, occSilur$cell)
-occSilur$bath <- extract(bathRast, robOccs)[['mainClass']] |> as.character()
+prjOccs <- project(llOccs, prj)
+occSilur$cell <- cells(rPrj, prjOccs)[,'cell']
+occSilur[, xyCell] <- xyFromCell(rPrj, occSilur$cell)
+occSilur$bath <- extract(bathRast, prjOccs)[['mainClass']] |> as.character()
 deep <- occSilur[occSilur$bath == 'deep',]
 prox <- occSilur[occSilur$bath == 'prox.',]
 ```
@@ -125,9 +125,9 @@ A quick inspection reveals roughly equal numbers of occurrences in each environm
 ```{r}
 nrow(deep); nrow(prox)
 
-anyDat <- rasterize( data.matrix(occSilur[, cellXY]), rob)
+anyDat <- rasterize( data.matrix(occSilur[, xyCell]), rPrj)
 bathMask <- mask(bathRast, anyDat)
-# bathMask <- mask(bathRast, robOccs) # fatal error, maybe a memory issue
+# bathMask <- mask(bathRast, prjOccs) # fatal error, maybe a memory issue
 freq(bathMask)
 ```
 
@@ -139,7 +139,7 @@ siteQuota <- 10
 siteCol <- 'cell'
 r <- 1000 # radial distance in km
 sampD <- cookies(dat = deep, 
-                 xy = cellXY, iter = reps, 
+                 xy = xyCell, iter = reps, 
                  nSite = siteQuota, 
                  siteId = siteCol, r = r, 
                  crs = prj, output = 'full')
@@ -148,26 +148,26 @@ r <- 1500
 
 set.seed(8)
 sampD <- cookies(dat = deep,
-                 xy = cellXY, iter = reps,
+                 xy = xyCell, iter = reps,
                  nSite = siteQuota,
                  siteId = siteCol, r = r,
                  weight = TRUE,
                  crs = prj, output = 'full')
 # sampD <- clustr(dat = deep, 
-#                 xy = cellXY, iter = reps, 
+#                 xy = xyCell, iter = reps, 
 #                 nSite = siteQuota, 
 #                 distMax = r*2,
 #                 crs = prj, output = 'full')
 
 set.seed(9)
 sampP <- cookies(dat = prox,
-                 xy = cellXY, iter = reps,
+                 xy = xyCell, iter = reps,
                  nSite = siteQuota,
                  siteId = siteCol, r = r,
                  weight = TRUE,
                  crs = prj, output = 'full')
 # sampP <- clustr(dat = prox, 
-#                 xy = cellXY, iter = reps, 
+#                 xy = xyCell, iter = reps, 
 #                 nSite = siteQuota, 
 #                 distMax = r*2,
 #                 crs = prj, output = 'full')
@@ -204,7 +204,7 @@ subsampRange <- function(taxa, df, taxCol, coordCols, crs){
 
 # taxa <- unique(occSilur$genus)
 # tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus', 
-#                coordCols = cellXY, crs = prj)
+#                coordCols = xyCell, crs = prj)
 ```
 
 
@@ -223,11 +223,11 @@ registerDoParallel(nCore)
 
 rngD <- foreach(df = sampD, .inorder = FALSE, .packages = 'divvy') %dopar%
   subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
-               coordCols = cellXY, crs = prj)
+               coordCols = xyCell, crs = prj)
 
 rngP <- foreach(df = sampP, .inorder = FALSE, .packages = 'divvy') %dopar%
   subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
-               coordCols = cellXY, crs = prj)
+               coordCols = xyCell, crs = prj)
 
 stopImplicitCluster()
 pt2 <- proc.time()
