@@ -122,28 +122,26 @@ prox <- occSilur[occSilur$bath == 'prox.',]
 ```
 
 A quick inspection reveals roughly equal numbers of occurrences in each environment. However, restricting consideration to places containing brachiopod occurrences, there are twice as many shallow as deep cells.
-```{r}
+```{r relative enviro abundance}
 nrow(deep); nrow(prox)
-
-anyDat <- rasterize( data.matrix(occSilur[, xyCell]), rPrj)
-bathMask <- mask(bathRast, anyDat)
-# bathMask <- mask(bathRast, prjOccs) # fatal error, maybe a memory issue
-freq(bathMask)
+freq(bathRast, bylayer = FALSE)
 ```
 
 Regionally subsample each occurrence subset. 
 Don't weight? if not enough pool cells to matter much
-```{r, error=TRUE}
+```{r subsample, error=TRUE}
 reps <- 500
-siteQuota <- 10
+siteQuota <- 15
 siteCol <- 'cell'
 r <- 1000 # radial distance in km
 sampD <- cookies(dat = deep, 
                  xy = xyCell, iter = reps, 
                  nSite = siteQuota, 
                  siteId = siteCol, r = r, 
+                 weight = TRUE,
                  crs = prj, output = 'full')
-# we have to expand the subsample bounds to get enough sites!
+# we have to expand the subsample bounds to get a good sample of sites!
+# (or settle for fewer sites per subsample)
 r <- 1500
 
 set.seed(8)
@@ -153,11 +151,6 @@ sampD <- cookies(dat = deep,
                  siteId = siteCol, r = r,
                  weight = TRUE,
                  crs = prj, output = 'full')
-# sampD <- clustr(dat = deep, 
-#                 xy = xyCell, iter = reps, 
-#                 nSite = siteQuota, 
-#                 distMax = r*2,
-#                 crs = prj, output = 'full')
 
 set.seed(9)
 sampP <- cookies(dat = prox,
@@ -166,11 +159,6 @@ sampP <- cookies(dat = prox,
                  siteId = siteCol, r = r,
                  weight = TRUE,
                  crs = prj, output = 'full')
-# sampP <- clustr(dat = prox, 
-#                 xy = xyCell, iter = reps, 
-#                 nSite = siteQuota, 
-#                 distMax = r*2,
-#                 crs = prj, output = 'full')
 
 # TODO also subsample all cells - for taxa with no preference/across depths
 ```
@@ -179,11 +167,11 @@ sampP <- cookies(dat = prox,
 ```{r fcns for custom range size}
 subsampRange <- function(taxa, df, taxCol, coordCols, crs){
   # remove multiple occs of a single taxon within a cell, for accurate occ count
-  df <- uniqify(df, taxVar = taxCol, xy = coordCols)
+# df <- uniqify(df, taxVar = taxCol, xy = coordCols) # unnecessary, but possibly speedier?
   taxRange <- function(taxon){
     taxBool <- df[, taxCol] == taxon
     if (sum(taxBool) == 0){ # case where taxon unsampled
-      rep(NA, 6)
+      rep(NA, 7)
     } else {
       taxCoords <- df[taxBool, coordCols]
       rangeSizer(taxCoords, crs)
@@ -191,20 +179,11 @@ subsampRange <- function(taxa, df, taxCol, coordCols, crs){
   }
   taxa <- sort(taxa)
   rngMat <- sapply(taxa, taxRange)
-  rownames(rngMat) <- c('centroidX', 'centroidY', 'latRange',
+  rownames(rngMat) <- c('occurrences', 'centroidX', 'centroidY', 'latRange',
                         'greatCircDist', 'meanPairDist', 'minSpanTree')
   rngDf <- t(rngMat) |> data.frame()
-  # also count unique occurrences
-  rngDf$occ <- NA
-  freq <- table(df[ ,taxCol ])
-  occPos <- match(names(freq), taxa)
-  rngDf$occ[occPos] <- as.numeric(freq)
   return(rngDf)
 }
-
-# taxa <- unique(occSilur$genus)
-# tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus', 
-#                coordCols = xyCell, crs = prj)
 ```
 
 
@@ -216,6 +195,10 @@ library(doParallel)
 library(beepr) # for notification when code finishes running
 
 taxa <- unique(occSilur$genus)
+
+# test case:
+# tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus', 
+#                coordCols = xyCell, crs = prj)
 
 nCore <- detectCores() - 1
 pt1 <- proc.time()
@@ -233,36 +216,34 @@ stopImplicitCluster()
 pt2 <- proc.time()
 (pt2-pt1)/60
 beep()
- #       user      system     elapsed 
- # 0.01666667  0.01583333 47.82000000 
+#       user     system    elapsed 
+# 0.03016667 0.02083333 6.64933333 
 ```
 
 ```{r load range size data, include = FALSE}
-# even in parallel, the run-time is 1 hr. (58 min elapsed)
-# save(rngD, rngP, file = 'DP-range-data-xtaxon.Rdata')
-# save(rngD, rngP, file = 'DP-range-data.RData')
-# save(rngD, rngP, file = 'DP-range-data-weighted.RData')
-# save(rngD, rngP, file = 'DP-range-data-clustr.RData')
-load('DP-range-data-xtaxon.RData')
+save(rngD, rngP, file = 'range-data-weighted.RData')
+load('range-data-weighted.RData')
 ```
 
-```{r}
+```{r average range size across subsamples}
+# summarize a focal species' range size data across all subsamples
 taxRange <- function(a, rngL, singletons = FALSE){
   tmp <- lapply(rngL, function(x){
     aBool <- row.names(x) == a
     x[ aBool, ]
   })
   aDf <- do.call(rbind, tmp)
-  if (singletons = FALSE){
+  # option: only consider subsamples where species is sampled multiple times
+  if (singletons == FALSE){
     singl <- aDf$occ == 1
     aDf <- aDf[ !singl, ]
   }
   colMeans(aDf, na.rm = TRUE)
 }
 
-a <- 'Trimerella' # 'Atrypa'
-taxRange(a)
-rngL <- rngD
+# test case
+atrypa <- taxRange('Atrypa', rngD)
+round(atrypa, 2)
 
 # TODO apply over all taxa of each PE class in subsamples of preferred enviro
 ```
@@ -272,10 +253,20 @@ rngL <- rngD
 
 Check how well different range metrics correlate with each other and with other (sub)sample summary information, e.g. total number of occurrences or taxa, or MST of subsample sites. Average occupied grid cells has little to no relation with sampling MST (-0.08), but unfortunately the other metrics of range size (mean pairwise distance, taxon MST) strongly do (>0.4).
 ```{r var corrs}
-colnames(rngD) <- colnames(rngP) <- paste0(colnames(rngD), 'Tax') # average taxon range metrics
+# TODO redo this whole chunk
+
+metaD <- sdsumry(dat = sampD, taxVar = 'genus', xy = xyCell, crs = prj)
+metaP <- sdsumry(dat = sampP, taxVar = 'genus', xy = xyCell, crs = prj)
+metaD$occAvg <- metaD$nOcc / metaD$nTax
+metaP$occAvg <- metaP$nOcc / metaP$nTax
+
+# NB looks like this SHOULD average mean pair dist and MST for all species in a subsample, 
+# then add that info to meta df's as 2 new columns with the suffix 'Tax'
+# TODO fix this before any of the lines here or later chunks will work
 metaD <- cbind(metaD, rngD)
 metaP <- cbind(metaP, rngP)
-
+colnames(rngD) <- colnames(rngP) <- paste0(colnames(rngD), 'Tax') # average taxon range metrics
+  
 # check out correlations between all pairs of variables
 vars <- c('nTax','nOcc','occAvg','minSpanTree','meanPairDistTax','minSpanTreeTax')
 cor(metaD[,vars], method = 'kendall')
