@@ -158,10 +158,11 @@ pref <- function(env, cutoff){
 
 # tag each row as from a taxon with deep, shallow, or nonspecific preference
 occSilur$pref <- NA
+cutoff <- 0.7
 for (tax in taxa){
  taxBool <- occSilur$genus == tax
  envOccs <- occSilur$bath[taxBool]
- occSilur$pref[taxBool] <- pref(envOccs, cutoff = 0.8)
+ occSilur$pref[taxBool] <- pref(envOccs, cutoff)
 }
 
 # remove duplicate taxon-site occurrences to save on memory
@@ -179,8 +180,9 @@ Don't weight? if not enough pool cells to matter much
 deep <- occSilur[ occSilur$pref == 'deep', ]
 prox <- occSilur[ occSilur$pref == 'prox.', ]
 # how many taxa specialise in each?
-length(unique(deep$genus))
-length(unique(prox$genus))
+taxaD <- unique(deep$genus)
+taxaP <- unique(prox$genus)
+paste(length(taxaD), 'deep;', length(taxaP), 'shallow')
 # cutoff of 0.8 gives 69 deep, 52 shallow
 # cutoff of 0.7 gives 94 deep, 61 shallow
 
@@ -271,11 +273,6 @@ beep()
 # 0.018500000 0.002833333 0.867666667 
 ```
 
-```{r load range size data, include = FALSE}
-save(rngD, rngP, file = 'range-data-weighted.RData')
-load('range-data-weighted.RData')
-```
-
 ```{r average range size across subsamples}
 # summarize a focal species' range size data across all subsamples
 taxRange <- function(a, rngL, singletons = FALSE){
@@ -293,14 +290,36 @@ taxRange <- function(a, rngL, singletons = FALSE){
 }
 
 # test case
-atrypa <- taxRange('Atrypa', rngD)
-round(atrypa, 2)
+crass <- taxRange('Crassitestella', rngD)
+round(crass, 2)
 
-# TODO apply over all taxa of each PE class in subsamples of preferred enviro
+# apply summary function over all taxa in subsamples of preferred enviro
+rngAvgD <- sapply(taxaD, taxRange, rngL = rngD) |>
+  t() |> data.frame()
+rngAvgP <- sapply(taxaP, taxRange, rngL = rngP) |>
+  t() |> data.frame()
+# sum(! is.na(rngAvgD$occurrences)) # taxon sample size
+# sum(! is.na(rngAvgP$occurrences))
 ```
 
 
 # Analysis across environments
+
+Range sizes are equivalent, with or without subsampling!
+```{r}
+unsamp <- subsampRange(taxa, occSilur, 'genus', xyCell, prj)
+unsampD <- unsamp[rownames(unsamp) %in% taxaD,]
+unsampP <- unsamp[rownames(unsamp) %in% taxaP,]
+
+t.test(log(unsampD$meanPairDist), log(unsampP$meanPairDist), alternative='g')
+t.test(sqrt(unsampD$minSpanTree), sqrt(unsampP$minSpanTree), alternative='g') # *
+wilcox.test((unsampD$occurrences), (unsampP$occurrences), alternative='g')
+
+t.test(log(rngAvgD$meanPairDist), log(rngAvgP$meanPairDist), alternative='g')
+t.test(sqrt(rngAvgD$minSpanTree), sqrt(rngAvgP$minSpanTree), alternative='g')
+wilcox.test((rngAvgD$occurrences), (rngAvgP$occurrences), alternative='g')
+```
+Unedited prior text follows:
 
 Check how well different range metrics correlate with each other and with other (sub)sample summary information, e.g. total number of occurrences or taxa, or MST of subsample sites. Average occupied grid cells has little to no relation with sampling MST (-0.08), but unfortunately the other metrics of range size (mean pairwise distance, taxon MST) strongly do (>0.4).
 ```{r var corrs}
