@@ -1,6 +1,6 @@
 ---
 title: "Environmental and geographic standardisation case study"
-author: "G. S. Antell"
+author: "G. Antell"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 bibliography: habitat-case-study-refs.bib
@@ -61,7 +61,7 @@ To disregard trivial differences in coordinate values between points from the sa
 # work in Equal Earth projected coordinates
 rWorld <- rast()
 prj <- 'EPSG:8857'
-rPrj <- project(rWorld, prj, res = 200000)
+rPrj <- project(rWorld, prj, res = 200000) # metre units, so ca. 2 degree resolution
 values(rPrj) <- 1:ncell(rPrj)
 
 xyCartes <- c('paleolng','paleolat')
@@ -74,7 +74,7 @@ xyCell <- c('cellX','cellY')
 collSilur[, xyCell] <- xyPrj
 ```
 
-# Determine environment
+# Classify substrate environment
 
 The purpose of the collections-based dataset is to determine habitat type locally across sites, so spatial subsampling can target sites of each type. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate and contains fields for affiliated geological and environmental information. Therefore, collections are a rich source of environment data that is largely independent of occurrences for an individual clade. To map sites according to deep vs. shallow habitat types, however, the 23 categories in the `environment` field must first be reclassified. The following division of marine environments is copied from scripts of @Antell2020, who adapted the classification of @Nurnberg2013.
 ```{r data cleanup}
@@ -107,34 +107,91 @@ plot(bathRast, col = c("#1B9E77", "#D95F02", "black"))
 ```
 A plot of the environmental distribution inferred from collection data traces the mid-latitude continents, albeit with gaps. Very few occurrences appear along the coasts of Gondwana, perhaps largely due to the under-sampling and under-reporting of the corresponding modern continents.
 
-# Spatial standardisation
-
-Split data by enviro category
 ```{r split occs by enviro class}
-# infer environment of each occurrence
+# rasterise to same grid as collections data
 llOccs <- vect(occSilur, geom = xyCartes, crs = 'epsg:4326')
 prjOccs <- project(llOccs, prj)
 occSilur$cell <- cells(rPrj, prjOccs)[,'cell']
 occSilur[, xyCell] <- xyFromCell(rPrj, occSilur$cell)
-occSilur$bath <- extract(bathRast, prjOccs)[['mainClass']] |> as.character()
-deep <- occSilur[occSilur$bath == 'deep',]
-prox <- occSilur[occSilur$bath == 'prox.',]
+
+# determine environment of each occurrence directly where possible
+# but in some places it won't be clear from associated 'environment' field -
+# in those cases, infer the predominant enviro in the cell based on collections
+
+occSilur$bathCell <- occSilur$bath <- extract(bathRast, prjOccs)[['mainClass']]
+# these variables will inherit class as factor - keep it this way
+# for correct ordering of factor levels when inferring preferences below
+
+occSilur$bath[occSilur$environment %in% proxTerms] <- 'prox.' 
+occSilur$bath[occSilur$environment %in% deepTerms] <- 'deep'
 ```
 
-A quick inspection reveals roughly equal numbers of occurrences in each environment. However, restricting consideration to places containing brachiopod occurrences, there are twice as many shallow as deep cells.
+A quick inspection reveals roughly equal numbers of occurrences in each environment. However, there are twice as many shallow as deep-water grid cells as indicated by all marine collections.
 ```{r relative enviro abundance}
-nrow(deep); nrow(prox)
+# inspect: what proportion of environments associated with individual records
+# match environmental inferrences from nearby collections' data?
+which(occSilur$bath == occSilur$bathCell) |> 
+  length()/nrow(occSilur)
+table(occSilur$bathCell)
+table(occSilur$bath)
+# the majority of inferences do match, and most of the discrepancies are where
+# more precise environmental information was available directly from occurrences
+
 freq(bathRast, bylayer = FALSE)
 ```
+
+# Classify environmental preferences 
+
+```{r determine spp preferences}
+taxa <- unique(occSilur$genus)
+
+# categorise preferences as binary or nonspecific, based on a given threshold
+pref <- function(env, cutoff){
+  envTbl <- table(env)
+  if (sum(envTbl[1:2])==0) { 'unk' } else {
+    envTbl <- envTbl[1:2]/sum(envTbl[1:2])
+    if (any(envTbl[1:2] > cutoff)) {
+      ifelse(envTbl[[1]] > cutoff, names(envTbl)[1], names(envTbl)[2])
+    } else { 'both' }
+  }
+}
+
+# tag each row as from a taxon with deep, shallow, or nonspecific preference
+occSilur$pref <- NA
+for (tax in taxa){
+ taxBool <- occSilur$genus == tax
+ envOccs <- occSilur$bath[taxBool]
+ occSilur$pref[taxBool] <- pref(envOccs, cutoff = 0.8)
+}
+
+# remove duplicate taxon-site occurrences to save on memory
+# this must be done AFTER establishing preferences:
+# duplicate spatial occurrences could have unique enviro information associated
+occSilur <- uniqify(occSilur, taxVar = 'genus', xy = xyCell)
+```
+
+
+# Spatial standardisation
 
 Regionally subsample each occurrence subset. 
 Don't weight? if not enough pool cells to matter much
 ```{r subsample, error=TRUE}
+deep <- occSilur[ occSilur$pref == 'deep', ]
+prox <- occSilur[ occSilur$pref == 'prox.', ]
+# how many taxa specialise in each?
+length(unique(deep$genus))
+length(unique(prox$genus))
+# cutoff of 0.8 gives 69 deep, 52 shallow
+# cutoff of 0.7 gives 94 deep, 61 shallow
+
+# double-checking: species tagged with unknown preference totally lack env data:
+  # View(occSilur[ occSilur$pref == 'unk', ]) # 19 genera with unk affinity
+
 reps <- 500
 siteQuota <- 15
 siteCol <- 'cell'
 r <- 1000 # radial distance in km
-sampD <- cookies(dat = deep, 
+sampP <- cookies(dat = prox, 
                  xy = xyCell, iter = reps, 
                  nSite = siteQuota, 
                  siteId = siteCol, r = r, 
@@ -145,14 +202,6 @@ sampD <- cookies(dat = deep,
 r <- 1500
 
 set.seed(8)
-sampD <- cookies(dat = deep,
-                 xy = xyCell, iter = reps,
-                 nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
-                 crs = prj, output = 'full')
-
-set.seed(9)
 sampP <- cookies(dat = prox,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
@@ -160,14 +209,18 @@ sampP <- cookies(dat = prox,
                  weight = TRUE,
                  crs = prj, output = 'full')
 
-# TODO also subsample all cells - for taxa with no preference/across depths
+set.seed(9)
+sampD <- cookies(dat = deep,
+                 xy = xyCell, iter = reps,
+                 nSite = siteQuota,
+                 siteId = siteCol, r = r,
+                 weight = TRUE,
+                 crs = prj, output = 'full')
 ```
 # Range size calculation
 
 ```{r fcns for custom range size}
 subsampRange <- function(taxa, df, taxCol, coordCols, crs){
-  # remove multiple occs of a single taxon within a cell, for accurate occ count
-# df <- uniqify(df, taxVar = taxCol, xy = coordCols) # unnecessary, but possibly speedier?
   taxRange <- function(taxon){
     taxBool <- df[, taxCol] == taxon
     if (sum(taxBool) == 0){ # case where taxon unsampled
@@ -194,10 +247,8 @@ library(iterators)
 library(doParallel)
 library(beepr) # for notification when code finishes running
 
-taxa <- unique(occSilur$genus)
-
 # test case:
-# tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus', 
+# tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus',
 #                coordCols = xyCell, crs = prj)
 
 nCore <- detectCores() - 1
@@ -216,8 +267,8 @@ stopImplicitCluster()
 pt2 <- proc.time()
 (pt2-pt1)/60
 beep()
-#       user     system    elapsed 
-# 0.03016667 0.02083333 6.64933333 
+#        user      system     elapsed 
+# 0.018500000 0.002833333 0.867666667 
 ```
 
 ```{r load range size data, include = FALSE}
