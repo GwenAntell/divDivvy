@@ -65,19 +65,25 @@ rPrj <- project(rWorld, prj, res = 200000) # metre units, so ca. 2 degree resolu
 values(rPrj) <- 1:ncell(rPrj)
 
 xyCartes <- c('paleolng','paleolat')
+xyCell   <- c('cellX','cellY')
+
+# collection data
 llColl <- vect(collSilur, geom = xyCartes, crs = 'epsg:4326')
 prjColl <- project(llColl, prj)
-cellMat <- cells(rPrj, prjColl) 
-collSilur$cell <- cellMat[,'cell']
-xyPrj <- xyFromCell(rPrj, collSilur$cell)
-xyCell <- c('cellX','cellY')
-collSilur[, xyCell] <- xyPrj
+collSilur$cell <- cells(rPrj, prjColl)[,'cell']
+collSilur[, xyCell] <- xyFromCell(rPrj, collSilur$cell)
+
+# taxon occurrences
+llOccs <- vect(occSilur, geom = xyCartes, crs = 'epsg:4326')
+prjOccs <- project(llOccs, prj)
+occSilur$cell <- cells(rPrj, prjOccs)[,'cell']
+occSilur[, xyCell] <- xyFromCell(rPrj, occSilur$cell)
 ```
 
 # Classify substrate environment
 
-The purpose of the collections-based dataset is to determine habitat type locally across sites, so spatial subsampling can target sites of each type. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate and contains fields for affiliated geological and environmental information. Therefore, collections are a rich source of environment data that is largely independent of occurrences for an individual clade. To map sites according to deep vs. shallow habitat types, however, the 23 categories in the `environment` field must first be reclassified. The following division of marine environments is copied from scripts of @Antell2020, who adapted the classification of @Nurnberg2013.
-```{r data cleanup}
+To compare ecological parameters between deep and shallow habitat types, the 23 categories in the PBDB `environment` field must first be reclassified to these binary options. The following division of marine environments is copied from scripts of @Antell2020, who adapted the classification of @Nurnberg2013.
+```{r define environments}
 proxTerms <- c("coastal indet.", "delta front", "delta plain",
                "deltaic indet.", "estuary/bay", "foreshore", "interdistributary bay",
                "lagoonal", "lagoonal/restricted shallow subtidal",
@@ -94,34 +100,26 @@ deepTerms <- c("basinal (carbonate)", "basinal (siliceous)",
                "deep subtidal shelf", "offshore", "offshore indet.",
                "offshore shelf", "slope", "submarine fan", "offshore ramp", 
                "basin reef", "slope/ramp reef") 
+```
+
+The most accurate environmental information will be that associated directly with occurrence records. Where available, that is what this script will use. However, there are many instances of blank of indeterminate 'environment' field. In those cases, a way to infer probable environment is to determine the predominant environment in the local grid cell based on the environment recorded with any PBDB collections in that cell. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate - therefore, collections are a rich source of environmental data that is largely independent of occurrences for an individual clade. 
+
+`divvy` provides the `classRast` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. The template raster passed to `classRast` here has the same resolution, extent, and coordinate reference system as above. Here, the function classifies grid cells as proximal or deep-water whenever more than 80% of collections are affiliated with a single environment.
+```{r classify collections enviro, fig.width=5.5, fig.align='center'}
 collSilur$bath <- NA
 collSilur$bath[collSilur$environment %in% proxTerms] <- 'prox.' 
 collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
-```
-
-`divvy` provides the `classRast` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. The template raster passed to `classRast` here has the same resolution, extent, and coordinate reference system as the data.
-```{r plot enviro raster, fig.width=5.5, fig.align='center'}
 bathRast <- classRast(rPrj, dat = collSilur, cutoff = 0.8,
                       xy = xyCell, env = 'bath')
 plot(bathRast, col = c("#1B9E77", "#D95F02", "black"))
 ```
 A plot of the environmental distribution inferred from collection data traces the mid-latitude continents, albeit with gaps. Very few occurrences appear along the coasts of Gondwana, perhaps largely due to the under-sampling and under-reporting of the corresponding modern continents.
 
-```{r split occs by enviro class}
-# rasterise to same grid as collections data
-llOccs <- vect(occSilur, geom = xyCartes, crs = 'epsg:4326')
-prjOccs <- project(llOccs, prj)
-occSilur$cell <- cells(rPrj, prjOccs)[,'cell']
-occSilur[, xyCell] <- xyFromCell(rPrj, occSilur$cell)
-
-# determine environment of each occurrence directly where possible
-# but in some places it won't be clear from associated 'environment' field -
-# in those cases, infer the predominant enviro in the cell based on collections
-
+```{r classify occs enviro}
+# create a new 'bathCell' column to note the collections-inferred environment
 occSilur$bathCell <- occSilur$bath <- extract(bathRast, prjOccs)[['mainClass']]
-# these variables will inherit class as factor - keep it this way
-# for correct ordering of factor levels when inferring preferences below
 
+# refine the enviro where possible based on observations directly linked to occs
 occSilur$bath[occSilur$environment %in% proxTerms] <- 'prox.' 
 occSilur$bath[occSilur$environment %in% deepTerms] <- 'deep'
 ```
@@ -140,71 +138,24 @@ table(occSilur$bath)
 freq(bathRast, bylayer = FALSE)
 ```
 
-# Classify environmental preferences 
-
-```{r determine spp preferences}
-taxa <- unique(occSilur$genus)
-
-# categorise preferences as binary or nonspecific, based on a given threshold
-pref <- function(env, cutoff){
-  envTbl <- table(env)
-  if (sum(envTbl[1:2])==0) { 'unk' } else {
-    envTbl <- envTbl[1:2]/sum(envTbl[1:2])
-    if (any(envTbl[1:2] > cutoff)) {
-      ifelse(envTbl[[1]] > cutoff, names(envTbl)[1], names(envTbl)[2])
-    } else { 'both' }
-  }
-}
-
-# tag each row as from a taxon with deep, shallow, or nonspecific preference
-occSilur$pref <- NA
-cutoff <- 0.7
-for (tax in taxa){
- taxBool <- occSilur$genus == tax
- envOccs <- occSilur$bath[taxBool]
- occSilur$pref[taxBool] <- pref(envOccs, cutoff)
-}
-
-# remove duplicate taxon-site occurrences to save on memory
-# this must be done AFTER establishing preferences:
-# duplicate spatial occurrences could have unique enviro information associated
-occSilur <- uniqify(occSilur, taxVar = 'genus', xy = xyCell)
-```
-
-
 # Spatial standardisation
 
 Regionally subsample each occurrence subset. 
-Don't weight? if not enough pool cells to matter much
 ```{r subsample, error=TRUE}
-deep <- occSilur[ occSilur$pref == 'deep', ]
-prox <- occSilur[ occSilur$pref == 'prox.', ]
-# how many taxa specialise in each?
-taxaD <- unique(deep$genus)
-taxaP <- unique(prox$genus)
-paste(length(taxaD), 'deep;', length(taxaP), 'shallow')
-# cutoff of 0.8 gives 69 deep, 52 shallow
-# cutoff of 0.7 gives 94 deep, 61 shallow
-
-# double-checking: species tagged with unknown preference totally lack env data:
-  # View(occSilur[ occSilur$pref == 'unk', ]) # 19 genera with unk affinity
+deep <- occSilur[occSilur$bath == 'deep', ] |>
+  uniqify(taxVar = 'genus', xy = xyCell)
+prox <- occSilur[occSilur$bath == 'prox.', ]|>
+  uniqify(taxVar = 'genus', xy = xyCell)
+# the divvy uniqify() function removes duplicate taxon-cell combinations
+# for smaller memory use and faster calculations below
 
 reps <- 500
 siteQuota <- 15
 siteCol <- 'cell'
 r <- 1000 # radial distance in km
-sampP <- cookies(dat = prox, 
-                 xy = xyCell, iter = reps, 
-                 nSite = siteQuota, 
-                 siteId = siteCol, r = r, 
-                 weight = TRUE,
-                 crs = prj, output = 'full')
-# we have to expand the subsample bounds to get a good sample of sites!
-# (or settle for fewer sites per subsample)
-r <- 1500
 
 set.seed(8)
-sampP <- cookies(dat = prox,
+sampD <- cookies(dat = deep,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
                  siteId = siteCol, r = r,
@@ -212,133 +163,58 @@ sampP <- cookies(dat = prox,
                  crs = prj, output = 'full')
 
 set.seed(9)
-sampD <- cookies(dat = deep,
+sampP <- cookies(dat = prox,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
                  siteId = siteCol, r = r,
                  weight = TRUE,
                  crs = prj, output = 'full')
 ```
-# Range size calculation
-
-```{r fcns for custom range size}
-subsampRange <- function(taxa, df, taxCol, coordCols, crs){
-  taxRange <- function(taxon){
-    taxBool <- df[, taxCol] == taxon
-    if (sum(taxBool) == 0){ # case where taxon unsampled
-      rep(NA, 7)
-    } else {
-      taxCoords <- df[taxBool, coordCols]
-      rangeSizer(taxCoords, crs)
-    }
-  }
-  taxa <- sort(taxa)
-  rngMat <- sapply(taxa, taxRange)
-  rownames(rngMat) <- c('occurrences', 'centroidX', 'centroidY', 'latRange',
-                        'greatCircDist', 'meanPairDist', 'minSpanTree')
-  rngDf <- t(rngMat) |> data.frame()
-  return(rngDf)
-}
-```
-
-
-```{r parallel range calculations, eval = FALSE}
-# put this in parallel because otherwise very slow
-library(foreach)
-library(iterators)
-library(doParallel)
-library(beepr) # for notification when code finishes running
-
-# test case:
-# tmp <- subsampRange(df = sampD[[1]], taxa = taxa, taxCol = 'genus',
-#                coordCols = xyCell, crs = prj)
-
-nCore <- detectCores() - 1
-pt1 <- proc.time()
-registerDoParallel(nCore)
-
-rngD <- foreach(df = sampD, .inorder = FALSE, .packages = 'divvy') %dopar%
-  subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
-               coordCols = xyCell, crs = prj)
-
-rngP <- foreach(df = sampP, .inorder = FALSE, .packages = 'divvy') %dopar%
-  subsampRange(df = df, taxa = taxa, taxCol = 'genus', 
-               coordCols = xyCell, crs = prj)
-
-stopImplicitCluster()
-pt2 <- proc.time()
-(pt2-pt1)/60
-beep()
-#        user      system     elapsed 
-# 0.018500000 0.002833333 0.867666667 
-```
-
-```{r average range size across subsamples}
-# summarize a focal species' range size data across all subsamples
-taxRange <- function(a, rngL, singletons = FALSE){
-  tmp <- lapply(rngL, function(x){
-    aBool <- row.names(x) == a
-    x[ aBool, ]
-  })
-  aDf <- do.call(rbind, tmp)
-  # option: only consider subsamples where species is sampled multiple times
-  if (singletons == FALSE){
-    singl <- aDf$occ == 1
-    aDf <- aDf[ !singl, ]
-  }
-  colMeans(aDf, na.rm = TRUE)
-}
-
-# test case
-crass <- taxRange('Crassitestella', rngD)
-round(crass, 2)
-
-# apply summary function over all taxa in subsamples of preferred enviro
-rngAvgD <- sapply(taxaD, taxRange, rngL = rngD) |>
-  t() |> data.frame()
-rngAvgP <- sapply(taxaP, taxRange, rngL = rngP) |>
-  t() |> data.frame()
-# sum(! is.na(rngAvgD$occurrences)) # taxon sample size
-# sum(! is.na(rngAvgP$occurrences))
-```
-
 
 # Analysis across environments
 
-Range sizes are equivalent, with or without subsampling!
-```{r}
-unsamp <- subsampRange(taxa, occSilur, 'genus', xyCell, prj)
-unsampD <- unsamp[rownames(unsamp) %in% taxaD,]
-unsampP <- unsamp[rownames(unsamp) %in% taxaP,]
-
-t.test(log(unsampD$meanPairDist), log(unsampP$meanPairDist), alternative='g')
-t.test(sqrt(unsampD$minSpanTree), sqrt(unsampP$minSpanTree), alternative='g') # *
-wilcox.test((unsampD$occurrences), (unsampP$occurrences), alternative='g')
-
-t.test(log(rngAvgD$meanPairDist), log(rngAvgP$meanPairDist), alternative='g')
-t.test(sqrt(rngAvgD$minSpanTree), sqrt(rngAvgP$minSpanTree), alternative='g')
-wilcox.test((rngAvgD$occurrences), (rngAvgP$occurrences), alternative='g')
+Determine what the results would conclude if analysis were based on global data without subsampling.
+```{r non-subsampled results}
+unsampD <- sdsumry(deep, 'genus', xyCell, prj, quotaQ = 0.95, quotaN = 1000, omitDom = TRUE)
+unsampP <- sdsumry(prox, 'genus', xyCell, prj, quotaQ = 0.95, quotaN = 1000, omitDom = TRUE)
+round(unsampD, 2)
+round(unsampP, 2)
+# paste0('deep ', round(unsampD[,'SCOR'], 2), '; proximal ', round(unsampP[,'SCOR'],2))
+# [1] "deep 16.89; proximal 11.06"
+# diversity roughly equivalent (exactly the same with rarefaction, but slightly higher 
+# values in deep: 214 vs 201 total taxa, 192 to 184 taxa point-estimated from SQS)
 ```
-Unedited prior text follows:
 
-Check how well different range metrics correlate with each other and with other (sub)sample summary information, e.g. total number of occurrences or taxa, or MST of subsample sites. Average occupied grid cells has little to no relation with sampling MST (-0.08), but unfortunately the other metrics of range size (mean pairwise distance, taxon MST) strongly do (>0.4).
+Calculate summary variables for each subsample. Check how well various metrics correlate with each other across subsample replicates, e.g. total number of occurrences or taxa, or MST of subsample sites.
 ```{r var corrs}
-# TODO redo this whole chunk
+# warning - very slow!! option to save and read in these data objects instead
+pt1 <- proc.time()
+metaD <- sdsumry(sampD, 'genus', xyCell, prj, quotaQ = 0.6, quotaN = 100, omitDom = TRUE)
+metaP <- sdsumry(sampP, 'genus', xyCell, prj, quotaQ = 0.6, quotaN = 100, omitDom = TRUE)
+pt2 <- proc.time()
+(pt2-pt1)/60
+#       user     system    elapsed 
+# 26.7666667  0.2131667 27.2441667 
+save(metaD, metaP, file = 'DP-subsample-metadata.RData')
+load('DP-subsample-metadata.RData')
 
-metaD <- sdsumry(dat = sampD, taxVar = 'genus', xy = xyCell, crs = prj)
-metaP <- sdsumry(dat = sampP, taxVar = 'genus', xy = xyCell, crs = prj)
-metaD$occAvg <- metaD$nOcc / metaD$nTax
-metaP$occAvg <- metaP$nOcc / metaP$nTax
+# need to check for infinity values of SCOR (when a taxon present in all cells)
+# removing subsamples with these cases means sample-sizes may differ
+# so remove an equal number of cases from deep/prox data sets
+infScor <- is.infinite(metaD$SCOR)
+nInf <- sum(infScor)
+metaD <- metaD[ !infScor, ]
+# pick the same number of rows to remove from the prox dataset
+set.seed(10)
+rows2toss <- sample(1:reps, nInf)
+metaP <- metaP[-rows2toss, ]
 
-# NB looks like this SHOULD average mean pair dist and MST for all species in a subsample, 
-# then add that info to meta df's as 2 new columns with the suffix 'Tax'
-# TODO fix this before any of the lines here or later chunks will work
-metaD <- cbind(metaD, rngD)
-metaP <- cbind(metaP, rngP)
-colnames(rngD) <- colnames(rngP) <- paste0(colnames(rngD), 'Tax') # average taxon range metrics
+# metaD$occAvg <- metaD$nOcc / metaD$nTax
+# metaP$occAvg <- metaP$nOcc / metaP$nTax
   
 # check out correlations between all pairs of variables
-vars <- c('nTax','nOcc','occAvg','minSpanTree','meanPairDistTax','minSpanTreeTax')
+vars <- c('nTax','nOcc','minSpanTree') 
+# vars <- c('nTax', 'SQSdiv', 'CRdiv','evenness')
 cor(metaD[,vars], method = 'kendall')
 cor(metaP[,vars], method = 'kendall')
 ```
@@ -391,25 +267,11 @@ obsVsNull <- function(dat1, dat2, vTest, vSort = NULL, nullN){
   c(null95, 'obsTestStat' = obsTestStat, 'obsQuantl' = testQuantl)
 }
 
-# are shallows more diverse? (H: prox > deep) - yes
-obsVsNull(metaD, metaP, vTest = 'nTax', nullN = 1000) # vSort = 'minSpanTree'
-
-# are ranges broader in the deep? (H: deep > prox) 
-
-# yes, according to occupancy
-obsVsNull(metaP, metaD, vTest = 'occAvg', nullN = 1000)
-
-# no, according to distance-based range metrics
-obsVsNull(metaP, metaD, vTest = 'greatCircDistTax', nullN = 1000)
-obsVsNull(metaP, metaD, vTest = 'meanPairDistTax', nullN = 1000)
-obsVsNull(metaP, metaD, vTest = 'minSpanTreeTax', nullN = 1000)
-
-# can range-vs-enviro differences be explained by systematic differences
-# in sampling between enviros? (H: deep > prox) 
-obsVsNull(metaP, metaD, vTest = 'minSpanTree', nullN = 1000)
+# are shallows more diverse? (H: prox > deep) - only if estimated with SQS
+obsVsNull(metaD, metaP, vTest = 'SCOR', nullN = 1000) 
+obsVsNull(metaD, metaP, vTest = 'nTax', nullN = 1000) 
+obsVsNull(metaD, metaP, vTest = 'SQSdiv', nullN = 1000) 
+obsVsNull(metaD, metaP, vTest = 'CRdiv', nullN = 1000)
 ```
-It turns out that the answer to our question depends on the way we measure range size. If we stick with occupancy, which is independent of site aggregation within subsamples, then one might confidently assert ranges were broader in deep water. If using a distance-based range metric (GCD, MPD, MST), the measurement is correlated with systemic differences in site aggregation between shallow and deep subsamples. Shallow ranges appear larger, but it's unclear if that's only because shallow subsamples tend to have more dispersed sites even within a standard regional radius.
-
-Can occupancy be trusted alone, and/or is there a way to better correct taxon ranges measured with GCD, MPD, and MST?
 
 # References
