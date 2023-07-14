@@ -1,8 +1,8 @@
 Package: divvy
 Title: Spatial Subsampling of Biodiversity Occurrence Data
-Version: 0.1.1.9000
+Version: 0.2.0.9000
 Authors@R: 
-    person("Gwen", "Antell", , "gwenantell@gmail.com", role = c("aut", "cre", "cph"),
+    person("Gawain", "Antell", , "gawainantell@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-1948-6624"))
 Depends: R (>= 4.0)
 Description: Divide taxonomic occurrence data into geographic regions of fair 
