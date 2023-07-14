@@ -1,7 +1,7 @@
 ---
 title: "Environmental and geographic standardisation case study"
-author: "G.T. Antell"
-date: "`r Sys.Date()`"
+author: "G. T. Antell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
 output: rmarkdown::html_vignette
 bibliography: habitat-case-study-refs.bib
 vignette: >
@@ -11,7 +11,10 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  comment = "#>"
+  )
 ```
 
 
@@ -266,7 +269,8 @@ infP <- is.infinite(metaP$SCOR)
 metaP <- metaP[ !infP, ]
 infE <- is.infinite(metaE$SCOR)
 metaE <- metaE[ !infE, ]
-sum(infP); sum(infE)
+sum(infP)
+sum(infE)
 ```
 
 For the permutation hypothesis tests below, it would be ideal for comparison groups to match in sample size. The previous step removed 10 samples from one group, 2 from another, and none from the third--a difference that could be remedied by omitting another 8 and 10 samples from the latter two groups, respectively. Samples could be selected at random. However, one could argue it would unfairly increase the odds of supporting the hypothesis of larger ranges in deep than shallow habitats to randomly omit 10 shallow samples but selectively omit the 10 deep samples where at least one taxon was universally distributed. For a conservative comparison, one could instead omit deep and eurytopic samples with largest values of SCOR.
