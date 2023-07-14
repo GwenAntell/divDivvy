@@ -13,14 +13,15 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.path = ""
   )
 ```
 
 
 ## Goals and limitations of the vignette
 
-This vignette is written to model a realistic project flow for ecological occurrence data, providing example uses of `divvy` functions in `R` code chunks to analyse geographic range size disparities between comparison categories. The data and hypothesis are representative of many real palaeobiology studies, with the hope of serving as a template for comparing ecology between environments, regions, or clades---for instance, investigations about whether diversity was greater in Gondwanaland or Laurasia, or whether biogeographic connectedness was greater within reefal or non-reefal assemblages. 
+This vignette is written to model a realistic project flow for ecological occurrence data, providing example uses of `divvy` functions in `R` code chunks to analyse geographic range size disparities between comparison categories. The data and hypothesis are representative of many real palaeobiology studies, with the hope of serving as a template for comparing ecology between environments, regions, or clades---for instance, investigations about whether diversity was greater in Gondwanaland or Laurasia, or whether biogeographic connectedness was greater within reefal or non-reefal assemblages.
 
 Results herein should not be taken as a conclusive answer to the example research question. For a publication-quality study, ideally one would further vet both taxonomic and environmental assignments in the original public database download, for instance. Similarly, while this vignette illustrates two lines of analysis, additional follow-up inquiries would be prudent to pursue before arguing a definitive palaeoecological interpretation of the results to the research community.
 
@@ -41,7 +42,7 @@ Palaeobiologists often track ecological parameters through time, where, as the m
 
 In the marine realm, one of the most important environmental axes of ecological differentiation is water depth. Diversity, geographic range size, and other aspects of community structure vary along a gradient of near-shore to deep-water environments. Here, we divide this environmental spectrum coarsely into shallow (proximal) vs. deep (distal) marine habitats. 'Shallow' habitats encompass deltaic, (sub)tidal, and shelf margin environments. 'Deep' habitats include continental slope and offshore settings, generally beginning at 140 m [@Duran2018].
 
-The ecological attribute this case study focusses on is geographic range size, a trait with widespread importance. For instance, range size determines extinction risk to a large degree [@Harnik2012; @Saupe2015]. Range size might influence origination propensity as well, although researchers dispute whether this relationship is positive [@Rosenzweig1995; @Maurer2001], negative [@Hansen1980; @Jablonski2003], or unimodal [@Gaston2003; @Allmon2014]. 
+The ecological attribute this case study focusses on is geographic range size, a trait with widespread importance. For instance, range size determines extinction risk to a large degree [@Harnik2012; @Saupe2015]. Range size might influence origination propensity as well, although researchers dispute whether this relationship is positive [@Rosenzweig1995; @Maurer2001], negative [@Hansen1980; @Jablonski2003], or unimodal [@Gaston2003; @Allmon2014].
 
 The environmental niche breadth of a taxon strongly controls its geographic distribution; the maximum attainable extent of a taxon's range size is the extent of occurrence of that taxon's suitable habitat. Two consequences of this relationship are that (1) taxa with broad niches (generalists or eurytopic taxa) are expected to occupy larger ranges than those with narrow niches (specialists or stenotopic taxa), and (2) for environments within a given specialisation, a larger geographic distribution of those habitats permits taxa to occupy larger ranges. Taxa may be more restricted than suitable environmental conditions would predict (realised niche breadth), due to biotic or historic factors, but taxa cannot exceed the bounds set by environmental suitability. Since environmental characteristics are more homogeneous in the cold, dark waters of the deep sea than in the topologic complexity of shallow settings, ecologists have long theorised geographic ranges to be larger for deep-dwelling than shallow-water species [@Coe1946; @McClain2010; @Costello2017]. Most empirical tests of this hypothesis have relied upon modern data, however, with relatively little evidence from periods of Earth history when ocean circulation and continental configuration were entirely unlike those of today.
 
@@ -55,9 +56,9 @@ PBDB downloads of (1) all marine collections and (2) all Brachiopoda occurrences
 
 ```{r imports, message=FALSE}
 # terra and sf have all the necessary helper functions for spatial operations
-library(terra) 
+library(terra)
 library(sf)
-library(divvy) 
+library(divvy)
 data(collSilur)
 data(occSilur)
 ```
@@ -104,27 +105,27 @@ To compare ecological parameters between preferred environments, the 23 categori
 proxTerms <- c("coastal indet.", "delta front", "delta plain",
                "deltaic indet.", "estuary/bay", "foreshore", "interdistributary bay",
                "lagoonal", "lagoonal/restricted shallow subtidal",
-               "marginal marine indet.", "open shallow subtidal", 
-               "fluvial-deltaic indet.", "paralic indet.", 
+               "marginal marine indet.", "open shallow subtidal",
+               "fluvial-deltaic indet.", "paralic indet.",
                "peritidal", "prodelta", "sand shoal",
-               "shallow subtidal indet.", "shoreface", 
+               "shallow subtidal indet.", "shoreface",
                "transition zone/lower shoreface",
                "intrashelf/intraplatform reef", "reef, buildup or bioherm",
-               "perireef or subreef", "platform/shelf-margin reef") 
-deepTerms <- c("basinal (carbonate)", "basinal (siliceous)", 
-               "basinal (siliciclastic)", "deep-water indet.", 
+               "perireef or subreef", "platform/shelf-margin reef")
+deepTerms <- c("basinal (carbonate)", "basinal (siliceous)",
+               "basinal (siliciclastic)", "deep-water indet.",
                "deep subtidal indet.", "deep subtidal ramp",
                "deep subtidal shelf", "offshore", "offshore indet.",
-               "offshore shelf", "slope", "submarine fan", "offshore ramp", 
-               "basin reef", "slope/ramp reef") 
+               "offshore shelf", "slope", "submarine fan", "offshore ramp",
+               "basin reef", "slope/ramp reef")
 ```
 
-The most accurate environmental information will be that associated directly with occurrence records. Where available, that is the information this script will prioritise. However, there are many instances of a blank or indeterminate 'environment' field. In those cases, a way to infer probable environment is to determine the predominant environment in the local grid cell based on the environment recorded from any PBDB collections in that cell. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate---therefore, collections are a rich source of environmental data that is largely independent of occurrences for an individual clade. 
+The most accurate environmental information will be that associated directly with occurrence records. Where available, that is the information this script will prioritise. However, there are many instances of a blank or indeterminate 'environment' field. In those cases, a way to infer probable environment is to determine the predominant environment in the local grid cell based on the environment recorded from any PBDB collections in that cell. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate---therefore, collections are a rich source of environmental data that is largely independent of occurrences for an individual clade.
 
 `divvy` provides the `classRast()` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. In the use below, the function classifies grid cells as proximal or deep-water whenever more than 80% of collections are affiliated with a single environment. The template raster passed to `classRast()` here has the same resolution, extent, and coordinate reference system as applied above to the occurrence data. <a id="world_map"></a>
-```{r classify collections enviro, fig.width=5.5, fig.align='center'}
+```{r classify-collections-enviro, out.width=650, out.height=325, fig.asp=0.5, dpi=300, fig.align='center', fig.cap='Predominant environment recorded in PBDB collections', fig.alt='World map where a mix of grid cells labelled deep, shallow, and indeterminate are scattered around the outline of Gondwanaland and Laurasia. Most of the points fall close to the coastlines and are concentrated around Laurasia.'}
 collSilur$bath <- NA
-collSilur$bath[collSilur$environment %in% proxTerms] <- 'prox' 
+collSilur$bath[collSilur$environment %in% proxTerms] <- 'prox'
 collSilur$bath[collSilur$environment %in% deepTerms] <- 'deep'
 bathRast <- classRast(rPrj, dat = collSilur, cutoff = 0.8,
                       xy = xyCell, env = 'bath')
@@ -138,7 +139,7 @@ It is now possible to infer binary water depth for Brachiopod occurrence records
 occSilur$bathCell <- occSilur$bath <- extract(bathRast, prjOccs)[['mainClass']]
 
 # refine the enviro where possible based on observations directly linked to occs
-occSilur$bath[occSilur$environment %in% proxTerms] <- 'prox' 
+occSilur$bath[occSilur$environment %in% proxTerms] <- 'prox'
 occSilur$bath[occSilur$environment %in% deepTerms] <- 'deep'
 ```
 
@@ -152,7 +153,7 @@ Inspection also reveals the majority of environments inferred from collection da
 ```{r correspondence of coll and occ enviro}
 # what proportion of environments associated with individual records
 # match environmental inferences from nearby collections' data?
-which(occSilur$bath == occSilur$bathCell) |> 
+which(occSilur$bath == occSilur$bathCell) |>
   length()/nrow(occSilur)
 
 # compare number of indeterminate enviro from collections vs above from records
@@ -210,7 +211,7 @@ The 70% threshold used to define taxon affinities leads to approximately equal n
 
 ## Spatially subsample each environment
 
-It is now an appropriate point in the workflow to standardise the spatial coverage of occurrences in each comparison group. `divvy` provides several options of spatial subsampling functions; in the code chunk below, we apply the `cookies()` subsampling routine to the datasets of deep, proximal, and eurytopic taxa. The arguments `reps`, `siteQuota`, and `radius` define the number of subsampling iterations run, the number of localities to include in each subsample, and the maximum radius of each circular subsampling region, respectively. 
+It is now an appropriate point in the workflow to standardise the spatial coverage of occurrences in each comparison group. `divvy` provides several options of spatial subsampling functions; in the code chunk below, we apply the `cookies()` subsampling routine to the datasets of deep, proximal, and eurytopic taxa. The arguments `reps`, `siteQuota`, and `radius` define the number of subsampling iterations run, the number of localities to include in each subsample, and the maximum radius of each circular subsampling region, respectively.
 
 The value of `reps` is set at a number high enough to ensure all possible points are captured in at least one subsample, while keeping the returned object (list of subsampled `data.frame`s) at a manageable size. Increasing the number of `reps` only slightly prolongs the computational time of subsampling but will linearly slow the runtime of range-size calculations on subsamples in the following sections. In Phanerozoic analyses, @Antell2020 performed 500 replicates of circular subsampling per time step, and @Close2017 did 100 (20 replicates from each of 5 regions defined by minimum spanning trees).
 
@@ -251,7 +252,7 @@ For further details of subsampling using `divvy`, including the `clustr()` funct
 
 ## Summed Common Occurrence Rate between environments
 
-We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdsumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdsumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample. 
+We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdsumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdsumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample.
 ```{r calculate subsample SCORs}
 metaD <- sdsumry(sampD, 'genus', xyCell, prj)
 metaP <- sdsumry(sampP, 'genus', xyCell, prj)
@@ -368,11 +369,11 @@ subsampRange <- function(taxa, df, taxCol, coordCols, crs){
 
 # run the function on all subsamples of each comparison set. warning:
 # these are intensive computations so might be slow (minutes of runtime)
-rngD <- lapply(sampD, FUN = subsampRange, taxa = taxa, taxCol = 'genus', 
+rngD <- lapply(sampD, FUN = subsampRange, taxa = taxa, taxCol = 'genus',
                coordCols = xyCell, crs = prj)
-rngP <- lapply(sampP, FUN = subsampRange, taxa = taxa, taxCol = 'genus', 
+rngP <- lapply(sampP, FUN = subsampRange, taxa = taxa, taxCol = 'genus',
                coordCols = xyCell, crs = prj)
-rngE <- lapply(sampE, FUN = subsampRange, taxa = taxa, taxCol = 'genus', 
+rngE <- lapply(sampE, FUN = subsampRange, taxa = taxa, taxCol = 'genus',
                coordCols = xyCell, crs = prj)
 ```
 
@@ -403,7 +404,7 @@ rngAvgE <- sapply(taxaE, taxRange, rngL = rngE) |>
 ```
 There are cases where a taxon is observed only once in a given subsample, which is uninformative for any geographic range measure except raw occurrence counts. The custom argument `singletons = FALSE` omits these cases from consideration for the focal taxon range-size average.
 
-Some taxa are never observed multiple times even with many subsamples. After omitting these taxa, the sample size of genera in each comparison group shrinks to 43 in deep water, 24 in proximal habitats, and 95 occupying a breadth of depths. 
+Some taxa are never observed multiple times even with many subsamples. After omitting these taxa, the sample size of genera in each comparison group shrinks to 43 in deep water, 24 in proximal habitats, and 95 occupying a breadth of depths.
 ```{r omit subsample singletons}
 rngAvgD <- rngAvgD[ complete.cases(rngAvgD), ]
 rngAvgP <- rngAvgP[ complete.cases(rngAvgP), ]
@@ -411,7 +412,7 @@ rngAvgE <- rngAvgE[ complete.cases(rngAvgE), ]
 sapply(list('D' = rngAvgD, 'P' = rngAvgP, 'E' = rngAvgE), nrow)
 ```
 
-The previous section, assessing SCOR as an example of comparing assemblage-based metrics, demonstrated a bootstrapping approach to generate results. As a complementary example, the following chunk uses Frequentist two-sample tests to address each hypothesis. For simplicity, only two measure of geographic range are compared here; the reader could easily substitute any of the other three in the datasets. 
+The previous section, assessing SCOR as an example of comparing assemblage-based metrics, demonstrated a bootstrapping approach to generate results. As a complementary example, the following chunk uses Frequentist two-sample tests to address each hypothesis. For simplicity, only two measure of geographic range are compared here; the reader could easily substitute any of the other three in the datasets.
 
 The occurrence or occupancy measure of range size is count data, so a Wilcoxon (Mann-Whitney) test is appropriate as a nonparametric test. The second range-size metric, summed length of minimum spanning trees, follows a normal distribution after square-root transformation; a student's t-test makes parametric comparisons on it.
 ```{r subsampled frequentist tests}
@@ -427,10 +428,10 @@ t.test(rngAvgE$minSpanTree, rngAvgD$minSpanTree, alternative='g') # eurytopic vs
 t.test(rngAvgE$minSpanTree, rngAvgD$minSpanTree, alternative='g') # eurytopic vs shallow
 ```
 
-The results of per-taxon range size comparisons are less clear than those of assemblage-based SCOR comparisons above. There is no discernible difference in mean range size between deep- and shallow-water species whether measured as occurrence counts or minimum spanning tree distances. However, eurytopic taxa still measure larger than either specialist group, even by conservative thresholds for significance: eurytopic taxa occur in nearly one more grid cell of the 15 in every subsample, and span about 270 km farther in tree length connecting occupied cells. 
+The results of per-taxon range size comparisons are less clear than those of assemblage-based SCOR comparisons above. There is no discernible difference in mean range size between deep- and shallow-water species whether measured as occurrence counts or minimum spanning tree distances. However, eurytopic taxa still measure larger than either specialist group, even by conservative thresholds for significance: eurytopic taxa occur in nearly one more grid cell of the 15 in every subsample, and span about 270 km farther in tree length connecting occupied cells.
 ```{r group average range size}
 vars <- c('occurrences', 'minSpanTree')
-sapply(list('D' = rngAvgD, 'P' = rngAvgP, 'E' = rngAvgE), 
+sapply(list('D' = rngAvgD, 'P' = rngAvgP, 'E' = rngAvgE),
        function(x) apply(x[,vars], 2, mean)
        )
 ```
