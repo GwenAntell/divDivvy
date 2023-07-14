@@ -1,0 +1,141 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = '#>',
+  fig.path = 'man/figures',
+  out.width = '40%'
+)
+```
+
+# divvy
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+<img src='man/figures/divvy_hex_sticker.png' width='300px' align='right'>
+
+Divvy up diversity into geographic regions of fair comparison!
+
+## Overview
+
+An R package offering spatial subsampling functions for biogeography and biodiversity studies, whether analysing fossil or modern taxon occurrence data. Three types of subsampling are available to to standardise the number and maximum spread (dispersion) of sites within a region of specified size:
+
+* `cookies`: Imposes a radial constraint on the spatial bounds of a subsample and standardises area by rarefying the number of localities
+
+* `clustr`: Aggregates sites that are nearest neighbours (connecting them with a minimum spanning tree) to impose a maximum diameter on the spatial bounds of a subsample, and optionally rarefies localities
+
+* `bandit`: Rarefies the number of localities within bands of equal latitude
+
+Additional functions include `uniqify` to subset an occurrence dataset to unique taxon-coordinate combinations, `sdsumry` to calculate basic spatial coverage and diversity metadata for a dataset or its subsamples, `rangeSizer` to calculate five measures of geographic range size, and `classRast` to generate a raster containing the most common environment or trait for point occurrences falling in each grid cell.
+
+## Installation
+
+You can install the development version of divvy from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages('devtools')
+devtools::install_github('GawainAntell/divvy')
+```
+
+There are two vignettes accompanying the package. To build the vignettes while downloading the development version, and then view them as compiled documents, use:
+
+``` r
+devtools::install_github('GawainAntell/divvy', build_vignettes = TRUE)
+browseVignettes('divvy')
+```
+
+## Usage examples
+
+### `bivalves`: Package data
+
+(Palaeo)ecologists often want to inspect basic information about taxon occurrence datasets such as number of occurrences, number of unique localities, general size and position of the study region, and biodiversity. This may be an initial step to become acquainted with the data, or it may be a final step of analysis to estimate ecological variables of interest. Let's load one of the example datasets in with `divvy` to demonstrate some functions that may help analyse it. The occurrences are latitude-longitude point coordinates of Pliocene bivalves from the Paleobiology Database; before proceeding further, let's rasterise these into an equal-area grid, a common starting point for biogeography analysis.
+
+```{r data prep, message=FALSE}
+library(divvy)
+data('bivalves')
+
+# initialise Equal Earth projected coordinates
+library(terra)
+rWorld <- rast()
+prj <- 'EPSG:8857'
+rPrj <- project(rWorld, prj, res = 200000) # 200,000m is approximately 2 degrees
+values(rPrj) <- 1:ncell(rPrj)
+
+# coordinate column names for the current and target coordinate reference system
+xyCartes <- c('paleolng','paleolat')
+xyCell   <- c('cellX','cellY')
+
+# extract cell number and centroid coordinates associated with each occurrence
+llOccs <- vect(bivalves, geom = xyCartes, crs = 'epsg:4326')
+prjOccs <- project(llOccs, prj)
+bivalves$cell <- cells(rPrj, prjOccs)[,'cell']
+bivalves[, xyCell] <- xyFromCell(rPrj, bivalves$cell)
+```
+
+### `uniqify`: Subset to unique occurrences
+
+Now let's examine the data with some `divvy` functions. First, we can apply `uniqify` to leave out any duplicate occurrences of a taxon within a grid cell. This shortens the dataset (and thereby reduces memory use) by more than half. 
+```{r uniqify example}
+nrow(bivalves)
+bivalves <- uniqify(bivalves, taxVar = 'genus', xy = xyCell)
+nrow(bivalves)
+```
+
+### `sdsumry`: Summary spatial and diversity metrics
+
+How many taxa are there? Over how many sites (equal-area grid cells)? How many degrees of latitude do those sites span? The `sdsumry` function returns this and related spatial and diversity metadata.
+```{r sdsumry example}
+sdsumry(bivalves, taxVar = 'genus', xy = xyCell, crs = prj)
+```
+There are just over 3000 unique taxon-site occurrences, including 550 genera from 157 grid cells across 137 degrees latitude. 
+
+### `rangeSizer`: Calculate geographic range size
+
+Maybe we aren't interested in community ecology and instead care about the geographic distribution of focal taxa, such as the mussel *Mytilus* and scallop *Yabepecten*. Provide the coordinates for these two taxa to `divvy`'s `rangeSizer` function:
+```{r rangeSizer example}
+myti <- bivalves[bivalves$genus == 'Mytilus',    xyCell]
+yabe <- bivalves[bivalves$genus == 'Yabepecten', xyCell]
+
+rangeSizer(myti, crs = prj)
+rangeSizer(yabe, crs = prj)
+```
+*Mytilus* is observed in 18 grid cells spread over tens of thousands of kilometers. In contrast, *Yabepecten* occurs in only two localities, 200 km apart at their grid cell centroids.
+
+If we back-transform the two locality's coordinates from Equal Earth projection to familiar latitude-longitude, we can tell *Yabepecten* has been reported only in northern Honshu, Japan (140-141 E longitude, 40-42 N latitude).
+```{r inspect Yabepecten coordinates}
+yabeVect <- vect(yabe, geom = xyCell, crs = prj)
+project(yabeVect, 'epsg:4326')
+```
+
+### `cookies`: Subsample global data into equivalent regions
+
+The `bivalves` dataset spans most of the world's oceans. If we were interested in a question such as how diversity at this Pliocene time step compares against diversity from an earlier interval when geographic sampling coverage was much more limited, we'd have to account for this different data distribution---otherwise, we'd unfairly estimate the well-sampled Pliocene to be far more diverse. Geographic standardisation of both area (acreage or number of sites studied) and dispersion (amount sites are spread apart) allows fair comparisons of ecological variables like richness, whether between time steps, environments, or other comparison groups with heterogeneous spatial coverage. 
+
+`divvy` offers three functions for subsampling (`cookies`, `clustr`, and `bandit`) which differ in how they standardise for dispersion. The easiest form of subsampling to visualise is applying a circular constraint to define the bounds of a subsample region. Within that region, a given number of sites are selected, to standardise area. Here, let's take 10 subsamples of the `bivalves` occurrences, each containing 12 sites within a circular region of 1500km (about the size of Australia.)
+```{r cookies example}
+set.seed(1)
+circLocs <- cookies(dat = bivalves, xy = xyCell, 
+                    iter = 10, nSite = 12, 
+                    siteId = 'cell', r = 1500, 
+                    crs = prj, output = 'full')
+```
+
+Below is a map of one possible subsample (red, with regional constraint drawn around it). Sites not included in the subsample, including one within the regional constraint, are plotted in blue.
+
+<img src='man/figures/bivalves-subsample-map.png' width='600px' align='center'>
+
+An individual subsample (one `data.frame` element of the returned `list` object) contains all occurrences from the subsampled sites. Here's a peek at the first subsample, to show it's just a subset of `bivalves`.
+```{r inspect a subsample}
+str(circLocs[[1]])
+```
+
+Because each subsample has the same information structure as the original dataset, we can analogously calculate summary spatial and diversity data for them using `sdsumry`. Each row of the returned matrix corresponds to one of the ten subsamples. In this small group of replicate subsamples, regional richness ranges from 117 to 194 genera. The number of localities is always 12, as was specified above, and the dispersion of subsamples is always within the upper bound set by the diameter of 3,000km (e.g. maximum great circle distance across any subsample's sites is 2807km).
+```{r sdsumry on subsamples}
+sdsumry(circLocs, taxVar = 'genus', xy = xyCell, crs = prj)
+```
