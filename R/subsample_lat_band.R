@@ -18,7 +18,7 @@
 #' @param dat A \code{data.frame} or \code{matrix} containing the coordinate
 #' columns \code{xy} and any associated variables, e.g. taxon names.
 #' @param xy A vector of two elements, specifying the name or numeric position
-#' of the columns containing longitude and latitude coordinates, respectively.
+#' of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
 #' @param crs Coordinate reference system as a GDAL text string, EPSG code,
 #' or object of class `crs`. Default is latitude-longitude (`EPSG:4326`).
 #' @param bin A numeric value for the width of latitudinal bands, in degrees.
@@ -46,39 +46,51 @@
 #' @export
 #'
 #' @examples
-#' # rasterise bivalve occurrences with Equal Earth projection
+#' # load bivalve occurrences to rasterise
 #' library(terra)
 #' data(bivalves)
-#' r <- rast(resolution = 1, crs = 'EPSG:8857')
-#' oldCoordCols <- c('paleolng', 'paleolat')
-#' newCoordCols <- c('centroidX','centroidY')
-#' cellIds <- cellFromXY(r, bivalves[, oldCoordCols])
-#' bivalves[, newCoordCols] <- xyFromCell(r, cellIds)
+#'
+#' # initialise Equal Earth projected coordinates
+#' rWorld <- rast()
+#' prj <- 'EPSG:8857'
+#' rPrj <- project(rWorld, prj, res = 200000) # 200,000m is approximately 2 degrees
+#'
+#' # coordinate column names for the current and target coordinate reference system
+#' xyCartes <- c('paleolng','paleolat')
+#' xyCell   <- c('centroidX','centroidY')
+#'
+#' # project occurrences and retrieve cell centroids in new coordinate system
+#' llOccs <- vect(bivalves, geom = xyCartes, crs = 'epsg:4326')
+#' prjOccs <- project(llOccs, prj)
+#' cellIds <- cells(rPrj, prjOccs)[,'cell']
+#' bivalves[, xyCell] <- xyFromCell(rPrj, cellIds)
 #'
 #' # subsample 20 equal-area sites within 10-degree bands of absolute latitude
 #' n <- 20
 #' reps <- 100
 #' set.seed(11)
-#' bandAbs <- bandit(dat = bivalves, xy = newCoordCols,
+#' bandAbs <- bandit(dat = bivalves, xy = xyCell,
 #'                   iter = reps, nSite = n, output = 'full',
-#'                   bin = 10, absLat = TRUE
-#'                   )
+#'                   bin = 10, absLat = TRUE,
+#'                   crs = prj
+#' )
 #' head(bandAbs[[1]]) # inspect first subsample
 #' names(bandAbs)[1] # degree interval (absolute value) of first subsample
-#' #> [1] "[0,10)"
+#' #> [1] "[10,20)"
 #' unique(names(bandAbs)) # all intervals containing sufficient data
-#' #> [1] "[0,10)"  "[10,20)" "[20,30)" "[30,40)" "[40,50)"
-#' # note insufficient coverage to subsample above 50 degrees
+#' #> [1] "[10,20)" "[20,30)" "[30,40)" "[40,50)"
+#' # note insufficient coverage to subsample at equator or above 50 degrees
 #'
 #' # subsample 20-deg bands, central band spaning equator, as in Allen et al. (2020)
 #' # (a finer-grain way to divide 180 degrees evenly into an odd number of
 #' # bands would be to set 'bin' = 4)
-#' bandCent <- bandit(dat = bivalves, xy = newCoordCols,
+#' bandCent <- bandit(dat = bivalves, xy = xyCell,
 #'                    iter = reps, nSite = n, output = 'full',
-#'                    bin = 20, centr = TRUE, absLat = FALSE
-#'                    )
+#'                    bin = 20, centr = TRUE, absLat = FALSE,
+#'                    crs = prj
+#' )
 #' unique(names(bandCent)) # all intervals containing sufficient data
-#' #> [1] "[-50,-30)" "[-10,10)"  "[10,30)"   "[30,50)"
+#' #> [1] "[-50,-30)" "[10,30)" "[30,50)"
 #'
 #' @references
 #'

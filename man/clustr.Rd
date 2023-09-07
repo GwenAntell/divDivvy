@@ -20,7 +20,7 @@ clustr(
 columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of the columns containing longitude and latitude coordinates, respectively.}
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.}
 
 \item{iter}{The number of spatial subsamples to return}
 

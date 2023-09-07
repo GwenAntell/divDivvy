@@ -1,4 +1,10 @@
-# divvy version 0.2.0 (development version)
+# divvy (development version)
+
+## Bug fixes
+
+* Fixed CRS mistakes in examples for `bandit` and `classRast` documentation
+
+# version 0.2.0
 
 ## Improvements
 

@@ -54,27 +54,32 @@ Nürnberg and Aberhan (2013) used to classify environmental preferences for taxa
 library(terra)
 # work in Equal Earth projected coordinates
 prj <- 'EPSG:8857'
-# generate point occurrences in Northern Africa
+# generate point occurrences in a small area of Northern Africa
 n <- 100
 set.seed(5)
 x <- runif(n,  0, 30)
 y <- runif(n, 10, 30)
-# create an environmental variable with a latitudinal gradient
-# more habitat type '0' near equator, more '1' northward
+# generate an environmental variable with a latitudinal gradient
+# more habitat type 0 (e.g. rock) near equator, more 1 (e.g. grassland) to north
 env <- rbinom(n, 1, prob = (y-10)/20)
+env[env == 0] <- 'rock'
+env[env == 1] <- 'grass'
+# units for Equal Earth are meters, so if we consider x and y as given in km,
+x <- x * 1000
+y <- y * 1000
 ptsDf <- data.frame(x, y, env)
-# rasterise at 5-degree resolution
-r <- terra::rast(resolution = 5, crs = prj,
-                 xmin = 0, xmax = 30, ymin = 10, ymax = 30)
+# raster for study area at 5-km resolution
+r <- rast(resolution = 5*1000, crs = prj,
+          xmin = 0, xmax = 30000, ymin = 10000, ymax = 30000)
 
-binRast <- classRast(grid = r, dat = ptsDf, xy = c('x','y'),
+binRast <- classRast(grid = r, dat = ptsDf, xy = c('x', 'y'),
                      env = 'env', cutoff = 0.6)
 binRast
 
 # plot environment classification vs. original points
 plot(binRast, col = c('lightgreen','grey60','white'))
-points(ptsDf[env==0,], pch =  1, cex = 1.2) # occurrences of habitat type '0'
-points(ptsDf[env==1,], pch = 16, cex = 1.2) # occurrences of habitat type '1'
+points(ptsDf[env=='rock', ], pch = 16, cex = 1.2) # occurrences of given habitat
+points(ptsDf[env=='grass',], pch =  1, cex = 1.2)
 
 
 }
