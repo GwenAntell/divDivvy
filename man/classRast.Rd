@@ -36,9 +36,19 @@ a raster grid with cell values specifying the majority environment therein.
 \details{
 The \code{cutoff} threshold is an inclusive bound: environmental incidence
 proportions greater than or equal to the \code{cutoff} will assign cell values
-to the majority environmental class. If no single category attains a
-sufficient majority in a cell, the cell value is indeterminate (\code{indet.}).
-Cells lacking environmental occurrences altogether have \code{NA} values.
+to the majority environmental class. For instance, if category A represents
+65\% of occurrences in a cell and \code{cutoff = 0.65}, the returned value for the
+cell will be A. If no single category in a cell meets or exceeds the
+representation necessary to reach the given \code{cutoff}, the value returned
+for the cell is \code{indet.}, indeterminate.
+Cells lacking environmental occurrences altogether return \code{NA} values.
+
+The \code{env} object can contain more than two classes, but in many cases it will
+be less likely for any individual class to attain an absolute majority the
+more finely divided classes are. For example, if there are three classes,
+A, B, and C, with relative proportions of 20\%, 31\%, and 49\%, the cell value
+will be returned as \code{indet.} because no single class can attain a \code{cutoff}
+above 50\%, despite class C having the largest relative representation.
 
 Missing environment values in the point data should be coded as \code{NA},
 not e.g. \code{'unknown'}. \code{classRast} ignores \code{NA} occurrences when tallying
@@ -49,6 +59,12 @@ That is, any grid cell encompassing original point data is non-\code{NA}.
 
 Antell and others (2020) set a \code{cutoff} of 0.8, based on the same threshold
 Nürnberg and Aberhan (2013) used to classify environmental preferences for taxa.
+
+The coordinates associated with points should be given with respect to the
+same coordinate reference system (CRS) of the target raster grid, e.g. both
+given in latitude-longitude, Equal Earth projected coordinates, or other CRS.
+The CRS of a \code{SpatRaster} object can be retrieved with \code{terra} function \code{crs}
+(with the optional but helpful argument \code{describe = TRUE}).
 }
 \examples{
 library(terra)
@@ -77,10 +93,20 @@ binRast <- classRast(grid = r, dat = ptsDf, xy = c('x', 'y'),
 binRast
 
 # plot environment classification vs. original points
-plot(binRast, col = c('lightgreen','grey60','white'))
+plot(binRast, col = c('lightgreen', 'grey60', 'white'))
 points(ptsDf[env=='rock', ], pch = 16, cex = 1.2) # occurrences of given habitat
 points(ptsDf[env=='grass',], pch =  1, cex = 1.2)
 
+# classRast can also accept more than 2 environmental classes:
+
+# add a 3rd environmental class with maximum occurrence in bottom-left grid cell
+newEnv <- data.frame('x' = rep(0,       10),
+                     'y' = rep(10000,   10),
+                     'env' = rep('new', 10))
+ptsDf <- rbind(ptsDf, newEnv)
+binRast <- classRast(grid = r, dat = ptsDf, xy = c('x', 'y'),
+                     env = 'env', cutoff = 0.6)
+plot(binRast, col = c('lightgreen', 'grey60', 'purple', 'white'))
 
 }
 \references{

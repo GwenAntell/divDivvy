@@ -4,6 +4,10 @@
 
 * Fixed CRS mistakes in examples for `bandit` and `classRast` documentation
 
+## Improvements
+
+* Added detail to function help documentation
+
 # version 0.2.0
 
 ## Improvements
