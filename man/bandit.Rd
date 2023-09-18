@@ -12,6 +12,8 @@ bandit(
   bin,
   centr = FALSE,
   absLat = FALSE,
+  maxN = 90,
+  maxS = -90,
   crs = "epsg:4326",
   output = "locs"
 )
@@ -28,14 +30,21 @@ latitudinal band.}
 
 \item{nSite}{The quota of unique locations to include in each subsample.}
 
-\item{bin}{A numeric value for the width of latitudinal bands, in degrees.}
+\item{bin}{A positive numeric value for latitudinal band width, in degrees.}
 
 \item{centr}{Logical: should a bin center on and cover the equator
 (\code{TRUE}) or should the equator mark the boundary between the
-lowest-latitude northern and southern bins (\code{FALSE}, default)?}
+lowest-latitude northern and southern bins (\code{FALSE}, default)?
+Ignored if \code{absLat = TRUE}.}
 
 \item{absLat}{Logical: should only the absolute values of latitude be
 evaluated? If \code{absLat = TRUE}, \code{centr} argument is ignored.}
+
+\item{maxN}{Optional argument to specify the northmost limit for subsampling,
+if less than 90 degrees.}
+
+\item{maxS}{Optional argument to specify the southmost limit for subsampling,
+if not -90 degrees. Should be a negative value if in the southern hemisphere.}
 
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
@@ -60,14 +69,21 @@ within bins of equal latitude
 \code{bandit} rarefies the number of spatial sites within latitudinal ranges
 of specified bin width. (Compare with \code{cookies} and \code{clustr}, which spatially
 subsample to a specified extent without regard to latitudinal position.)
-Cases where it could be appropriate to control for variable locality latitude
+Cases where it could be appropriate to control for latitudinal spread of localities
 include characterisations of latitudinal diversity gradients (e.g. Marcot 2016)
-or comparisons of environmental parameters that covary strongly with
+or comparisons of ecosystem parameters that covary strongly with
 latitude (e.g. diversity in reefal vs. non-reefal habitats). Note that
-the total surface area of the Earth within equal latitudinal increments
+the total surface area of the Earth within equal-latitudinal increments
 decreases from the equator towards the poles; \code{bandit} standardises only
 the amount of sites/area encompassed by each subsample, not the total area
 that could have been available for species to inhabit.
+
+As with all \code{divvy} subsampling functions, sites within a given
+regional/latitudinal subsample are selected without replacement.
+
+To calculate an integer number of degrees into which a given latitudinal
+range divides evenly, the \code{palaeoverse} package (v 1.2.1) provides the
+\code{lat_bins} function with argument \code{fit = TRUE}.
 }
 \examples{
 # load bivalve occurrences to rasterise
@@ -105,9 +121,10 @@ unique(names(bandAbs)) # all intervals containing sufficient data
 #> [1] "[10,20)" "[20,30)" "[30,40)" "[40,50)"
 # note insufficient coverage to subsample at equator or above 50 degrees
 
-# subsample 20-deg bands, central band spaning equator, as in Allen et al. (2020)
-# (a finer-grain way to divide 180 degrees evenly into an odd number of
-# bands would be to set 'bin' = 4)
+# subsample 20-degree bands, where central band spans the equator
+# (-10 S to 10 N latitude), as in Allen et al. (2020)
+# (An alternative, finer-grain way to divide 180 degrees evenly into an
+# odd number of bands would be to set 'bin' = 4.)
 bandCent <- bandit(dat = bivalves, xy = xyCell,
                    iter = reps, nSite = n, output = 'full',
                    bin = 20, centr = TRUE, absLat = FALSE,
