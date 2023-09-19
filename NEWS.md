@@ -3,10 +3,12 @@
 ## Bug fixes
 
 * Fixed CRS mistakes in examples for `bandit` and `classRast` documentation
+* Update URL addresses in vignettes
 
 ## Improvements
 
 * Added detail to function help documentation
+* Added option to specify custom breaks for latitudinal subsamples
 
 # version 0.2.0
 

@@ -1,7 +1,7 @@
 ---
 title: "Environmental and geographic standardisation case study"
 author: "G. T. Antell"
-date: "14 July 2023"
+date: "19 September 2023"
 output: rmarkdown::html_vignette
 bibliography: habitat-case-study-refs.bib
 vignette: >
