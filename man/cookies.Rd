@@ -9,7 +9,6 @@ cookies(
   xy,
   iter,
   nSite,
-  siteId,
   r,
   weight = FALSE,
   crs = "epsg:4326",
@@ -22,17 +21,12 @@ columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
 of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
-Coordinates for the same site ID should be identical, and where IDs are
-raster cells the coordinates are usually expected to be cell centroids.}
+Coordinates for any shared sampling sites should be identical, and where sites
+are raster cells, coordinates are usually expected to be cell centroids.}
 
 \item{iter}{The number of spatial subsamples to return}
 
 \item{nSite}{The quota of unique locations to include in each subsample.}
-
-\item{siteId}{The name or numeric position of the column in \code{dat}
-containing identifiers for unique spatial sites, e.g. raster cell names.
-\code{siteID} must be of same class as \code{xy}, e.g. a numeric column
-position if \code{xy} is given as a vector of numeric column positions.}
 
 \item{r}{Numeric value for the radius (km) defining the circular extent
 of each spatial subsample.}
@@ -45,10 +39,9 @@ subsample region (\code{weight = TRUE}).}
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
 
-\item{output}{Whether returned value should be two columns of subsample
-site coordinates (\code{output = 'locs'}), with row names the
-site IDs, or the subset of rows from \code{dat} associated with those
-coordinates (\code{output = 'full'}).}
+\item{output}{Whether the returned data should be two columns of
+subsample site coordinates (\code{output = 'locs'}) or the subset of rows
+from \code{dat} associated with those coordinates (\code{output = 'full'}).}
 }
 \value{
 A list of length \code{iter}. Each list element is a
@@ -90,11 +83,11 @@ Euclidian space, in units associated with the projection CRS (e.g. metres).
 n <- 10
 x <- seq(from = 140, to = 145, length.out = n)
 y <- seq(from = -20, to = -25, length.out = n)
-pts <- data.frame(x, y, id = 1:n)
+pts <- data.frame(x, y)
 
 # sample 5 sets of 3 occurrences within 200km radius
 cookies(dat = pts, xy = 1:2, iter = 5,
-        nSite = 3, siteId = 3, r = 200)
+        nSite = 3, r = 200)
 
 }
 \references{

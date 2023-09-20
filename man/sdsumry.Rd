@@ -6,8 +6,8 @@
 \usage{
 sdsumry(
   dat,
-  taxVar,
   xy,
+  taxVar,
   crs = "epsg:4326",
   collections = NULL,
   quotaQ = NULL,
@@ -19,14 +19,14 @@ sdsumry(
 \item{dat}{A \code{data.frame} or \code{matrix} containing taxon names,
 coordinates, and any associated variables; or a list of such structures.}
 
+\item{xy}{A vector of two elements, specifying the name or numeric position
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
+Coordinates for any shared sampling sites should be identical, and where sites
+are raster cells, coordinates are usually expected to be cell centroids.}
+
 \item{taxVar}{The name or numeric position of the column containing
 taxonomic identifications. \code{taxVar} must be of same class as \code{xy}, e.g. a
 numeric column position if \code{xy} is given as a vector of numeric positions.}
-
-\item{xy}{A vector of two elements, specifying the name or numeric position
-of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
-Coordinates for the same site ID should be identical, and where IDs are
-raster cells the coordinates are usually expected to be cell centroids.}
 
 \item{crs}{Coordinate reference system as a GDAL text string, EPSG code,
 or object of class \code{crs}. Default is latitude-longitude (\code{EPSG:4326}).}
@@ -99,10 +99,10 @@ sp <- sample(letters[1:20], 50, replace = TRUE, prob = abund)
 obs <- data.frame(x, y, sp)
 
 # minimum sample data returned
-sdsumry(obs, taxVar = 'sp', xy = c('x','y'))
+sdsumry(obs, c('x','y'), 'sp')
 
 # also calculate evenness and coverage-based rarefaction diversity estimates
-sdsumry(obs, taxVar = 'sp', xy = c('x','y'), quotaQ = 0.7)
+sdsumry(obs, xy = c('x','y'), taxVar = 'sp', quotaQ = 0.7)
 
 }
 \references{

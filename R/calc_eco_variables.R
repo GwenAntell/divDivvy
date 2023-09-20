@@ -149,10 +149,10 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' obs <- data.frame(x, y, sp)
 #'
 #' # minimum sample data returned
-#' sdsumry(obs, taxVar = 'sp', xy = c('x','y'))
+#' sdsumry(obs, c('x','y'), 'sp')
 #'
 #' # also calculate evenness and coverage-based rarefaction diversity estimates
-#' sdsumry(obs, taxVar = 'sp', xy = c('x','y'), quotaQ = 0.7)
+#' sdsumry(obs, xy = c('x','y'), taxVar = 'sp', quotaQ = 0.7)
 #'
 #' @seealso [rangeSizer()]
 #'
@@ -166,7 +166,7 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #'
 #' \insertRef{Hsieh2016}{divvy}
 
-sdsumry <- function(dat, taxVar, xy,
+sdsumry <- function(dat, xy, taxVar,
                     crs = 'epsg:4326', collections = NULL,
                     quotaQ = NULL, quotaN = NULL,
                     omitDom = FALSE){

@@ -4,33 +4,29 @@
 \alias{uniqify}
 \title{Find unique (taxon) occurrence records}
 \usage{
-uniqify(dat, taxVar = NULL, xy = NULL, siteId = NULL, na.rm = TRUE)
+uniqify(dat, xy, taxVar = NULL, na.rm = TRUE)
 }
 \arguments{
 \item{dat}{A \code{data.frame} or \code{matrix} containing taxon names,
 coordinates, and any associated variables; or a list of such structures.}
 
+\item{xy}{A vector of two elements, specifying the name or numeric position
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
+Coordinates for any shared sampling sites should be identical, and where sites
+are raster cells, coordinates are usually expected to be cell centroids.}
+
 \item{taxVar}{The name or numeric position of the column containing
 taxonomic identifications. \code{taxVar} must be of same class as \code{xy}, e.g. a
 numeric column position if \code{xy} is given as a vector of numeric positions.}
-
-\item{xy}{A vector of two elements, specifying the name or numeric position
-of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
-Coordinates for the same site ID should be identical, and where IDs are
-raster cells the coordinates are usually expected to be cell centroids.}
-
-\item{siteId}{The name or numeric position of the column containing
-identifiers for unique spatial sites, e.g. raster cell names.
-If \code{siteId} supplied, \code{xy} is ignored. One of \code{siteId} or \code{xy} is required.}
 
 \item{na.rm}{Should records missing spatial information be removed?
 Default is yes.}
 }
 \value{
 An object with the same class and columns as \code{dat}, containing the
-subset of rows representing unique localities (if \code{siteId} supplied),
-coordinates (if \code{xy} supplied), or taxon-site combinations
-(if \code{taxVar} supplied). The first record at each spatial locality is retained,
+subset of rows representing unique coordinates (if only \code{xy} supplied)
+or unique taxon-site combinations (if \code{taxVar} is also supplied).
+The first record at each spatial locality is retained,
 or if \code{taxVar} is specified, the first record of each taxon at a locality.
 }
 \description{
@@ -45,7 +41,7 @@ sp <- c(rep(letters[1:3], 2),
 obs <- data.frame(x, y, sp)
 
 # compare original and unique datasets:
-# rows 4 and 5 removed as duplicates of 1 and 2, respectively
+# rows 4 and 5 removed as duplicates of rows 1 and 2, respectively
 obs
 uniqify(obs, taxVar = 3, xy = 1:2)
 
@@ -55,7 +51,7 @@ uniqify(obs, xy = c('x', 'y'))
 # caution - data outside the taxon and occurrence variables
 # will be lost where associated with duplicate occurrences
 obs$notes <- letters[11:20]
-uniqify(obs, taxVar = 3, xy = 1:2)
+uniqify(obs, 1:2, 3)
 # the notes 'n' and 'o' are absent in the output data
 
 }

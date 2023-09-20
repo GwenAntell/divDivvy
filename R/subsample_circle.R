@@ -1,7 +1,6 @@
 # return vector of cells that lie within buffer radius of given seed
 findPool <- function(seed, dat, siteId, xy, r, nSite, crs = 'epsg:4326'
                      ){
-  dat <- as.data.frame(dat)
   datSf <- sf::st_as_sf(dat, coords = xy, crs = crs)
   seedRow <- which(dat[, siteId] == seed)[1]
   seedpt <- datSf[seedRow, ]
@@ -66,24 +65,12 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #' Euclidian space, in units associated with the projection CRS (e.g. metres).
 #'
 #' @inheritParams clustr
-#' @param siteId The name or numeric position of the column in \code{dat}
-#' containing identifiers for unique spatial sites, e.g. raster cell names.
-#' \code{siteID} must be of same class as \code{xy}, e.g. a numeric column
-#' position if \code{xy} is given as a vector of numeric column positions.
-#' @param xy A vector of two elements, specifying the name or numeric position
-#' of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
-#' Coordinates for the same site ID should be identical, and where IDs are
-#' raster cells the coordinates are usually expected to be cell centroids.
 #' @param r Numeric value for the radius (km) defining the circular extent
 #' of each spatial subsample.
 #' @param weight Whether sites within the subsample radius should be drawn
 #' at random (\code{weight = FALSE}, default) or with probability inversely
 #' proportional to the square of their distance from the centre of the
 #' subsample region (\code{weight = TRUE}).
-#' @param output Whether returned value should be two columns of subsample
-#' site coordinates (\code{output = 'locs'}), with row names the
-#' site IDs, or the subset of rows from \code{dat} associated with those
-#' coordinates (\code{output = 'full'}).
 #'
 #' @returns A list of length \code{iter}. Each list element is a
 #' \code{data.frame} or \code{matrix} (matching the class of \code{dat})
@@ -101,28 +88,28 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #' n <- 10
 #' x <- seq(from = 140, to = 145, length.out = n)
 #' y <- seq(from = -20, to = -25, length.out = n)
-#' pts <- data.frame(x, y, id = 1:n)
+#' pts <- data.frame(x, y)
 #'
 #' # sample 5 sets of 3 occurrences within 200km radius
 #' cookies(dat = pts, xy = 1:2, iter = 5,
-#'         nSite = 3, siteId = 3, r = 200)
+#'         nSite = 3, r = 200)
 #'
 #' @seealso [clustr()]
 #' @export
 #' @references
 #'
 #' \insertRef{Antell2020}{divvy}
-cookies <- function(dat, xy, iter, nSite, siteId, r, weight = FALSE,
+cookies <- function(dat, xy, iter, nSite, r, weight = FALSE,
                     crs = 'epsg:4326', output = 'locs'){
-  locDat <- dat[, c(xy, siteId)]
-  coords <- uniqify(locDat, siteId = siteId)
+  coords <- uniqify(dat, xy) |> as.data.frame()
+  coords$id <- paste0('loc', 1:nrow(coords))
 
-  # this is the rate-limiting step (v slow), but overall
-  # it's most efficient to construct all spatial buffers here at start
+  # this is the rate-limiting step (very slow), but overall
+  # it's more efficient to construct all spatial buffers here at start
   # and not repeat the calculations anywhere later!
-  allPools <- findSeeds(coords, siteId, xy, r, nSite, crs)
+  allPools <- findSeeds(coords, 'id', xy, r, nSite, crs)
   if (length(allPools) < 1){
-    stop('not enough close sites for any sample')
+    stop('not enough close sites for any subsample')
   }
 
   # takes a subsample of sites/cells, w/o replacement, w/in buffered radius
@@ -161,14 +148,19 @@ cookies <- function(dat, xy, iter, nSite, siteId, r, weight = FALSE,
     } else {
       samplIds <- sample(sample(pool), nSite, replace = FALSE)
     } # end site rarefaction
+    coordRows <- match(samplIds, coords$id) # row location of sample pts in coord data
+    coordLocs <- coords[coordRows, xy]
+
     if (output == 'full'){
-      inSamp <- match(dat[, siteId], samplIds)
-      out <- dat[!is.na(inSamp), ]
+      x <- xy[1]
+      y <- xy[2]
+      sampPtStrg <- paste(coordLocs[, x], coordLocs[, y], sep = '/')
+      datPtStrg  <- paste(      dat[, x],       dat[, y], sep = '/')
+      inSamp <- match(datPtStrg, sampPtStrg)
+      out <- dat[ !is.na(inSamp), ]
     } else {
       if (output == 'locs'){
-        inSamp <- match(samplIds, coords[, siteId])
-        out <- coords[inSamp, xy]
-        rownames(out) <- samplIds
+        out <- coordLocs
       } else {
         stop('output argument must be one of c(\'full\', \'locs\')')
       }
