@@ -20,7 +20,9 @@ clustr(
 columns \code{xy} and any associated variables, e.g. taxon names.}
 
 \item{xy}{A vector of two elements, specifying the name or numeric position
-of columns in \code{dat} containing coordinates, e.g. longitude and latitude.}
+of columns in \code{dat} containing coordinates, e.g. longitude and latitude.
+Coordinates for any shared sampling sites should be identical, and where sites
+are raster cells, coordinates are usually expected to be cell centroids.}
 
 \item{iter}{The number of spatial subsamples to return}
 

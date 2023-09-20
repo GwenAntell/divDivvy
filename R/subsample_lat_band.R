@@ -26,6 +26,8 @@
 #' columns `xy` and any associated variables, e.g. taxon names.
 #' @param xy A vector of two elements, specifying the name or numeric position
 #' of columns in `dat` containing coordinates, e.g. longitude and latitude.
+#' Coordinates for any shared sampling sites should be identical, and where sites
+#' are raster cells, coordinates are usually expected to be cell centroids.
 #' @param crs Coordinate reference system as a GDAL text string, EPSG code,
 #' or object of class `crs`. Default is latitude-longitude (`EPSG:4326`).
 #' @param bin A positive numeric value for latitudinal band width, in degrees.
