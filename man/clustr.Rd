@@ -97,7 +97,7 @@ small number of iterations.
 n <- 10
 x <- seq(from = 140, to = 145, length.out = n)
 y <- seq(from = -20, to = -25, length.out = n)
-pts <- data.frame(x, y, id = 1:n)
+pts <- data.frame(x, y)
 
 # sample 5 sets of 4 locations no more than 400km across
 clustr(dat = pts, xy = 1:2, iter = 5,

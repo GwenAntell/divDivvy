@@ -95,7 +95,7 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 #' n <- 10
 #' x <- seq(from = 140, to = 145, length.out = n)
 #' y <- seq(from = -20, to = -25, length.out = n)
-#' pts <- data.frame(x, y, id = 1:n)
+#' pts <- data.frame(x, y)
 #'
 #' # sample 5 sets of 4 locations no more than 400km across
 #' clustr(dat = pts, xy = 1:2, iter = 5,
@@ -119,15 +119,13 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 
 clustr <- function(dat, xy, iter, nSite = NULL, distMax, nMin = 3,
                    crs = 'epsg:4326', output = 'locs'){
-  x <- xy[1]
-  y <- xy[2]
 	coords <- uniqify(dat[,xy], xy = xy)
 	coords <- as.data.frame(coords) # in case data is given as a matrix
 	nLoc <- nrow(coords)
 	if ( !is.null(nSite) ){
-	  if (nLoc < nSite) stop('insufficient points for a subsample')
+	  if (nLoc < nSite) stop('insufficient points for any subsample')
 	} else {
-	  if (nLoc < nMin) stop('insufficient points for a cluster')
+	  if (nLoc < nMin) stop('insufficient points for any subsample')
 	}
 	# great circle spherical distances for lon-lat coordinates (geodetic)
 	# Euclidian distances for Cartesian coordinates
@@ -148,7 +146,7 @@ clustr <- function(dat, xy, iter, nSite = NULL, distMax, nMin = 3,
 	names(posTrees) <- coords$ID
 	availTrees <- Filter(Negate(is.null), posTrees)
 	if (length(availTrees) == 0){
-	  stop('not enough close sites for any sample')
+	  stop('not enough close sites for any subsample')
 	}
 
 	smplTree <- function(){
@@ -165,15 +163,19 @@ clustr <- function(dat, xy, iter, nSite = NULL, distMax, nMin = 3,
 	  if ( !is.null(nSite) ){
 	    seedTr <- sample(sample(seedTr), nSite, replace = FALSE)
 	  }
-	  sampRows <- match(seedTr, coords$ID) # row location of sample pts in coord data
-	  sampPtStrg <- paste(coords[sampRows, x], coords[sampRows, y], sep = '/')
-	  datPtStrg  <- paste(dat[,x], dat[,y], sep = '/')
-	  inSamp <- match(datPtStrg, sampPtStrg)
+	  coordRows <- match(seedTr, coords$ID) # row location of sample pts in coord data
+	  coordLocs <- coords[coordRows, xy]
+
 	  if (output == 'full'){
-	    out <- dat[!is.na(inSamp), ]
+	    x <- xy[1]
+	    y <- xy[2]
+	    sampPtStrg <- paste(coordLocs[, x], coordLocs[, y], sep = '/')
+	    datPtStrg  <- paste(      dat[, x],       dat[, y], sep = '/')
+	    inSamp <- match(datPtStrg, sampPtStrg)
+	    out <- dat[ !is.na(inSamp), ]
 	  } else {
 	    if (output == 'locs'){
-	      out <- coords[sampRows, xy]
+	      out <- coordLocs
 	    } else {
 	      stop('output argument must be one of c(\'full\', \'locs\')')
 	    }
