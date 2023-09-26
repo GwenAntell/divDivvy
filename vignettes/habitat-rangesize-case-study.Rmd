@@ -1,7 +1,7 @@
 ---
 title: "Environmental and geographic standardisation case study"
 author: "G. T. Antell"
-date: "19 September 2023"
+date: "26 September 2023"
 output: rmarkdown::html_vignette
 bibliography: habitat-case-study-refs.bib
 vignette: >
@@ -273,30 +273,26 @@ The values of `siteQuota` and `radius` are a trade-off between increasing the sa
 reps <- 500 # number of subsamples to draw
 siteQuota <- 15 # number of sites (equal-area grid cells) in each subsample
 r <- 1000 # radial distance in km
-siteCol <- 'cell'
 
 set.seed(8)
 sampD <- cookies(dat = deep,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
+                 r = r, weight = TRUE,
                  crs = prj, output = 'full')
 
 set.seed(9)
 sampP <- cookies(dat = prox,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
+                 r = r, weight = TRUE,
                  crs = prj, output = 'full')
 
 set.seed(10)
 sampE <- cookies(dat = eury,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
+                 r = r, weight = TRUE,
                  crs = prj, output = 'full')
 ```
 
@@ -304,12 +300,30 @@ For further details of subsampling using `divvy`, including the `clustr()` funct
 
 ## Summed Common Occurrence Rate between environments
 
-We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdsumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdsumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample.
+We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdSumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdSumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample.
 
 ```r
-metaD <- sdsumry(sampD, 'genus', xyCell, prj)
-metaP <- sdsumry(sampP, 'genus', xyCell, prj)
-metaE <- sdsumry(sampE, 'genus', xyCell, prj)
+metaD <- sdSumry(sampD, 'genus', xyCell, prj)
+```
+
+```
+#> Error in `[.data.frame`(x, coords): undefined columns selected
+```
+
+```r
+metaP <- sdSumry(sampP, 'genus', xyCell, prj)
+```
+
+```
+#> Error in `[.data.frame`(x, coords): undefined columns selected
+```
+
+```r
+metaE <- sdSumry(sampE, 'genus', xyCell, prj)
+```
+
+```
+#> Error in `[.data.frame`(x, coords): undefined columns selected
 ```
 
 SCOR is calculated as the sum across taxa of the log probability of incidence: very widespread taxa make a large contribution to an assemblage SCOR, while rare taxa have relatively little influence. When a taxon is present in *all* sampled locations, its log probability of incidence is infinite. Infinity is nonsensical in an empirical comparison, so let's screen out subsamples with those values (12 in total, of 1500 subsamples).
@@ -320,7 +334,7 @@ is.infinite(metaD$SCOR) |> any() # none in deep habitat dataset
 ```
 
 ```
-#> [1] FALSE
+#> Error in eval(expr, envir, enclos): object 'metaD' not found
 ```
 
 ```r
@@ -328,7 +342,7 @@ is.infinite(metaP$SCOR) |> any() # but some in the prox habitat dataset
 ```
 
 ```
-#> [1] TRUE
+#> Error in eval(expr, envir, enclos): object 'metaP' not found
 ```
 
 ```r
@@ -336,19 +350,47 @@ is.infinite(metaE$SCOR) |> any() # and some in the all-habitats dataset
 ```
 
 ```
-#> [1] TRUE
+#> Error in eval(expr, envir, enclos): object 'metaE' not found
 ```
 
 ```r
 infP <- is.infinite(metaP$SCOR)
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaP' not found
+```
+
+```r
 metaP <- metaP[ !infP, ]
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaP' not found
+```
+
+```r
 infE <- is.infinite(metaE$SCOR)
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaE' not found
+```
+
+```r
 metaE <- metaE[ !infE, ]
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaE' not found
+```
+
+```r
 sum(infP)
 ```
 
 ```
-#> [1] 10
+#> Error in eval(expr, envir, enclos): object 'infP' not found
 ```
 
 ```r
@@ -356,7 +398,7 @@ sum(infE)
 ```
 
 ```
-#> [1] 2
+#> Error in eval(expr, envir, enclos): object 'infE' not found
 ```
 
 For the permutation hypothesis tests below, it would be ideal for comparison groups to match in sample size. The previous step removed 10 samples from one group, 2 from another, and none from the third--a difference that could be remedied by omitting another 8 and 10 samples from the latter two groups, respectively. Samples could be selected at random. However, one could argue it would unfairly increase the odds of supporting the hypothesis of larger ranges in deep than shallow habitats to randomly omit 10 shallow samples but selectively omit the 10 deep samples where at least one taxon was universally distributed. For a conservative comparison, one could instead omit deep and eurytopic samples with largest values of SCOR.
@@ -364,12 +406,58 @@ For the permutation hypothesis tests below, it would be ideal for comparison gro
 ```r
 # make sample size (of subsamples) equal, by removing ones with highest SCOR
 lowestN <- min(nrow(metaD), nrow(metaP), nrow(metaE))
+```
+
+```
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaD' not found
+```
+
+```r
 sortD <- order(metaD$SCOR, decreasing = FALSE)
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaD' not found
+```
+
+```r
 metaD <- metaD[sortD, ]
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaD' not found
+```
+
+```r
 metaD <- metaD[1:lowestN, ]
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaD' not found
+```
+
+```r
 sortE <- order(metaE$SCOR, decreasing = FALSE)
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaE' not found
+```
+
+```r
 metaE <- metaE[sortE, ]
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaE' not found
+```
+
+```r
 metaE <- metaE[1:lowestN, ]
+```
+
+```
+#> Error in eval(expr, envir, enclos): object 'metaE' not found
 ```
 Ultimately, the choice of how to perform this selection step makes little difference to results, because it affects only 2% of subsamples.
 
@@ -405,8 +493,7 @@ diffDist(metaD, metaP, vTest = 'SCOR', nReps = 1000)
 ```
 
 ```
-#>     lwrCI     uprCI      mean 
-#> 0.6122449 0.6592347 0.6349163
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaD' not found
 ```
 
 ```r
@@ -415,8 +502,7 @@ diffDist(metaE, metaD, vTest = 'SCOR', nReps = 1000)
 ```
 
 ```
-#>     lwrCI     uprCI      mean 
-#> 0.9755102 0.9938776 0.9844980
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaE' not found
 ```
 
 ```r
@@ -427,8 +513,7 @@ diffDist(metaE, metaP, vTest = 'SCOR', nReps = 1000)
 ```
 
 ```
-#>     lwrCI     uprCI      mean 
-#> 0.9816327 0.9979592 0.9894939
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaE' not found
 ```
 
 Another way one could compare SCOR between groups is inspecting the distribution of values in each comparison group. Overall, SCOR values from assemblages of deep-water taxa were slightly larger than those of proximal taxa, while eurytopic taxa were substantially more common than either of those groups (SCOR values five times as large). Again, note that because these results are derived from spatially-standardised data, these numbers account for the fact eurytopic taxa as defined here had many more cells of suitable habitat available to occupy.
@@ -438,8 +523,7 @@ summary(metaD$SCOR)
 ```
 
 ```
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   2.183   3.174   3.689   3.700   4.153   5.878
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaD' not found
 ```
 
 ```r
@@ -447,8 +531,7 @@ summary(metaP$SCOR)
 ```
 
 ```
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   1.090   2.028   3.297   3.135   3.942   5.550
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaP' not found
 ```
 
 ```r
@@ -456,46 +539,42 @@ summary(metaE$SCOR)
 ```
 
 ```
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   3.383   9.796  15.042  14.959  19.822  28.715
+#> Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaE' not found
 ```
 
 ### Contrast results from non-subsampled data
 
-What would the results and conclusions have been without going to the effort to spatially-subsample the original occurrence data? For comparison with the average SCOR values listed above, the following code uses the `sdsumry()` function again, this time on the non-standardized full datasets.
+What would the results and conclusions have been without going to the effort to spatially-subsample the original occurrence data? For comparison with the average SCOR values listed above, the following code uses the `sdSumry()` function again, this time on the non-standardized full datasets.
 
 ```r
-sdsumry(deep, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(deep, 'genus', xyCell, prj) |> round(digits = 2)
 ```
 
 ```
-#>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax
-#> [1,]  713  250  -3192759  -1735760   166.32      33567.84       8071.8    130946.3    3   94
-```
-
-```r
-sdsumry(prox, 'genus', xyCell, prj) |> round(digits = 2)
-```
-
-```
-#>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax
-#> [1,]  432  204  -3766508   -957619   166.32      33567.84      7845.98      127435 2.27   61
+#> Error in `[.data.frame`(x, coords): undefined columns selected
 ```
 
 ```r
-sdsumry(eury, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(prox, 'genus', xyCell, prj) |> round(digits = 2)
 ```
 
 ```
-#>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax
-#> [1,] 3462  404  -3134553  -1227392   166.32      33567.84      8321.72    168862.1 9.46  100
+#> Error in `[.data.frame`(x, coords): undefined columns selected
+```
+
+```r
+sdSumry(eury, 'genus', xyCell, prj) |> round(digits = 2)
+```
+
+```
+#> Error in `[.data.frame`(x, coords): undefined columns selected
 ```
 
 In this case the overall direction of results is the same. However, subsampling makes the difference between eurytopic taxa and specialists more pronounced---SCOR values from raw data are estimated about three times larger rather than five times larger compared to shallow- and deep-water taxa.
 
 ## Average taxon range size between environments
 
-The preceding section illustrates a way one might quantitatively compare an ecological variable calculated from assemblage or community data. There are many cases where one would be interested in a taxon-specific variable instead, e.g. body size or other traits. The present section demonstrates a way to extract and summarise focal taxon data from subsampled assemblage data. The trait of interest in this instance is geographic range size, which can be parameterised in a variety of ways. The `rangerSizer()` function in `divvy` returns five measures of geographic distribution, two of which the following code compares between ecological study groups.
+The preceding section illustrates a way one might quantitatively compare an ecological variable calculated from assemblage or community data. There are many cases where one would be interested in a taxon-specific variable instead, e.g. body size or other traits. The present section demonstrates a way to extract and summarise focal taxon data from subsampled assemblage data. The trait of interest in this instance is geographic range size, which can be parameterised in a variety of ways. The `rangeSize()` function in `divvy` returns five measures of geographic distribution, two of which the following code compares between ecological study groups.
 
 
 ```r
@@ -508,7 +587,7 @@ subsampRange <- function(taxa, df, taxCol, coordCols, crs){
       rep(NA, 7)
     } else {
       taxCoords <- df[taxBool, coordCols]
-      rangeSizer(taxCoords, crs)
+      rangeSize(taxCoords, crs)
     }
   }
   taxa <- sort(taxa)

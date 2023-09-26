@@ -2,8 +2,9 @@
 
 ## Breaking changes
 
+* Changed function names `rangeSizer` to `rangeSize` and `sdsumry` to `sdSumry`
 * Removed `siteId` argument from `cookies` and `uniqify`
-* More convenient argument order in `sdsumry` and `uniqify`
+* More convenient argument order in `sdSumry` and `uniqify`
 
 ## Bug fixes
 
@@ -14,6 +15,7 @@
 
 * Added detail to function help documentation
 * Added option to specify custom breaks for latitudinal subsamples
+* Updated mapping section in vignette to avoid calling deprecated spatial packages
 
 # version 0.2.0
 

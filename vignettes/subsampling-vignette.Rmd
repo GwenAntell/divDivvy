@@ -51,11 +51,12 @@ Taxonomic composition turns over from one geographic location to another. The am
 
 ## Prepare Paleobiology Database records
 
-We begin by loading the `divvy` package itself, as well as its geospatial package dependencies `sf`, `units`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction. The `icosa` package offers a convenient way to convert vector coordinate data to equal-area raster cells in the empirical examples that follow.
+We begin by loading the `divvy` package itself, and note its geospatial package dependencies `units`, `sf`, `terra`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction. The `icosa` package offers a convenient way to convert vector coordinate data to equal-area raster cells in the empirical examples that follow.
 ```{r setup, message=FALSE}
 library(divvy) 
-library(sf)
 library(units)
+library(sf)
+library(terra)
 library(vegan)
 library(iNEXT)
 library(icosa)
@@ -92,21 +93,24 @@ if (onEdge > 0){
 # retrieve latitude-longitude coordinates of polygon centroids
 cntrd <- data.frame( pos(hgrid, faceIds) )
 bivalves[, c('cellLng','cellLat')] <- cntrd
-bivalves$face <- faceIds
 ```
 
-We can inspect the spatial distribution of data by converting occurrence points to `spatial features` (a class that contains coordinate system information) and plotting them against a basic world map, supplied here from the `spData` package.
+We can inspect the spatial distribution of data by converting occurrence points to `spatial features` (a class that contains coordinate system information) and plotting them against a basic world map, supplied here from the `rnaturalearth` and `rnaturalearthdata` packages.
 ```{r map data, fig.width=5.5, fig.align='center', message=FALSE}
 occUniq <- unique(cntrd)
 ptsUniq <- st_as_sf(occUniq, coords = c('long','lat'), 
                     crs = 'epsg:4326')
 
-library(spData)
-countries <- world['continent']$geom
-par(mar = rep(1, 4))
-plot(countries, col = 'grey')
-plot(ptsUniq, add = TRUE, 
-     col ='blue', pch = 17)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggplot2) # for plot visualisation
+world <- ne_countries(scale = "medium", returnclass = "sf")
+worldP <- ggplot(data = world) +
+  theme_bw() +
+  geom_sf() +
+  geom_sf(data = ptsUniq, shape = 17, color = 'blue')
+
+plot(worldP)
 ```
 
 ## Subsampling examples
@@ -126,8 +130,9 @@ First let's apply circular subsampling, which both constrains the spatial bounds
 set.seed(7)
 circLocs <- cookies(dat = bivalves,  
                     xy = c('cellLng','cellLat'), 
-                    iter = 500, nSite = 12, 
-                    siteId = 'face', r = 1500, # radial distance in km
+                    iter = 500, 
+                    nSite = 12, 
+                    r = 1500, # radial distance in km
                     weight = TRUE, # probabilistically aggregate subsampling sites
                     output = 'locs')
 length(circLocs)
@@ -135,45 +140,28 @@ circLocs[[1]]
 ```
 Subsamples are returned as elements in a `list` of length `iter`. If `output = "locs"` (default), each element is a `data.frame` of coordinates for the `nSite` sites included in a subsample. This output may be useful as an intermediate object on which to run custom functions that calculate ecological parameters of interest, for instance metrics of spatial connectedness among fossil sites. We can also use location output to explore where the subsample plots on our earlier map.
 ```{r map subsample, fig.width=5.5, fig.align='center'}
-# original plot
-par(mar = rep(1, 4))
-plot(countries, col = 'grey')
-plot(ptsUniq, add = TRUE, 
-     col ='blue', pch = 17)
-
 # over-plot the subsample locations
 smplPts <- st_as_sf(circLocs[[1]], 
                     coords = c('cellLng','cellLat'), 
                     crs = 'epsg:4326')
-plot(smplPts, add = TRUE, 
-     col = 'red', pch = 17)
+worldP +
+  geom_sf(data = smplPts, shape = 17, color = 'red')
 ```
 This subsample happens to fall along the coasts of Central America and northwestern South America. Now note that the first code chunk in this section set the `weight` argument of `cookies` to `TRUE`. Weighting means sites in a subsample are drawn with higher probability the closer they fall to the central occurrence point ('seed cell'). The seed cell is always included in weighted subsamples and is the first point listed in the output. To visibilise the subsample method further, let's extract the seed location and manually plot the circular constraint around it.
-```{r count pool size}
+```{r count pool size, fig.width=5.5, fig.align='center'}
 cntr <- smplPts[1,]
 # distances inferred to be meters based on lat-long coord system
 r <- 1500
 buf <- st_buffer(cntr, dist = r*1000)
-# plot(buf, add = TRUE, border ='red', lwd = 2)
 
 # tally how many fossil localities fall within buffer region
 inBuf <- st_intersects(ptsUniq, buf, sparse = FALSE) 
 sum(inBuf)
-```
-```{r map buffer, fig.width=5.5, fig.align='center', echo = FALSE}
-# original plot
-par(mar = rep(1, 4))
-plot(countries, col = 'grey')
-plot(ptsUniq, add = TRUE, 
-     col ='blue', pch = 17)
 
-# over-plot the subsample locations
-smplPts <- st_as_sf(circLocs[[1]], 
-                    coords = c('cellLng','cellLat'), 
-                    crs = 'epsg:4326')
-plot(smplPts, add = TRUE, 
-     col = 'red', pch = 17)
-plot(buf, add = TRUE, border ='red', lwd = 2)
+# over-plot subsample boundary region and included sites
+worldP +
+  geom_sf(data = smplPts, shape = 17, color = 'red') +
+  geom_sf(data = buf, fill = NA, linewidth = 1, color = 'red')
 ```
 There happen to be 13 sites in the region from which to draw a subsample of 12, and close inspection reveals the excluded blue point at the northeastern periphery. Weighting is designed to cluster subsample sites more compactly than random selection, so it is expected distant points will tend to be left out.
 
@@ -183,8 +171,9 @@ set.seed(7)
 # same parameter values as above except for 'output'
 circOccs <- cookies(dat = bivalves, 
                     xy = c('cellLng','cellLat'), 
-                    iter = 500, nSite = 12, 
-                    siteId = 'face', r = 1500, 
+                    iter = 500, 
+                    nSite = 12, 
+                    r = 1500, 
                     weight = TRUE, 
                     output = 'full')
 head( circOccs[[1]] )
@@ -196,7 +185,7 @@ Data fed into `divvy` subsampling functions can contain duplicate taxon--locatio
 
 The study that developed the circular buffer approach for regional subsampling (implemented with `cookies`) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells [@Antell2020]. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts [@Alroy2008]. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).
 
-In contrast, the study that developed the nearest-neighbour subsampling approach (described below) rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The `divvy` diversity summary function (`sdsumry`) and the most recent study to use nearest-neighbour subsamples [@Close2020] call on the `iNEXT` implementation of coverage-based richness estimation, which ignores the PBDB collections/references data structure. Therefore, users wishing to to rarefy collections and/or references should write custom richness estimation scripts or adapt Alroy's Perl scripts.
+In contrast, the study that developed the nearest-neighbour subsampling approach (described below) rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The `divvy` diversity summary function (`sdSumry`) and the most recent study to use nearest-neighbour subsamples [@Close2020] call on the `iNEXT` implementation of coverage-based richness estimation, which ignores the PBDB collections/references data structure. Therefore, users wishing to to rarefy collections and/or references should write custom richness estimation scripts or adapt Alroy's Perl scripts.
 
 To filter out duplicate taxon--location records from a datset, thereby reducing object size and saving memory, `divvy` offers the `uniqify` function. Omitting duplicate occurrences from `bivalves` removes more than 5,000 rows.
 ```{r unique occs}
@@ -252,13 +241,13 @@ unique(names(bandLocs)) # latitudinal degree intervals subsampled (100x each)
 
 ## Analysis on subsampled data
 
-The `sdsumry` function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. `sdsumry` also tallies taxa in a sample and performs coverage-based rarefaction (if `quotaQ` supplied) and classical rarefaction (if `quotaN` supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by `iNEXT`). 
+The `sdSumry` function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. `sdSumry` also tallies taxa in a sample and performs coverage-based rarefaction (if `quotaQ` supplied) and classical rarefaction (if `quotaN` supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by `iNEXT`). 
 
-When coverage-based rarefaction is applied, the specified coverage level (`quotaQ`) should be appropriate for the estimated coverage of the original sample. Any requested quota greater than empirically available will require diversity extrapolation. `sdsumry` returns the estimated sample coverage whenever coverage-based rarefaction is applied. Also note, homogeneous evenness is an underlying assumption for fair comparisons of coverage-based rarefaction diversity estimates. To help check this assumption, `sdsumry` also returns Pielou's J evenness metric whenever coverage-based rarefaction is applied. Evenness metrics are an area of ongoing theoretical debate and methodological development in ecology, and the use of Pielou's J in `divvy` is a reflection of this metrics' widespread use rather than a singular endorsement. If J estimates vary widely between time intervals or other categories of comparison, it is worth investigating evenness differences in more nuanced detail, for instance by calculating a variety of metrics.
+When coverage-based rarefaction is applied, the specified coverage level (`quotaQ`) should be appropriate for the estimated coverage of the original sample. Any requested quota greater than empirically available will require diversity extrapolation. `sdSumry` returns the estimated sample coverage whenever coverage-based rarefaction is applied. Also note, homogeneous evenness is an underlying assumption for fair comparisons of coverage-based rarefaction diversity estimates. To help check this assumption, `sdSumry` also returns Pielou's J evenness metric whenever coverage-based rarefaction is applied. Evenness metrics are an area of ongoing theoretical debate and methodological development in ecology, and the use of Pielou's J in `divvy` is a reflection of this metrics' widespread use rather than a singular endorsement. If J estimates vary widely between time intervals or other categories of comparison, it is worth investigating evenness differences in more nuanced detail, for instance by calculating a variety of metrics.
 
 Compare the summary data from the original dataset vs. a single spatial subsample. First consider the summary of spatial metrics. The geographic dispersion of `bivalves` occurrences is enormous---this in itself indicates spatial standardisation is necessary to derive meaningful biological metrics. When we compare diversity estimates from the global vs. spatially-subsampled dataset, richness estimates are much higher for the global dataset, regardless of rarefaction method. This result demonstrates the species--area effect described in the introduction: even when rarefaction is applied to the same quota or coverage level, diversity estimates are larger for datasets with greater spatial coverage, because rarefaction fails to control spatial turnover in diversity.
 ```{r meta data}
-unsamp <- sdsumry(dat = bivalves, 
+unsamp <- sdSumry(dat = bivalves, 
                   taxVar = 'genus',
                   collections = 'collection_no',
                   xy = c('cellLng','cellLat'),
@@ -266,7 +255,7 @@ unsamp <- sdsumry(dat = bivalves,
                   omitDom = TRUE)
 unsamp
 
-samp1 <- sdsumry(dat = circOccs[[1]], 
+samp1 <- sdSumry(dat = circOccs[[1]], 
                  taxVar = 'genus',
                  collections = 'collection_no',
                  xy = c('cellLng','cellLat'),
@@ -279,7 +268,7 @@ Iterative spatial subsampling addresses this issue in that it can control for *b
 ```{r summary over subsamples}
 # warning - it's slow to rarefy diversity for hundreds of subsamples!
 # this code chunk skips it for quick demonstration purposes
-sampsMeta <- sdsumry(dat = circOccs, 
+sampsMeta <- sdSumry(dat = circOccs, 
                      taxVar = 'genus',
                      collections = 'collection_no',
                      xy = c('cellLng','cellLat')

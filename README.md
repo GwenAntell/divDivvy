@@ -29,9 +29,9 @@ region of specified size:
   latitude
 
 Additional functions include `uniqify` to subset an occurrence dataset
-to unique taxon-coordinate combinations, `sdsumry` to calculate basic
+to unique taxon-coordinate combinations, `sdSumry` to calculate basic
 spatial coverage and diversity metadata for a dataset or its subsamples,
-`rangeSizer` to calculate five measures of geographic range size, and
+`rangeSize` to calculate five measures of geographic range size, and
 `classRast` to generate a raster containing the most common environment
 or trait for point occurrences falling in each grid cell.
 
@@ -107,14 +107,14 @@ nrow(bivalves)
 #> [1] 3061
 ```
 
-### `sdsumry`: Summary spatial and diversity metrics
+### `sdSumry`: Summary spatial and diversity metrics
 
 How many taxa are there? Over how many sites (equal-area grid cells)?
-How many degrees of latitude do those sites span? The `sdsumry` function
+How many degrees of latitude do those sites span? The `sdSumry` function
 returns this and related spatial and diversity metadata.
 
 ``` r
-sdsumry(bivalves, taxVar = 'genus', xy = xyCell, crs = prj)
+sdSumry(bivalves, taxVar = 'genus', xy = xyCell, crs = prj)
 #>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist
 #> [1,] 3061  157 -434404.9   1647720 137.4159      28917.12     11375.07
 #>      minSpanTree     SCOR nTax
@@ -124,21 +124,21 @@ sdsumry(bivalves, taxVar = 'genus', xy = xyCell, crs = prj)
 There are just over 3000 unique taxon-site occurrences, including 550
 genera from 157 grid cells across 137 degrees latitude.
 
-### `rangeSizer`: Calculate geographic range size
+### `rangeSize`: Calculate geographic range size
 
 Maybe we aren’t interested in community ecology and instead care about
 the geographic distribution of focal taxa, such as the mussel *Mytilus*
 and scallop *Yabepecten*. Provide the coordinates for these two taxa to
-`divvy`’s `rangeSizer` function:
+`divvy`’s `rangeSize` function:
 
 ``` r
 myti <- bivalves[bivalves$genus == 'Mytilus',    xyCell]
 yabe <- bivalves[bivalves$genus == 'Yabepecten', xyCell]
 
-rangeSizer(myti, crs = prj)
+rangeSize(myti, crs = prj)
 #>      nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree
 #> [1,]   18  67152.05   4750551 99.31458      22351.73     10390.96    37303.68
-rangeSizer(yabe, crs = prj)
+rangeSize(yabe, crs = prj)
 #>      nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree
 #> [1,]    2  11856041   5039440 1.808585           200          200         200
 ```
@@ -187,8 +187,7 @@ Australia.)
 ``` r
 set.seed(1)
 circLocs <- cookies(dat = bivalves, xy = xyCell, 
-                    iter = 10, nSite = 12, 
-                    siteId = 'cell', r = 1500, 
+                    iter = 10, nSite = 12, r = 1500, 
                     crs = prj, output = 'full')
 ```
 
@@ -221,7 +220,7 @@ str(circLocs[[1]])
 
 Because each subsample has the same information structure as the
 original dataset, we can analogously calculate summary spatial and
-diversity data for them using `sdsumry`. Each row of the returned matrix
+diversity data for them using `sdSumry`. Each row of the returned matrix
 corresponds to one of the ten subsamples. In this small group of
 replicate subsamples, regional richness ranges from 117 to 194 genera.
 The number of localities is always 12, as was specified above, and the
@@ -230,7 +229,7 @@ diameter of 3,000km (e.g. maximum great circle distance across any
 subsample’s sites is 2807km).
 
 ``` r
-sdsumry(circLocs, taxVar = 'genus', xy = xyCell, crs = prj)
+sdSumry(circLocs, taxVar = 'genus', xy = xyCell, crs = prj)
 #>    nOcc nLoc   centroidX centroidY latRange greatCircDist meanPairDist
 #> 1   338   12  -6977292.4   4156106 10.25901      1612.452     781.6607
 #> 2   265   12 -10160625.7   4072773 17.14477      2039.608     910.6453

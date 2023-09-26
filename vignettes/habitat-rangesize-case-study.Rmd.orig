@@ -221,30 +221,26 @@ The values of `siteQuota` and `radius` are a trade-off between increasing the sa
 reps <- 500 # number of subsamples to draw
 siteQuota <- 15 # number of sites (equal-area grid cells) in each subsample
 r <- 1000 # radial distance in km
-siteCol <- 'cell'
 
 set.seed(8)
 sampD <- cookies(dat = deep,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
+                 r = r, weight = TRUE,
                  crs = prj, output = 'full')
 
 set.seed(9)
 sampP <- cookies(dat = prox,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
+                 r = r, weight = TRUE,
                  crs = prj, output = 'full')
 
 set.seed(10)
 sampE <- cookies(dat = eury,
                  xy = xyCell, iter = reps,
                  nSite = siteQuota,
-                 siteId = siteCol, r = r,
-                 weight = TRUE,
+                 r = r, weight = TRUE,
                  crs = prj, output = 'full')
 ```
 
@@ -252,11 +248,11 @@ For further details of subsampling using `divvy`, including the `clustr()` funct
 
 ## Summed Common Occurrence Rate between environments
 
-We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdsumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdsumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample.
+We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdSumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdSumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample.
 ```{r calculate subsample SCORs}
-metaD <- sdsumry(sampD, 'genus', xyCell, prj)
-metaP <- sdsumry(sampP, 'genus', xyCell, prj)
-metaE <- sdsumry(sampE, 'genus', xyCell, prj)
+metaD <- sdSumry(sampD, 'genus', xyCell, prj)
+metaP <- sdSumry(sampP, 'genus', xyCell, prj)
+metaE <- sdSumry(sampE, 'genus', xyCell, prj)
 ```
 
 SCOR is calculated as the sum across taxa of the log probability of incidence: very widespread taxa make a large contribution to an assemblage SCOR, while rare taxa have relatively little influence. When a taxon is present in *all* sampled locations, its log probability of incidence is infinite. Infinity is nonsensical in an empirical comparison, so let's screen out subsamples with those values (12 in total, of 1500 subsamples).
@@ -333,18 +329,18 @@ summary(metaE$SCOR)
 
 ### Contrast results from non-subsampled data
 
-What would the results and conclusions have been without going to the effort to spatially-subsample the original occurrence data? For comparison with the average SCOR values listed above, the following code uses the `sdsumry()` function again, this time on the non-standardized full datasets.
+What would the results and conclusions have been without going to the effort to spatially-subsample the original occurrence data? For comparison with the average SCOR values listed above, the following code uses the `sdSumry()` function again, this time on the non-standardized full datasets.
 ```{r calculate global SCORs}
-sdsumry(deep, 'genus', xyCell, prj) |> round(digits = 2)
-sdsumry(prox, 'genus', xyCell, prj) |> round(digits = 2)
-sdsumry(eury, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(deep, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(prox, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(eury, 'genus', xyCell, prj) |> round(digits = 2)
 ```
 
 In this case the overall direction of results is the same. However, subsampling makes the difference between eurytopic taxa and specialists more pronounced---SCOR values from raw data are estimated about three times larger rather than five times larger compared to shallow- and deep-water taxa.
 
 ## Average taxon range size between environments
 
-The preceding section illustrates a way one might quantitatively compare an ecological variable calculated from assemblage or community data. There are many cases where one would be interested in a taxon-specific variable instead, e.g. body size or other traits. The present section demonstrates a way to extract and summarise focal taxon data from subsampled assemblage data. The trait of interest in this instance is geographic range size, which can be parameterised in a variety of ways. The `rangerSizer()` function in `divvy` returns five measures of geographic distribution, two of which the following code compares between ecological study groups.
+The preceding section illustrates a way one might quantitatively compare an ecological variable calculated from assemblage or community data. There are many cases where one would be interested in a taxon-specific variable instead, e.g. body size or other traits. The present section demonstrates a way to extract and summarise focal taxon data from subsampled assemblage data. The trait of interest in this instance is geographic range size, which can be parameterised in a variety of ways. The `rangeSize()` function in `divvy` returns five measures of geographic distribution, two of which the following code compares between ecological study groups.
 
 ```{r calculate per-taxon range size in subsamples}
 # custom function to find all occurrences of focal taxon in a subsample
@@ -356,7 +352,7 @@ subsampRange <- function(taxa, df, taxCol, coordCols, crs){
       rep(NA, 7)
     } else {
       taxCoords <- df[taxBool, coordCols]
-      rangeSizer(taxCoords, crs)
+      rangeSize(taxCoords, crs)
     }
   }
   taxa <- sort(taxa)
