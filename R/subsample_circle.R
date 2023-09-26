@@ -131,13 +131,13 @@ cookies <- function(dat, xy, iter, nSite, r, weight = FALSE,
       # remove seed from probabilistic sampling - include it manually
       # (otherwise inverse distance will divide by zero)
       pool <- pool[ !pool == seed]
-      poolBool <- coords[,siteId] %in% pool
+      poolBool <- coords[, 'id'] %in% pool
       poolPts <- datSf[poolBool,]
 
       # squared inverse weight because inverse alone is too weak an effect
       # great circle spherical distances for lon-lat coordinates (geodetic)
       # Euclidian distances for Cartesian coordinates
-      seedRow <- which(coords[, siteId] == seed)[1]
+      seedRow <- which(coords[, 'id'] == seed)[1]
       seedPt <- datSf[seedRow,]
       gcdists <- sf::st_distance(poolPts, seedPt)
       wts <- sapply(gcdists, function(x) x^(-2))
