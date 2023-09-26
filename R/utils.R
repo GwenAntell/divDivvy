@@ -2,7 +2,7 @@
 #'
 #' Subset a dataset to unique spatial localities or locality-taxon combinations.
 #'
-#' @inheritParams sdsumry
+#' @inheritParams sdSumry
 #' @param na.rm Should records missing spatial information be removed?
 #' Default is yes.
 #'

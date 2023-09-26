@@ -28,11 +28,11 @@
 #' y <- rnorm(20,  44.4280, 1)
 #' pts <- cbind(x,y)
 #'
-#' rangeSizer(pts)
+#' rangeSize(pts)
 #'
 #' @export
 
-rangeSizer <- function(coords, crs = 'epsg:4326'){
+rangeSize <- function(coords, crs = 'epsg:4326'){
   coords <- unique(coords)
   if ( !isa(coords, 'data.frame') ){
     coords <- as.data.frame(coords)
@@ -84,7 +84,7 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' Summarise the geographic scope and position of occurrence data, and
 #' optionally estimate diversity and evenness
 #'
-#' \code{sdsumry} compiles metadata about a sample or list of samples,
+#' \code{sdSumry} compiles metadata about a sample or list of samples,
 #' before or after spatial subsampling. The function counts the number
 #' of collections (if requested), taxon presences (excluding repeat incidences
 #' of a taxon at a given site), and unique spatial sites;
@@ -107,11 +107,11 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' Very widespread taxa make a large contribution to an assemblage SCOR,
 #' while rare taxa have relatively little influence.
 #'
-#' If \code{quotaQ} is supplied, \code{sdsumry} rarefies richness at the
+#' If \code{quotaQ} is supplied, \code{sdSumry} rarefies richness at the
 #' given coverage value and returns the point estimate of richness (Hill number 0)
 #' and its 95% confidence interval, as well as estimates of evenness (Pielou's J)
 #' and frequency-distribution sample coverage (given by `iNEXT$DataInfo`).
-#' If \code{quotaN} is supplied, \code{sdsumry} rarefies richness to the given
+#' If \code{quotaN} is supplied, \code{sdSumry} rarefies richness to the given
 #' number of occurrence counts and returns the point estimate of richness
 #' and its 95% confidence interval.
 #' Coverage-based and classical rarefaction are both calculated with
@@ -149,12 +149,12 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #' obs <- data.frame(x, y, sp)
 #'
 #' # minimum sample data returned
-#' sdsumry(obs, c('x','y'), 'sp')
+#' sdSumry(obs, c('x','y'), 'sp')
 #'
 #' # also calculate evenness and coverage-based rarefaction diversity estimates
-#' sdsumry(obs, xy = c('x','y'), taxVar = 'sp', quotaQ = 0.7)
+#' sdSumry(obs, xy = c('x','y'), taxVar = 'sp', quotaQ = 0.7)
 #'
-#' @seealso [rangeSizer()]
+#' @seealso [rangeSize()]
 #'
 #' @export
 #'
@@ -166,7 +166,7 @@ rangeSizer <- function(coords, crs = 'epsg:4326'){
 #'
 #' \insertRef{Hsieh2016}{divvy}
 
-sdsumry <- function(dat, xy, taxVar,
+sdSumry <- function(dat, xy, taxVar,
                     crs = 'epsg:4326', collections = NULL,
                     quotaQ = NULL, quotaN = NULL,
                     omitDom = FALSE){
@@ -186,7 +186,7 @@ sdsumry <- function(dat, xy, taxVar,
     # run range size fcn as if all occs were from a single taxon
     locs <- unique( df[,xy] )
     nSite <- nrow(locs)
-    spatSumry <- rangeSizer(coords = locs, crs = crs)
+    spatSumry <- rangeSize(coords = locs, crs = crs)
     out <- cbind(out, 'nOcc' = nOcc, spatSumry)
 
     # SCOR summed common occurrence rate (Hannisdal 2012)
