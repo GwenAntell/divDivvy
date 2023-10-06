@@ -2,8 +2,14 @@
 #'
 #' Subset a dataset to unique spatial localities or locality-taxon combinations.
 #'
+#' The `na.rm` argument applies to coordinate values and, if `taxVar`
+#' is supplied, to taxon values. If `na.rm = FALSE`, any `NA` values will be
+#' retained and treated as their own value. Note that `divvy` ignores any rows
+#' with missing coordinates for the subsampling functions `cookies`, `clustr`,
+#' and `bandit`.
+#'
 #' @inheritParams sdSumry
-#' @param na.rm Should records missing spatial information be removed?
+#' @param na.rm Should records missing information be removed?
 #' Default is yes.
 #'
 #' @return An object with the same class and columns as `dat`, containing the

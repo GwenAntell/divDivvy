@@ -19,7 +19,7 @@ are raster cells, coordinates are usually expected to be cell centroids.}
 taxonomic identifications. \code{taxVar} must be of same class as \code{xy}, e.g. a
 numeric column position if \code{xy} is given as a vector of numeric positions.}
 
-\item{na.rm}{Should records missing spatial information be removed?
+\item{na.rm}{Should records missing information be removed?
 Default is yes.}
 }
 \value{
@@ -31,6 +31,13 @@ or if \code{taxVar} is specified, the first record of each taxon at a locality.
 }
 \description{
 Subset a dataset to unique spatial localities or locality-taxon combinations.
+}
+\details{
+The \code{na.rm} argument applies to coordinate values and, if \code{taxVar}
+is supplied, to taxon values. If \code{na.rm = FALSE}, any \code{NA} values will be
+retained and treated as their own value. Note that \code{divvy} ignores any rows
+with missing coordinates for the subsampling functions \code{cookies}, \code{clustr},
+and \code{bandit}.
 }
 \examples{
 # generate occurrence data
