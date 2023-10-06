@@ -24,7 +24,9 @@ LazyData: true
 Suggests: 
     knitr,
     icosa,
-    spData,
+    rnaturalearth,
+    rnaturalearthdata,
+    ggplot2,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
