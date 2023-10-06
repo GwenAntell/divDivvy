@@ -16,6 +16,7 @@
 * Added detail to function help documentation
 * Added option to specify custom breaks for latitudinal subsamples
 * Updated mapping section in vignette to avoid calling deprecated spatial packages
+* Created unit tests
 
 # version 0.2.0
 
