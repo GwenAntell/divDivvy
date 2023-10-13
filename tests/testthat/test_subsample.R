@@ -1,5 +1,3 @@
-# TODO - wrapping around antemeridian
-
 # generate occurrences: 10 lat-long points in modern Australia
 n <- 10
 x <- seq(from = 140, to = 145, length.out = n)
@@ -12,7 +10,7 @@ test_that('fails if points too sparse for any subsample', {
   expect_error(clustr(dat = pts, xy = 1:2, iter = 5, nSite = n+1, distMax = 400),
                'insufficient points for any subsample')
   expect_error(bandit(dat = pts, xy = 1:2, bin = 30, nSite = n+1),
-               'not enough close sites for any sample')
+               'not enough close sites for any subsample')
 })
 
 test_that('NA coordinates are removed/ignored', {
@@ -22,7 +20,7 @@ test_that('NA coordinates are removed/ignored', {
   expect_error(clustr(dat = pts, xy = 1:2, iter = 5, nSite = n, distMax = 400),
                'insufficient points for any subsample')
   expect_error(bandit(dat = pts, xy = 1:2, bin = 30, nSite = n),
-               'not enough close sites for any sample')
+               'not enough close sites for any subsample')
 })
 
 test_that('multiple input classes ok', {
@@ -55,27 +53,22 @@ xyCell   <- c('centroidX','centroidY')
 llOccs <- terra::vect(bivalves, geom = xyCartes, crs = 'epsg:4326')
 prjOccs <- terra::project(llOccs, prj)
 cellIds <- terra::cells(rPrj, prjOccs)[,'cell']
-bivalves[, xyCell] <- terra::xyFromCell(rPrj, cellIds)
+bivAlt <- bivalves
+bivAlt[, xyCell] <- terra::xyFromCell(rPrj, cellIds)
 
 test_that('projected coords ok', {
-  expect_no_condition(cookies(dat = bivalves, xy = xyCell, crs = prj,
+  expect_no_condition(cookies(dat = bivAlt, xy = xyCell, crs = prj,
                               iter = 5, nSite = n, r = 1500))
-  expect_no_condition(clustr( dat = bivalves, xy = xyCell, crs = prj,
+  expect_no_condition(clustr( dat = bivAlt, xy = xyCell, crs = prj,
                               iter = 5, nSite = n, distMax = 3000))
-  expect_no_condition(bandit( dat = bivalves, xy = xyCell, crs = prj,
+  expect_no_condition(bandit( dat = bivAlt, xy = xyCell, crs = prj,
                               iter = 5, nSite = n, bin = 10, absLat = TRUE))
 })
 
-# TODO make bandit and clustr return error/warning!
 test_that('coord projection flags pts outside lat-long bounds', {
-  offPt <- xyFromCell(rPrj, 1)
+  offPt <- terra::xyFromCell(rPrj, 1)
   offPt[, 'y'] <- offPt[, 'y'] + 5000000 # shift north of north pole
-  bivalves[1, xyCell] <- offPt # insert faulty coordinates into data
-  expect_error(cookies(dat = bivalves, xy = xyCell, crs = prj,
+  bivAlt[1, xyCell] <- offPt # insert faulty coordinates into data
+  expect_error(cookies(dat = bivAlt, xy = xyCell, crs = prj,
                        iter = 5, nSite = n, r = 1500))
-  # expect_warning()
-  # clustr( dat = bivalves, xy = xyCell, crs = prj,
-  #         iter = 5, nSite = n, distMax = 3000)
-  #  bandit(dat = bivalves, xy = xyCell, crs = prj,
-  #         iter = 10, nSite = 20, bin = 10)
 })

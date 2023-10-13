@@ -169,7 +169,7 @@ bandit <- function(dat, xy, iter, nSite, bin,
   bTally <- table(coords[,'band']) |> as.numeric()
   bnds <- bnds[ bTally >= nSite ]
   if (length(bnds) < 1){
-    stop('not enough close sites for any sample')
+    stop('not enough close sites for any subsample')
   }
   seeds <- sapply(bnds, replicate, n = iter)
 
