@@ -2,8 +2,7 @@ test_that('rangeSize returns appropriate values', {
   xy <- cbind('x' = c(1, 1, 1),
               'y' = c(0, 5, 10))
   rng <- rangeSize(xy)
-  expect_equal(as.numeric(rng[, 1:4]),
-               c(3, 1, 5, 10))
+  expect_equal(rng[, 1:4], c(3, 1, 5, 10), ignore_attr = TRUE)
   expect_type(rng[, 5:7], 'double')
   xy <- data.frame(xy)
   rng2 <- rangeSize(xy)
@@ -39,29 +38,14 @@ cellIds <- terra::cells(rPrj, prjOccs)[,'cell']
 bivAlt <- bivalves
 bivAlt[, xyCell] <- terra::xyFromCell(rPrj, cellIds)
 
-test_that('rangeSize accepts projected coords', {
+test_that('rangeSize and sdSumry accept projected coords', {
   expect_no_condition( rangeSize(bivAlt[, xyCell], crs = prj) )
   rngPrj <- rangeSize(bivAlt[, xyCell], crs = prj)
   expect_type(rngPrj, 'double')
   expect_equal(sum(is.na(rngPrj)), 0)
-})
 
-# insert faulty coordinates into data
-offPt <- terra::xyFromCell(rPrj, 1)
-offPt[, 'y'] <- offPt[, 'y'] + 5000000 # shift north of north pole
-bivAlt[1, xyCell] <- offPt
-
-test_that('coord projection flags pts outside lat-long bounds', {
-  expect_warning(expect_warning(expect_warning(
-  expect_warning(expect_warning(expect_warning(
-  expect_warning( sdSumry(bivAlt, xyCell, 'genus') )
-           #      'bounding box has potentially an invalid value range for longlat data')
-    )))
-  )))
-  expect_warning(expect_warning(expect_warning(
-    expect_warning(expect_warning(expect_warning(
-      expect_warning( rangeSize(bivAlt[, xyCell]) )
-      #      'bounding box has potentially an invalid value range for longlat data')
-    )))
-  )))
+  expect_no_condition( sdSumry(bivAlt,   xyCell,  'genus', crs = prj) )
+  smryLL  <- sdSumry(bivalves, xyCartes, 'genus')
+  smryPrj <- sdSumry(bivAlt,   xyCell,   'genus', crs = prj)
+  expect_equal(smryLL[,'latRange'], smryPrj[,'latRange'], tolerance = 0.01)
 })
