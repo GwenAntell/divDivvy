@@ -5,3 +5,5 @@
 ^README\.Rmd$
 ^vignettes/habitat-rangesize-case-study\.Rmd\.orig$
 ^vignettes/precompile\.R$
+^revdep$
+^\.github$
