@@ -6,6 +6,7 @@
 <!-- badges: start -->
 
 [![test-coverage](https://github.com/GawainAntell/divvy/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/GawainAntell/divvy/actions/workflows/test-coverage.yaml)
+[![codecov](https://codecov.io/gh/GawainAntell/divvy/graph/badge.svg?token=SEJWHTUBB1)](https://codecov.io/gh/GawainAntell/divvy)
 <!-- badges: end -->
 
 <img src='man/figures/divvy_hex_sticker.png' width='300px' align='right'>
