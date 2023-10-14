@@ -1,6 +1,3 @@
-# GSA note files
-.docx
-
 # History files
 .Rhistory
 .Rapp.history
@@ -22,8 +19,9 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
-# produced vignettes
+# Knitted vignettes
 vignettes/*.html
 vignettes/*.pdf
 
@@ -42,3 +40,6 @@ vignettes/*.pdf
 .Renviron
 .Rproj.user
 inst/doc
+
+# Mac files
+**/.DS_Store
