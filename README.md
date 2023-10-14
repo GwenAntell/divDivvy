@@ -4,6 +4,8 @@
 # divvy
 
 <!-- badges: start -->
+
+[![test-coverage](https://github.com/GawainAntell/divvy/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/GawainAntell/divvy/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
 <img src='man/figures/divvy_hex_sticker.png' width='300px' align='right'>
