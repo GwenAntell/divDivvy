@@ -7,3 +7,6 @@
 ^vignettes/precompile\.R$
 ^revdep$
 ^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
