@@ -18,6 +18,9 @@ navbar:
         href: articles/subsampling-vignette.html
       - text: Range size case study
         href: articles/habitat-rangesize-case-study.html
+      - text: Conceptual walkthrough
+        href: articles/subsampling-concept-walkthrough.html
+
 home:
   sidebar:
     structure: [citation, authors, dev, license, links]
