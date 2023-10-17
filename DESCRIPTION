@@ -23,7 +23,6 @@ RoxygenNote: 7.2.3
 LazyData: true
 Suggests: 
     knitr,
-    icosa,
     rnaturalearth,
     rnaturalearthdata,
     ggplot2,
