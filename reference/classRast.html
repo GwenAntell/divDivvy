@@ -8,7 +8,7 @@ a raster grid with cell values specifying the majority environment therein."><!-
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
     
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
+    <nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-primary"><div class="container">
     
     <a class="navbar-brand me-2" href="../index.html">divvy</a>
 
@@ -20,23 +20,29 @@ a raster grid with cell values specifying the majority environment therein."><!-
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item">
-  <a class="nav-link" href="../reference/index.html">Reference</a>
-</li>
-<li class="nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/habitat-rangesize-case-study.html">Environmental and geographic standardisation case study</a>
-    <a class="dropdown-item" href="../articles/subsampling-vignette.html">Spatial Subsampling Vignette</a>
+      <ul class="navbar-nav me-auto"><li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-getting-started">Getting started</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-getting-started">
+    <a class="dropdown-item" href="../articles/subsampling-vignette.html">Subsampling tutorial</a>
+    <a class="dropdown-item" href="../articles/habitat-rangesize-case-study.html">Range size case study</a>
   </div>
 </li>
+<li class="active nav-item">
+  <a class="nav-link" href="../reference/index.html">Reference</a>
+</li>
 <li class="nav-item">
-  <a class="nav-link" href="../news/index.html">Changelog</a>
+  <a class="nav-link" href="../news/index.html">News</a>
 </li>
       </ul><form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off"></form>
 
-      <ul class="navbar-nav"></ul></div>
+      <ul class="navbar-nav"><li class="nav-item">
+  <a class="external-link nav-link" href="https://github.com/GawainAntell/divvy/" aria-label="github">
+    <span class="fab fa fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul></div>
 
     
   </div>
@@ -44,7 +50,7 @@ a raster grid with cell values specifying the majority environment therein."><!-
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Convert point environment data to a raster of majority-environment classes</h1>
-      
+      <small class="dont-index">Source: <a href="https://github.com/GawainAntell/divvy/blob/HEAD/R/calc_enviro_variables.R" class="external-link"><code>R/calc_enviro_variables.R</code></a></small>
       <div class="d-none name"><code>classRast.Rd</code></div>
     </div>
 
@@ -112,7 +118,7 @@ A, B, and C, with relative proportions of 20%, 31%, and 49%, the cell value
 will be returned as <code>indet.</code> because no single class can attain a <code>cutoff</code>
 above 50%, despite class C having the largest relative representation.</p>
 <p>Missing environment values in the point data should be coded as <code>NA</code>,
-not e.g. <code>'unknown'</code>. <code>classRast</code> ignores <code>NA</code> occurrences when tallying
+not e.g. <code>'unknown'</code>. <code>classRast()</code> ignores <code>NA</code> occurrences when tallying
 environmental occurrences against the <code>cutoff</code>. However, <code>NA</code> occurrences
 still count when determining <code>NA</code> status of cells in the raster: a cell
 containing occurrences of only <code>NA</code> value is classified as <code>indet.</code>, not <code>NA</code>.
@@ -122,7 +128,7 @@ Nürnberg and Aberhan (2013) used to classify environmental preferences for taxa
 <p>The coordinates associated with points should be given with respect to the
 same coordinate reference system (CRS) of the target raster grid, e.g. both
 given in latitude-longitude, Equal Earth projected coordinates, or other CRS.
-The CRS of a <code>SpatRaster</code> object can be retrieved with <code>terra</code> function <code>crs</code>
+The CRS of a <code>SpatRaster</code> object can be retrieved with <code><a href="https://rdrr.io/pkg/terra/man/crs.html" class="external-link">terra::crs()</a></code>
 (with the optional but helpful argument <code>describe = TRUE</code>).</p>
     </div>
     <div class="section level2">

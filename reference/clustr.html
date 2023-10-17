@@ -8,7 +8,7 @@ points within regions of set extent, with optional rarefaction to a site quota."
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
     
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
+    <nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-primary"><div class="container">
     
     <a class="navbar-brand me-2" href="../index.html">divvy</a>
 
@@ -20,23 +20,29 @@ points within regions of set extent, with optional rarefaction to a site quota."
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item">
-  <a class="nav-link" href="../reference/index.html">Reference</a>
-</li>
-<li class="nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/habitat-rangesize-case-study.html">Environmental and geographic standardisation case study</a>
-    <a class="dropdown-item" href="../articles/subsampling-vignette.html">Spatial Subsampling Vignette</a>
+      <ul class="navbar-nav me-auto"><li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-getting-started">Getting started</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-getting-started">
+    <a class="dropdown-item" href="../articles/subsampling-vignette.html">Subsampling tutorial</a>
+    <a class="dropdown-item" href="../articles/habitat-rangesize-case-study.html">Range size case study</a>
   </div>
 </li>
+<li class="active nav-item">
+  <a class="nav-link" href="../reference/index.html">Reference</a>
+</li>
 <li class="nav-item">
-  <a class="nav-link" href="../news/index.html">Changelog</a>
+  <a class="nav-link" href="../news/index.html">News</a>
 </li>
       </ul><form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off"></form>
 
-      <ul class="navbar-nav"></ul></div>
+      <ul class="navbar-nav"><li class="nav-item">
+  <a class="external-link nav-link" href="https://github.com/GawainAntell/divvy/" aria-label="github">
+    <span class="fab fa fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul></div>
 
     
   </div>
@@ -44,7 +50,7 @@ points within regions of set extent, with optional rarefaction to a site quota."
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Cluster localities within regions of nearest neighbours</h1>
-      
+      <small class="dont-index">Source: <a href="https://github.com/GawainAntell/divvy/blob/HEAD/R/subsample_MST.R" class="external-link"><code>R/subsample_MST.R</code></a></small>
       <div class="d-none name"><code>clustr.Rd</code></div>
     </div>
 
@@ -148,9 +154,9 @@ Any tree with fewer than <code>nMin</code> points is prohibited.</p>
 and any tree with fewer than <code>nSite</code> points is prohibited.
 After building a tree as described above, a random set of <code>nSite</code> points
 within the cluster is taken (without replacement).
-The <code>nSite</code> argument makes <code>clustr</code> comparable with <code>cookies</code>
+The <code>nSite</code> argument makes <code>clustr()</code> comparable with <code><a href="cookies.html">cookies()</a></code>
 in that it spatially standardises both extent and area/locality number.</p>
-<p>The performance of <code>clustr</code> is designed on the assumption <code>iter</code>
+<p>The performance of <code>clustr()</code> is designed on the assumption <code>iter</code>
 is much larger than the number of unique localities. Internal code first
 calculates the full minimum spanning tree at every viable starting point
 before it then samples those trees (i.e. resamples and optionally rarefies)

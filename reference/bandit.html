@@ -8,7 +8,7 @@ within bins of equal latitude"><!-- mathjax --><script src="https://cdnjs.cloudf
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
     
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
+    <nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-primary"><div class="container">
     
     <a class="navbar-brand me-2" href="../index.html">divvy</a>
 
@@ -20,23 +20,29 @@ within bins of equal latitude"><!-- mathjax --><script src="https://cdnjs.cloudf
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item">
-  <a class="nav-link" href="../reference/index.html">Reference</a>
-</li>
-<li class="nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/habitat-rangesize-case-study.html">Environmental and geographic standardisation case study</a>
-    <a class="dropdown-item" href="../articles/subsampling-vignette.html">Spatial Subsampling Vignette</a>
+      <ul class="navbar-nav me-auto"><li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-getting-started">Getting started</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-getting-started">
+    <a class="dropdown-item" href="../articles/subsampling-vignette.html">Subsampling tutorial</a>
+    <a class="dropdown-item" href="../articles/habitat-rangesize-case-study.html">Range size case study</a>
   </div>
 </li>
+<li class="active nav-item">
+  <a class="nav-link" href="../reference/index.html">Reference</a>
+</li>
 <li class="nav-item">
-  <a class="nav-link" href="../news/index.html">Changelog</a>
+  <a class="nav-link" href="../news/index.html">News</a>
 </li>
       </ul><form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off"></form>
 
-      <ul class="navbar-nav"></ul></div>
+      <ul class="navbar-nav"><li class="nav-item">
+  <a class="external-link nav-link" href="https://github.com/GawainAntell/divvy/" aria-label="github">
+    <span class="fab fa fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul></div>
 
     
   </div>
@@ -44,7 +50,7 @@ within bins of equal latitude"><!-- mathjax --><script src="https://cdnjs.cloudf
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Rarefy localities within latitudinal bands</h1>
-      
+      <small class="dont-index">Source: <a href="https://github.com/GawainAntell/divvy/blob/HEAD/R/subsample_lat_band.R" class="external-link"><code>R/subsample_lat_band.R</code></a></small>
       <div class="d-none name"><code>bandit.Rd</code></div>
     </div>
 
@@ -143,22 +149,22 @@ in a given interval to draw a subsample, that interval is omitted from output.</
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>bandit</code> rarefies the number of spatial sites within latitudinal ranges
-of specified bin width. (Compare with <code>cookies</code> and <code>clustr</code>, which spatially
+    <p><code>bandit()</code> rarefies the number of spatial sites within latitudinal ranges
+of specified bin width. (Compare with <code><a href="cookies.html">cookies()</a></code> and <code><a href="clustr.html">clustr()</a></code>, which spatially
 subsample to a specified extent without regard to latitudinal position.)
 Cases where it could be appropriate to control for latitudinal spread of localities
 include characterisations of latitudinal diversity gradients (e.g. Marcot 2016)
 or comparisons of ecosystem parameters that covary strongly with
 latitude (e.g. diversity in reefal vs. non-reefal habitats). Note that
 the total surface area of the Earth within equal-latitudinal increments
-decreases from the equator towards the poles; <code>bandit</code> standardises only
+decreases from the equator towards the poles; <code>bandit()</code> standardises only
 the amount of sites/area encompassed by each subsample, not the total area
 that could have been available for species to inhabit.</p>
 <p>As with all <code>divvy</code> subsampling functions, sites within a given
 regional/latitudinal subsample are selected without replacement.</p>
 <p>To calculate an integer number of degrees into which a given latitudinal
 range divides evenly, the <code>palaeoverse</code> package (v 1.2.1) provides the
-<code>lat_bins</code> function with argument <code>fit = TRUE</code>.</p>
+<code>palaeoverse::lat_bins()</code> function with argument <code>fit = TRUE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -183,7 +189,7 @@ range divides evenly, the <code>palaeoverse</code> package (v 1.2.1) provides th
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># load bivalve occurrences to rasterise</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.7.46</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.7.55</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">bivalves</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># initialise Equal Earth projected coordinates</span></span></span>
