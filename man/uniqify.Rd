@@ -36,8 +36,8 @@ Subset a dataset to unique spatial localities or locality-taxon combinations.
 The \code{na.rm} argument applies to coordinate values and, if \code{taxVar}
 is supplied, to taxon values. If \code{na.rm = FALSE}, any \code{NA} values will be
 retained and treated as their own value. Note that \code{divvy} ignores any rows
-with missing coordinates for the subsampling functions \code{cookies}, \code{clustr},
-and \code{bandit}.
+with missing coordinates for the subsampling functions \code{\link[=cookies]{cookies()}},
+\code{\link[=clustr]{clustr()}}, and \code{\link[=bandit]{bandit()}}.
 }
 \examples{
 # generate occurrence data

@@ -68,15 +68,15 @@ in a given interval to draw a subsample, that interval is omitted from output.
 within bins of equal latitude
 }
 \details{
-\code{bandit} rarefies the number of spatial sites within latitudinal ranges
-of specified bin width. (Compare with \code{cookies} and \code{clustr}, which spatially
+\code{bandit()} rarefies the number of spatial sites within latitudinal ranges
+of specified bin width. (Compare with \code{\link[=cookies]{cookies()}} and \code{\link[=clustr]{clustr()}}, which spatially
 subsample to a specified extent without regard to latitudinal position.)
 Cases where it could be appropriate to control for latitudinal spread of localities
 include characterisations of latitudinal diversity gradients (e.g. Marcot 2016)
 or comparisons of ecosystem parameters that covary strongly with
 latitude (e.g. diversity in reefal vs. non-reefal habitats). Note that
 the total surface area of the Earth within equal-latitudinal increments
-decreases from the equator towards the poles; \code{bandit} standardises only
+decreases from the equator towards the poles; \code{bandit()} standardises only
 the amount of sites/area encompassed by each subsample, not the total area
 that could have been available for species to inhabit.
 
@@ -85,7 +85,7 @@ regional/latitudinal subsample are selected without replacement.
 
 To calculate an integer number of degrees into which a given latitudinal
 range divides evenly, the \code{palaeoverse} package (v 1.2.1) provides the
-\code{lat_bins} function with argument \code{fit = TRUE}.
+\code{\link[palaeoverse:lat_bins]{palaeoverse::lat_bins()}} function with argument \code{fit = TRUE}.
 }
 \examples{
 # load bivalve occurrences to rasterise

@@ -35,6 +35,6 @@ uncertain or unaccepted taxonomic names, non-marine palaeo-environments,
 or missing coordinates are excluded from the original download (29 July 2022).
 Taxonomic synonymisation and removal of stratigraphic outliers
 follows the \code{fossilbrush} vignette example of cross-correlation with the
-Sepkoski range-through database (\code{fossilbrush::sepkoski}).
+Sepkoski range-through database \verb{[fossilbrush::sepkoski()]}.
 }
 \keyword{datasets}

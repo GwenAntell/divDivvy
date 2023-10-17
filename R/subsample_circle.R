@@ -47,7 +47,7 @@ findSeeds <- function(dat, siteId, xy, r, nSite, crs = 'epsg:4326'
 #'
 #' The function takes a single location as a starting (seed) point and
 #' circumscribes a buffer of \code{r} km around it. Buffer circles that span
-#' the antemeridian (180 deg longitude) are wrapped as a multipolygon
+#' the antemeridian (180 degrees longitude) are wrapped as a multipolygon
 #' to prevent artificial truncation. After standardising radial extent, sites
 #' are drawn within the circular extent until a quota of \code{nSite} is met.
 #' Sites are sampled without replacement, so a location is used as a seed point

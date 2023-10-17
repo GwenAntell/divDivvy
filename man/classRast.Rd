@@ -51,7 +51,7 @@ will be returned as \code{indet.} because no single class can attain a \code{cut
 above 50\%, despite class C having the largest relative representation.
 
 Missing environment values in the point data should be coded as \code{NA},
-not e.g. \code{'unknown'}. \code{classRast} ignores \code{NA} occurrences when tallying
+not e.g. \code{'unknown'}. \code{classRast()} ignores \code{NA} occurrences when tallying
 environmental occurrences against the \code{cutoff}. However, \code{NA} occurrences
 still count when determining \code{NA} status of cells in the raster: a cell
 containing occurrences of only \code{NA} value is classified as \code{indet.}, not \code{NA}.
@@ -63,7 +63,7 @@ Nürnberg and Aberhan (2013) used to classify environmental preferences for taxa
 The coordinates associated with points should be given with respect to the
 same coordinate reference system (CRS) of the target raster grid, e.g. both
 given in latitude-longitude, Equal Earth projected coordinates, or other CRS.
-The CRS of a \code{SpatRaster} object can be retrieved with \code{terra} function \code{crs}
+The CRS of a \code{SpatRaster} object can be retrieved with \code{\link[terra:crs]{terra::crs()}}
 (with the optional but helpful argument \code{describe = TRUE}).
 }
 \examples{

@@ -84,7 +84,7 @@ rangeSize <- function(coords, crs = 'epsg:4326'){
 #' Summarise the geographic scope and position of occurrence data, and
 #' optionally estimate diversity and evenness
 #'
-#' \code{sdSumry} compiles metadata about a sample or list of samples,
+#' \code{sdSumry()} compiles metadata about a sample or list of samples,
 #' before or after spatial subsampling. The function counts the number
 #' of collections (if requested), taxon presences (excluding repeat incidences
 #' of a taxon at a given site), and unique spatial sites;
@@ -107,15 +107,15 @@ rangeSize <- function(coords, crs = 'epsg:4326'){
 #' Very widespread taxa make a large contribution to an assemblage SCOR,
 #' while rare taxa have relatively little influence.
 #'
-#' If \code{quotaQ} is supplied, \code{sdSumry} rarefies richness at the
+#' If \code{quotaQ} is supplied, `sdSumry()` rarefies richness at the
 #' given coverage value and returns the point estimate of richness (Hill number 0)
 #' and its 95% confidence interval, as well as estimates of evenness (Pielou's J)
 #' and frequency-distribution sample coverage (given by `iNEXT$DataInfo`).
-#' If \code{quotaN} is supplied, \code{sdSumry} rarefies richness to the given
+#' If \code{quotaN} is supplied, `sdSumry()` rarefies richness to the given
 #' number of occurrence counts and returns the point estimate of richness
 #' and its 95% confidence interval.
 #' Coverage-based and classical rarefaction are both calculated with
-#' \code{iNEXT::estimateD} internally. For details, such as how diversity
+#' [iNEXT::estimateD()] internally. For details, such as how diversity
 #' is extrapolated if sample coverage is insufficient to achieve a specified
 #' rarefaction level, consult Chao and Jost (2012) and Hsieh *et al.* (2016).
 #'

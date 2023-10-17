@@ -3,15 +3,15 @@
 #' `bandit` subsamples spatial point data to a specified number of sites
 #' within bins of equal latitude
 #'
-#' `bandit` rarefies the number of spatial sites within latitudinal ranges
-#' of specified bin width. (Compare with `cookies` and `clustr`, which spatially
+#' `bandit()` rarefies the number of spatial sites within latitudinal ranges
+#' of specified bin width. (Compare with [cookies()] and [clustr()], which spatially
 #' subsample to a specified extent without regard to latitudinal position.)
 #' Cases where it could be appropriate to control for latitudinal spread of localities
 #' include characterisations of latitudinal diversity gradients (e.g. Marcot 2016)
 #' or comparisons of ecosystem parameters that covary strongly with
 #' latitude (e.g. diversity in reefal vs. non-reefal habitats). Note that
 #' the total surface area of the Earth within equal-latitudinal increments
-#' decreases from the equator towards the poles; `bandit` standardises only
+#' decreases from the equator towards the poles; `bandit()` standardises only
 #' the amount of sites/area encompassed by each subsample, not the total area
 #' that could have been available for species to inhabit.
 #'
@@ -20,7 +20,7 @@
 #'
 #' To calculate an integer number of degrees into which a given latitudinal
 #' range divides evenly, the `palaeoverse` package (v 1.2.1) provides the
-#' `lat_bins` function with argument `fit = TRUE`.
+#' [palaeoverse::lat_bins()] function with argument `fit = TRUE`.
 #'
 #' @param dat A `data.frame` or `matrix` containing the coordinate
 #' columns `xy` and any associated variables, e.g. taxon names.

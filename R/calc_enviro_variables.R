@@ -20,7 +20,7 @@
 #' above 50%, despite class C having the largest relative representation.
 #'
 #' Missing environment values in the point data should be coded as `NA`,
-#' not e.g. `'unknown'`. `classRast` ignores `NA` occurrences when tallying
+#' not e.g. `'unknown'`. `classRast()` ignores `NA` occurrences when tallying
 #' environmental occurrences against the `cutoff`. However, `NA` occurrences
 #' still count when determining `NA` status of cells in the raster: a cell
 #' containing occurrences of only `NA` value is classified as `indet.`, not `NA`.
@@ -32,7 +32,7 @@
 #' The coordinates associated with points should be given with respect to the
 #' same coordinate reference system (CRS) of the target raster grid, e.g. both
 #' given in latitude-longitude, Equal Earth projected coordinates, or other CRS.
-#' The CRS of a `SpatRaster` object can be retrieved with `terra` function `crs`
+#' The CRS of a `SpatRaster` object can be retrieved with [terra::crs()]
 #' (with the optional but helpful argument `describe = TRUE`).
 #'
 #' @param grid A `SpatRaster` to use as a template for the

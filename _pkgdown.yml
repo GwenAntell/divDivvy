@@ -1,4 +1,50 @@
 url: https://gawainantell.github.io/divvy/
 template:
   bootstrap: 5
+  bootswatch: flatly
+
+navbar:
+  structure:
+    left:  [articles, reference, news]
+    right: [search, github]
+  components:
+    news:
+      text: News
+      href: news/index.html
+    articles:
+      text: Getting started
+      menu:
+      - text: Subsampling tutorial
+        href: articles/subsampling-vignette.html
+      - text: Range size case study
+        href: articles/habitat-rangesize-case-study.html
+home:
+  sidebar:
+    structure: [citation, authors, dev, license, links]
+
+reference:
+- title: Subsampling functions
+  desc: >
+    Functions that perform spatial standardisation on a dataset.
+  contents:
+  - bandit
+  - clustr
+  - cookies
+
+- title: Helper functions
+  desc: >
+    Various additional functionality related to geographic occurrence data.
+  contents:
+  - classRast
+  - rangeSize
+  - sdSumry
+  - uniqify
+
+- title: Example datasets
+  desc: >
+    Data curated from the Paleobiology Database, invoked in examples and vignettes.
+  contents:
+  - bivalves
+  - collSilur
+  - occSilur
 

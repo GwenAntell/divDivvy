@@ -62,10 +62,10 @@ groupr <- function(seed, sfPts, distMtrx, distMax){
 #' and any tree with fewer than \code{nSite} points is prohibited.
 #' After building a tree as described above, a random set of \code{nSite} points
 #' within the cluster is taken (without replacement).
-#' The \code{nSite} argument makes \code{clustr} comparable with \code{cookies}
+#' The \code{nSite} argument makes `clustr()` comparable with [cookies()]
 #' in that it spatially standardises both extent and area/locality number.
 #'
-#' The performance of \code{clustr} is designed on the assumption \code{iter}
+#' The performance of `clustr()` is designed on the assumption \code{iter}
 #' is much larger than the number of unique localities. Internal code first
 #' calculates the full minimum spanning tree at every viable starting point
 #' before it then samples those trees (i.e. resamples and optionally rarefies)

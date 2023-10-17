@@ -31,4 +31,5 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://gawainantell.github.io/divvy/
+URL: https://gawainantell.github.io/divvy/, https://github.com/GawainAntell/divvy
+BugReports: https://github.com/GawainAntell/divvy/issues

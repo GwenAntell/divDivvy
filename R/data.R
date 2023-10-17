@@ -50,7 +50,7 @@
 #' or missing coordinates are excluded from the original download (29 July 2022).
 #' Taxonomic synonymisation and removal of stratigraphic outliers
 #' follows the `fossilbrush` vignette example of cross-correlation with the
-#' Sepkoski range-through database (`fossilbrush::sepkoski`).
+#' Sepkoski range-through database `[fossilbrush::sepkoski()]`.
 #'
 #' @format A data frame with 13502 rows and 11 variables:
 #' \describe{
