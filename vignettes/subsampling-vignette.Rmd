@@ -39,6 +39,8 @@ knitr::opts_chunk$set(
 
 This document introduces rationale for spatial subsampling and covers common use cases for `divvy` functions, including example R code. Sections below discuss ways to format data, implement three different subsampling routines, and calculate common biodiversity metrics.
 
+For a more comprehensive review of spatial subsampling theory, applications in paleobiology and ecology, and implementation in the `divvy` package, refer to @Antell2023, 'Spatial standardization of taxon occurrence data---a call to action'.
+
 ## Why to subsample spatially
 
 Biodiversity measures, whether quantified from fossil or extant data, reflect the outcome of three types of processes: 1. the biological processes the measurements aim to capture, 2. stochastic processes that generate random error, and 3. observation processes, such as the distribution of collecting effort intensity. Compared to neontological data, observation densities of palaeontological data reflect the additional contributions of taphonomy (decay and preservation processes) and sedimentation (burial and lithification processes). The term 'sampling' is used herein to refer to the full suite of influences on how many of the fossil taxa that lived in a place are recorded as fossil occurrences there. Given the large number of processes involved in sampling fossils, it is unsurprising that for many palaeo-occurrence datasets, the combined effect size of unexplained error and variable observation probabilities on biodiversity parameter estimates is greater than that of true biological processes from the past.

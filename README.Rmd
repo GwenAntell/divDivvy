@@ -27,7 +27,9 @@ Divvy up diversity into geographic regions of fair comparison!
 
 ## Overview
 
-An R package offering spatial subsampling functions for biogeography and biodiversity studies, whether analysing fossil or modern taxon occurrence data. Three types of subsampling are available to to standardise the number and maximum spread (dispersion) of sites within a region of specified size:
+An R package offering spatial subsampling functions for biogeography and biodiversity studies, whether analysing fossil or modern taxon occurrence data, as described by Antell et al. (2023), 'Spatial standardization of taxon occurrence data---a call to action'. A preprint of the *Paleobiology* paper is available at Earth ArXiv (\doi{10.31223/X5997Z}). 
+
+Three types of subsampling are available to to standardise the number and maximum spread (dispersion) of sites within a region of specified size:
 
 * `cookies`: Imposes a radial constraint on the spatial bounds of a subsample and standardises area by rarefying the number of localities
 
@@ -37,20 +39,20 @@ An R package offering spatial subsampling functions for biogeography and biodive
 
 Additional functions include `uniqify` to subset an occurrence dataset to unique taxon-coordinate combinations, `sdSumry` to calculate basic spatial coverage and diversity metadata for a dataset or its subsamples, `rangeSize` to calculate five measures of geographic range size, and `classRast` to generate a raster containing the most common environment or trait for point occurrences falling in each grid cell.
 
+There are vignettes accompanying the package, to demonstrate use cases of `divvy` functions and describe common considerations for analyses of taxonomic occurrence data. You can view the compiled documents  at the [package website](https://gawainantell.github.io/divvy/) under ['Getting started'](https://gawainantell.github.io/divvy/articles/).
+
 ## Installation
 
-You can install the development version of divvy from [GitHub](https://github.com/) with:
+You can install the newest release of `divvy` from CRAN:
+``` r
+install.packages('divvy')
+```
+
+Alternatively, you can install the development version of `divvy` from [GitHub](https://github.com/) with help from `devtools`:
 
 ``` r
 # install.packages('devtools')
 devtools::install_github('GawainAntell/divvy')
-```
-
-There are two vignettes accompanying the package. To build the vignettes while downloading the development version, and then view them as compiled documents, use:
-
-``` r
-devtools::install_github('GawainAntell/divvy', build_vignettes = TRUE)
-browseVignettes('divvy')
 ```
 
 ## Usage examples
