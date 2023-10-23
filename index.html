@@ -82,25 +82,26 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>An R package offering spatial subsampling functions for biogeography and biodiversity studies, whether analysing fossil or modern taxon occurrence data. Three types of subsampling are available to to standardise the number and maximum spread (dispersion) of sites within a region of specified size:</p>
+<p>An R package offering spatial subsampling functions for biogeography and biodiversity studies, whether analysing fossil or modern taxon occurrence data, as described by Antell et al. (2023), ‘Spatial standardization of taxon occurrence data—a call to action’. A preprint of the <em>Paleobiology</em> paper is available at Earth ArXiv ().</p>
+<p>Three types of subsampling are available to to standardise the number and maximum spread (dispersion) of sites within a region of specified size:</p>
 <ul>
 <li><p><code>cookies</code>: Imposes a radial constraint on the spatial bounds of a subsample and standardises area by rarefying the number of localities</p></li>
 <li><p><code>clustr</code>: Aggregates sites that are nearest neighbours (connecting them with a minimum spanning tree) to impose a maximum diameter on the spatial bounds of a subsample, and optionally rarefies localities</p></li>
 <li><p><code>bandit</code>: Rarefies the number of localities within bands of equal latitude</p></li>
 </ul>
 <p>Additional functions include <code>uniqify</code> to subset an occurrence dataset to unique taxon-coordinate combinations, <code>sdSumry</code> to calculate basic spatial coverage and diversity metadata for a dataset or its subsamples, <code>rangeSize</code> to calculate five measures of geographic range size, and <code>classRast</code> to generate a raster containing the most common environment or trait for point occurrences falling in each grid cell.</p>
+<p>There are vignettes accompanying the package, to demonstrate use cases of <code>divvy</code> functions and describe common considerations for analyses of taxonomic occurrence data. You can view the compiled documents at the <a href="https://gawainantell.github.io/divvy/">package website</a> under <a href="https://gawainantell.github.io/divvy/articles/">‘Getting started’</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of divvy from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>You can install the newest release of <code>divvy</code> from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">'divvy'</span><span class="op">)</span></span></code></pre></div>
+<p>Alternatively, you can install the development version of <code>divvy</code> from <a href="https://github.com/" class="external-link">GitHub</a> with help from <code>devtools</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages('devtools')</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">'GawainAntell/divvy'</span><span class="op">)</span></span></code></pre></div>
-<p>There are two vignettes accompanying the package. To build the vignettes while downloading the development version, and then view them as compiled documents, use:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">'GawainAntell/divvy'</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/browseVignettes.html" class="external-link">browseVignettes</a></span><span class="op">(</span><span class="st">'divvy'</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage-examples">Usage examples<a class="anchor" aria-label="anchor" href="#usage-examples"></a>
