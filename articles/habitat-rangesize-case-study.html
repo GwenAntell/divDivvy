@@ -77,7 +77,7 @@
                         <h4 data-toc-skip class="author">G. T.
 Antell</h4>
             
-            <h4 data-toc-skip class="date">26 September 2023</h4>
+            <h4 data-toc-skip class="date">24 October 2023</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/GawainAntell/divvy/blob/HEAD/vignettes/habitat-rangesize-case-study.Rmd" class="external-link"><code>vignettes/habitat-rangesize-case-study.Rmd</code></a></small>
       <div class="d-none name"><code>habitat-rangesize-case-study.Rmd</code></div>
@@ -167,15 +167,16 @@ Chaudhary 2017)</span>. Most empirical tests of this hypothesis have
 relied upon modern data, however, with relatively little evidence from
 periods of Earth history when ocean circulation and continental
 configuration were entirely unlike those of today.</p>
-<p>The following sections walk through an analysis to test the
-expectations geographic ranges are wider for (1) eurytopic than
-stenotopic taxa and (2) deep- than shallow-water taxa, using brachiopod
-occurrences from the Silurian (444-419 Ma) recorded in the <a href="https://paleobiodb.org/" class="external-link">Paleobiology Database</a> (PBDB).
+<p><a id="atlas_map"></a> The following sections walk through an
+analysis to test the expectations geographic ranges are wider for (1)
+eurytopic than stenotopic taxa and (2) deep- than shallow-water taxa,
+using brachiopod occurrences from the Silurian (444-419 Ma) recorded in
+the <a href="https://paleobiodb.org/" class="external-link">Paleobiology Database</a> (PBDB).
 Brachiopoda was a diverse clade that made up a large component of
 Paleozoic benthic communities <span class="citation">(Close et al. 2020;
 Rojas et al. 2021)</span>. In the Paleozoic, much of the world’s
-landmass had coalesced at southermost latitudes into Gondwana, with the
-remaining continents scattered at the equator and separated by the
+landmass had coalesced at southermost latitudes into Gondwanaland, with
+the remaining continents scattered at the equator and separated by the
 Iapetus, Paleo-Tethys, Rheic, and Panthalassic oceans (map below).
 Hence, the geometry of a cosmopolitan marine species’ range from the
 Silurian would differ distinctly from a cosmopolitan range today.
@@ -183,9 +184,9 @@ Spatial subsampling is crucial to addressing the research questions
 because the preserved area and distribution of shallow and deep-water
 habitats also differ from each other.</p>
 <div class="figure">
-<img src="PALEOMAP_atlas_map75a_Llandovery_430.png" alt=""><p class="caption">Silurian palaeogeography, as reconstructed by the
+<img src="PALEOMAP_atlas_map75a_Llandovery_430.png" alt=""><p class="caption"><em>Silurian palaeogeography, as reconstructed by the
 PALEOMAP PaleoAtlas project <span class="citation">(Scotese
-2016)</span>.</p>
+2016)</span>.</em></p>
 </div>
 </div>
 <div class="section level2">
@@ -282,8 +283,8 @@ classification of <span class="citation">Nürnberg and Aberhan
 <p>The most accurate environmental information will be that associated
 directly with occurrence records. Where available, that is the
 information this script will prioritise. However, there are many
-instances of a blank or indeterminate ‘environment’ field. In those
-cases, a way to infer probable environment is to determine the
+instances of a blank or indeterminate <code>environment</code> field. In
+those cases, a way to infer probable environment is to determine the
 predominant environment in the local grid cell based on the environment
 recorded from any PBDB collections in that cell. A collection in the
 PBDB can contain any number of occurrences of any number of clades but
@@ -297,7 +298,7 @@ classifies grid cells as proximal or deep-water whenever more than 80%
 of collections are affiliated with a single environment. The template
 raster passed to <code><a href="../reference/classRast.html">classRast()</a></code> here has the same resolution,
 extent, and coordinate reference system as applied above to the
-occurrence data. <a id="world_map"></a></p>
+occurrence data. <a id="raster_map"></a></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">collSilur</span><span class="op">$</span><span class="va">bath</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="va">collSilur</span><span class="op">$</span><span class="va">bath</span><span class="op">[</span><span class="va">collSilur</span><span class="op">$</span><span class="va">environment</span> <span class="op"><a href="https://rdrr.io/pkg/terra/man/match.html" class="external-link">%in%</a></span> <span class="va">proxTerms</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">'prox'</span></span>
@@ -307,17 +308,17 @@ occurrence data. <a id="world_map"></a></p>
 <span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">bathRast</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#1B9E77"</span>, <span class="st">"#D95F02"</span>, <span class="st">"black"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="classify-collections-enviro-1.png" alt="World map where a mix of grid cells labelled deep, shallow, and indeterminate are scattered around the outline of Gondwanaland and Laurasia. Most of the points fall close to the coastlines and are concentrated around Laurasia." width="650" height="325"><p class="caption">
-Predominant environment recorded in PBDB collections
+<em>Predominant environment recorded in PBDB collections</em>
 </p>
 </div>
 <p>A plot of the environmental distribution inferred from collection
-data traces the mid-latitude continents (figured above), albeit with
-gaps. Very few occurrences appear along the coasts of Gondwanaland,
-perhaps largely due to the under-sampling and under-reporting of the
-corresponding modern continents relative to North America and Europe.
-Also note that sampling of northern extents of Laurasia occurs almost
-exclusively in deep-water settings.</p>
-<p>It is now possible to infer binary water depth for Brachiopod
+data traces the mid-latitude continents <a href="#atlas_map">(figured
+above)</a>, albeit with gaps. Very few occurrences appear along the
+coasts of Gondwanaland, perhaps largely due to the under-sampling and
+under-reporting of the corresponding modern continents relative to North
+America and Europe. Also note that sampling of northern extents of
+Laurasia occurs almost exclusively in deep-water settings.</p>
+<p>It is now possible to infer binary water depth for brachiopod
 occurrence records. Where available, the classification will reflect the
 environment directly associated with occurrences, and otherwise will be
 inferences from the collections-based raster.</p>
@@ -375,9 +376,7 @@ labels a focal taxon as a specialist for an environment if more than a
 threshold proportion of its occurrences (here, 70%) lie within a single
 habitat type.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">taxa</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">occSilur</span><span class="op">$</span><span class="va">genus</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># categorise preferences as binary or nonspecific/eurytopic</span></span>
+<code class="sourceCode R"><span><span class="co"># categorise preferences as binary or nonspecific/eurytopic</span></span>
 <span><span class="va">pref</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">env</span>, <span class="va">cutoff</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="va">envTbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span></span>
 <span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">envTbl</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span><span class="op">==</span><span class="fl">0</span><span class="op">)</span> <span class="op">{</span> <span class="st">'unk'</span> <span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
@@ -393,6 +392,7 @@ habitat type.</p>
 <pre><code><span><span class="co">#&gt; [1] "deep"   "prox"   "indet."</span></span></code></pre>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># tag each row as from a taxon with deep, proximal, or eurytopic preference</span></span>
+<span><span class="va">taxa</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">occSilur</span><span class="op">$</span><span class="va">genus</span><span class="op">)</span></span>
 <span><span class="va">occSilur</span><span class="op">$</span><span class="va">pref</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="va">cutoff</span> <span class="op">&lt;-</span> <span class="fl">0.7</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">tax</span> <span class="kw">in</span> <span class="va">taxa</span><span class="op">)</span><span class="op">{</span></span>
@@ -406,9 +406,9 @@ analysis below is to divide the occurrence dataset into three
 proximal-environment specialists, and one for eurytopic taxa with
 respect to depth. This data structure is straightforward to illustrate
 subsampling in the section below but is not the only way to proceed with
-analysis; for instance, one could organise the data subsets in a list or
-array instead and then perform subsampling across that structure’s
-indices.</p>
+analysis; for instance, one could organise the data subsets in a
+<code>list</code> or <code>array</code> instead, and then perform
+subsampling across that structure’s indices.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">deep</span> <span class="op">&lt;-</span> <span class="va">occSilur</span><span class="op">[</span> <span class="va">occSilur</span><span class="op">$</span><span class="va">pref</span> <span class="op">==</span> <span class="st">'deep'</span>, <span class="op">]</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/uniqify.html">uniqify</a></span><span class="op">(</span>taxVar <span class="op">=</span> <span class="st">'genus'</span>, xy <span class="op">=</span> <span class="va">xyCell</span><span class="op">)</span></span>
@@ -484,7 +484,7 @@ size of an ocean basin or biogeographic zone.</p>
 <p>For further details of subsampling using <code>divvy</code>,
 including the <code><a href="../reference/clustr.html">clustr()</a></code> function to define subsamples based
 on minimum spanning tree diameter instead of circular regional
-constraints, consult the main package vignette.</p>
+constraints, consult the other vignettes and <span class="citation">Antell, Benson, and Saupe (accepted)</span>.</p>
 </div>
 <div class="section level2">
 <h2 id="summed-common-occurrence-rate-between-environments">Summed Common Occurrence Rate between environments<a class="anchor" aria-label="anchor" href="#summed-common-occurrence-rate-between-environments"></a>
@@ -502,14 +502,9 @@ take a <code>list</code> of subsampled occurrence data subsets as its
 data argument and return a single <code>data.frame</code> with columns
 for the summary variables and a row for each subsample.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaD</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">sampD</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in `[.data.frame`(x, coords): undefined columns selected</span></span></code></pre>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaP</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">sampP</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in `[.data.frame`(x, coords): undefined columns selected</span></span></code></pre>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">sampE</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in `[.data.frame`(x, coords): undefined columns selected</span></span></code></pre>
+<code class="sourceCode R"><span><span class="va">metaD</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">sampD</span>, <span class="va">xyCell</span>, <span class="st">'genus'</span>, <span class="va">prj</span><span class="op">)</span></span>
+<span><span class="va">metaP</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">sampP</span>, <span class="va">xyCell</span>, <span class="st">'genus'</span>, <span class="va">prj</span><span class="op">)</span></span>
+<span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">sampE</span>, <span class="va">xyCell</span>, <span class="st">'genus'</span>, <span class="va">prj</span><span class="op">)</span></span></code></pre></div>
 <p>SCOR is calculated as the sum across taxa of the log probability of
 incidence: very widespread taxa make a large contribution to an
 assemblage SCOR, while rare taxa have relatively little influence. When
@@ -517,67 +512,46 @@ a taxon is present in <em>all</em> sampled locations, its log
 probability of incidence is infinite. Infinity is nonsensical in an
 empirical comparison, so let’s screen out subsamples with those values
 (12 in total, of 1500 subsamples).</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># check for infinity values of SCOR and remove them</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaD</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># none in deep habitat dataset</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt; [1] FALSE</span></span></code></pre>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaP</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># but some in the prox habitat dataset</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaP' not found</span></span></code></pre>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt; [1] TRUE</span></span></code></pre>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># and some in the all-habitats dataset</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaE' not found</span></span></code></pre>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">infP</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaP</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaP' not found</span></span></code></pre>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaP</span> <span class="op">&lt;-</span> <span class="va">metaP</span><span class="op">[</span> <span class="op">!</span><span class="va">infP</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaP' not found</span></span></code></pre>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">infE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaE' not found</span></span></code></pre>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="va">metaE</span><span class="op">[</span> <span class="op">!</span><span class="va">infE</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaE' not found</span></span></code></pre>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">infP</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'infP' not found</span></span></code></pre>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt; [1] TRUE</span></span></code></pre>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">infP</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaP</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span>
+<span><span class="va">metaP</span> <span class="op">&lt;-</span> <span class="va">metaP</span><span class="op">[</span> <span class="op">!</span><span class="va">infP</span>, <span class="op">]</span></span>
+<span><span class="va">infE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.infinite</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span>
+<span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="va">metaE</span><span class="op">[</span> <span class="op">!</span><span class="va">infE</span>, <span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">infP</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; [1] 10</span></span></code></pre>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">infE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'infE' not found</span></span></code></pre>
+<pre><code><span><span class="co">#&gt; [1] 2</span></span></code></pre>
 <p>For the permutation hypothesis tests below, it would be ideal for
 comparison groups to match in sample size. The previous step removed 10
-samples from one group, 2 from another, and none from the third–a
+samples from one group, 2 from another, and none from the third—a
 difference that could be remedied by omitting another 8 and 10 samples
 from the latter two groups, respectively. Samples could be selected at
 random. However, one could argue it would unfairly increase the odds of
 supporting the hypothesis of larger ranges in deep than shallow habitats
-to randomly omit 10 shallow samples but selectively omit the 10 deep
+to randomly omit 10 deep samples but selectively omit the 10 shallow
 samples where at least one taxon was universally distributed. For a
 conservative comparison, one could instead omit deep and eurytopic
 samples with largest values of SCOR.</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># make sample size (of subsamples) equal, by removing ones with highest SCOR</span></span>
-<span><span class="va">lowestN</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">metaD</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">metaP</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sortD</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">metaD</span><span class="op">$</span><span class="va">SCOR</span>, decreasing <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaD</span> <span class="op">&lt;-</span> <span class="va">metaD</span><span class="op">[</span><span class="va">sortD</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaD</span> <span class="op">&lt;-</span> <span class="va">metaD</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">lowestN</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sortE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">$</span><span class="va">SCOR</span>, decreasing <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaE' not found</span></span></code></pre>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="va">metaE</span><span class="op">[</span><span class="va">sortE</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaE' not found</span></span></code></pre>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="va">metaE</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">lowestN</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in eval(expr, envir, enclos): object 'metaE' not found</span></span></code></pre>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># make sample size (of subsamples) equal, by removing ones with largest SCOR</span></span>
+<span><span class="va">lowestN</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">metaD</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">metaP</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sortD</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">metaD</span><span class="op">$</span><span class="va">SCOR</span>, decreasing <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">metaD</span> <span class="op">&lt;-</span> <span class="va">metaD</span><span class="op">[</span><span class="va">sortD</span>, <span class="op">]</span></span>
+<span><span class="va">metaD</span> <span class="op">&lt;-</span> <span class="va">metaD</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">lowestN</span>, <span class="op">]</span></span>
+<span><span class="va">sortE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">$</span><span class="va">SCOR</span>, decreasing <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="va">metaE</span><span class="op">[</span><span class="va">sortE</span>, <span class="op">]</span></span>
+<span><span class="va">metaE</span> <span class="op">&lt;-</span> <span class="va">metaE</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">lowestN</span>, <span class="op">]</span></span></code></pre></div>
 <p>Ultimately, the choice of how to perform this selection step makes
 little difference to results, because it affects only 2% of
 subsamples.</p>
@@ -587,7 +561,7 @@ various test statistics one could calculate. Here are custom functions
 for a bootstrapping approach that capitalises on the existing division
 of subsamples to generate nonparametric estimates of how probable SCOR
 values from one group are to exceed those of another.</p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># how often does the value in group 1 exceed that in group 2 paired samples?</span></span>
 <span><span class="co"># randomly shuffle subsample ordering before comparing</span></span>
 <span><span class="va">testDiff</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dat1</span>, <span class="va">dat2</span>, <span class="va">vTest</span><span class="op">)</span><span class="op">{</span></span>
@@ -607,63 +581,75 @@ values from one group are to exceed those of another.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">null95</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'lwrCI'</span>, <span class="st">'uprCI'</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">null95</span>, <span class="st">'mean'</span> <span class="op">=</span> <span class="va">avg</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p>A random region of deep-water habitat contains more taxa with
-widespread ranges than a proximal habitat two-thirds of the time.
-Assemblages of eurytopic taxa from any random region almost always
-contained representatives with more widespread ranges than assemblages
-of either habitat specialist.</p>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<p>When we apply the boostrapping test, the results indicate a random
+region of deep-water habitat contains more taxa with widespread ranges
+than a proximal habitat two-thirds of the time. Assemblages of eurytopic
+taxa from any random region almost always contained representatives with
+more widespread ranges than assemblages of either habitat
+specialist.</p>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># do deep-water environments harbor more cosmopolitan taxa?</span></span>
 <span><span class="fu">diffDist</span><span class="op">(</span><span class="va">metaD</span>, <span class="va">metaP</span>, vTest <span class="op">=</span> <span class="st">'SCOR'</span>, nReps <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt;     lwrCI     uprCI      mean </span></span>
+<span><span class="co">#&gt; 0.6122449 0.6592347 0.6349163</span></span></code></pre>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># what about eurytopic taxa vs. deep-water specialists?</span></span>
 <span><span class="fu">diffDist</span><span class="op">(</span><span class="va">metaE</span>, <span class="va">metaD</span>, vTest <span class="op">=</span> <span class="st">'SCOR'</span>, nReps <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaE' not found</span></span></code></pre>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt;     lwrCI     uprCI      mean </span></span>
+<span><span class="co">#&gt; 0.9755102 0.9938776 0.9844980</span></span></code></pre>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># and if eurytopic species are more widespread than deep,</span></span>
 <span><span class="co"># they'll also be more widespread than proximal-dwellers</span></span>
 <span><span class="co"># (since more deep-water species are widespread than proximal are)</span></span>
 <span><span class="fu">diffDist</span><span class="op">(</span><span class="va">metaE</span>, <span class="va">metaP</span>, vTest <span class="op">=</span> <span class="st">'SCOR'</span>, nReps <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaE' not found</span></span></code></pre>
+<pre><code><span><span class="co">#&gt;     lwrCI     uprCI      mean </span></span>
+<span><span class="co">#&gt; 0.9816327 0.9979592 0.9894939</span></span></code></pre>
 <p>Another way one could compare SCOR between groups is inspecting the
 distribution of values in each comparison group. Overall, SCOR values
 from assemblages of deep-water taxa were slightly larger than those of
 proximal taxa, while eurytopic taxa were substantially more common than
-either of those groups (SCOR values five times as large). Again, note
-that because these results are derived from spatially-standardised data,
-these numbers account for the fact eurytopic taxa as defined here had
-many more cells of suitable habitat available to occupy.</p>
-<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
+either of those groups (SCOR values 4–5 times as large). Again, note
+that because these results are derived from spatially standardised data,
+these numbers account for the fact that eurytopic taxa as defined here
+had many more cells of suitable habitat available to occupy.</p>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">metaD</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaD' not found</span></span></code></pre>
-<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   2.183   3.174   3.689   3.700   4.153   5.878</span></span></code></pre>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">metaP</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaP' not found</span></span></code></pre>
-<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   1.090   2.028   3.297   3.135   3.942   5.550</span></span></code></pre>
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">metaE</span><span class="op">$</span><span class="va">SCOR</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaE' not found</span></span></code></pre>
+<pre><code><span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   3.383   9.796  15.042  14.959  19.822  28.715</span></span></code></pre>
 <div class="section level3">
 <h3 id="contrast-results-from-non-subsampled-data">Contrast results from non-subsampled data<a class="anchor" aria-label="anchor" href="#contrast-results-from-non-subsampled-data"></a>
 </h3>
 <p>What would the results and conclusions have been without going to the
-effort to spatially-subsample the original occurrence data? For
+effort to spatially subsample the original occurrence data? For
 comparison with the average SCOR values listed above, the following code
 uses the <code><a href="../reference/sdSumry.html">sdSumry()</a></code> function again, this time on the
-non-standardized full datasets.</p>
-<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">deep</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in `[.data.frame`(x, coords): undefined columns selected</span></span></code></pre>
-<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">prox</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in `[.data.frame`(x, coords): undefined columns selected</span></span></code></pre>
-<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">eury</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Error in `[.data.frame`(x, coords): undefined columns selected</span></span></code></pre>
-<p>In this case the overall direction of results is the same. However,
-subsampling makes the difference between eurytopic taxa and specialists
-more pronounced—SCOR values from raw data are estimated about three
-times larger rather than five times larger compared to shallow- and
+non-standardised full datasets.</p>
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">deep</span>, <span class="va">xyCell</span>, <span class="st">'genus'</span>, <span class="va">prj</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt;      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax</span></span>
+<span><span class="co">#&gt; [1,]  713  250  -3192759  -1735760   166.32      33567.84       8071.8    130946.3    3   94</span></span></code></pre>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">prox</span>, <span class="va">xyCell</span>, <span class="st">'genus'</span>, <span class="va">prj</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt;      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax</span></span>
+<span><span class="co">#&gt; [1,]  432  204  -3766508   -957619   166.32      33567.84      7845.98      127435 2.27   61</span></span></code></pre>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sdSumry.html">sdSumry</a></span><span class="op">(</span><span class="va">eury</span>, <span class="va">xyCell</span>, <span class="st">'genus'</span>, <span class="va">prj</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt;      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax</span></span>
+<span><span class="co">#&gt; [1,] 3462  404  -3134553  -1227392   166.32      33567.84      8321.72    168862.1 9.46  100</span></span></code></pre>
+<p>In this case the overall direction of results is the same (deep-water
+taxa tend to be slightly more widespread than shallow-water taxa, and
+eurytopic taxa are most widespread of all). However, subsampling makes
+the difference between eurytopic taxa and specialists more
+pronounced—SCOR values from raw data are estimated about three times
+larger (rather than 4–5 times larger) compared to shallow- and
 deep-water taxa.</p>
 </div>
 </div>
@@ -681,7 +667,7 @@ variety of ways. The <code><a href="../reference/rangeSize.html">rangeSize()</a>
 <code>divvy</code> returns five measures of geographic distribution, two
 of which the following code compares between ecological study
 groups.</p>
-<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># custom function to find all occurrences of focal taxon in a subsample</span></span>
 <span><span class="co"># and return summary measures of geographic distribution from them</span></span>
 <span><span class="va">subsampRange</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">taxa</span>, <span class="va">df</span>, <span class="va">taxCol</span>, <span class="va">coordCols</span>, <span class="va">crs</span><span class="op">)</span><span class="op">{</span></span>
@@ -711,10 +697,10 @@ groups.</p>
 <span><span class="va">rngE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">sampE</span>, FUN <span class="op">=</span> <span class="va">subsampRange</span>, taxa <span class="op">=</span> <span class="va">taxa</span>, taxCol <span class="op">=</span> <span class="st">'genus'</span>,</span>
 <span>               coordCols <span class="op">=</span> <span class="va">xyCell</span>, crs <span class="op">=</span> <span class="va">prj</span><span class="op">)</span></span></code></pre></div>
 <p>The above code chunk produces a <code>list</code> of range-size data
-for all species in all subsamples. The lines below average all values
-for each focal taxon to consolidate these intermediate calculations into
+for all genera in all subsamples. The lines below average all values for
+each focal taxon to consolidate these intermediate calculations into
 per-taxon range data for final analysis.</p>
-<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># summarize a focal species' range size data across all subsamples</span></span>
 <span><span class="va">taxRange</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">a</span>, <span class="va">rngL</span>, <span class="va">singletons</span> <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">rngL</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">{</span></span>
@@ -746,7 +732,7 @@ the focal taxon range-size average.</p>
 subsamples. After omitting these taxa, the sample size of genera in each
 comparison group shrinks to 43 in deep water, 24 in proximal habitats,
 and 95 occupying a breadth of depths.</p>
-<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rngAvgD</span> <span class="op">&lt;-</span> <span class="va">rngAvgD</span><span class="op">[</span> <span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">rngAvgD</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="va">rngAvgP</span> <span class="op">&lt;-</span> <span class="va">rngAvgP</span><span class="op">[</span> <span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">rngAvgP</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="va">rngAvgE</span> <span class="op">&lt;-</span> <span class="va">rngAvgE</span><span class="op">[</span> <span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">)</span>, <span class="op">]</span></span>
@@ -757,14 +743,16 @@ and 95 occupying a breadth of depths.</p>
 assemblage-based metrics, demonstrated a bootstrapping approach to
 generate results. As a complementary example, the following chunk uses
 Frequentist two-sample tests to address each hypothesis. For simplicity,
-only two measure of geographic range are compared here; the reader could
-easily substitute any of the other three in the datasets.</p>
+only two measure of geographic range are compared here (grid cell
+occupancy and summed length of minimum spanning tree); the reader could
+easily substitute any of the other three in the datasets (latitudinal
+range, great circle distance, and mean pairwise distance).</p>
 <p>The occurrence or occupancy measure of range size is count data, so a
 Wilcoxon (Mann-Whitney) test is appropriate as a nonparametric test. The
-second range-size metric, summed length of minimum spanning trees,
+second range-size metric, summed length of minimum spanning tree,
 follows a normal distribution after square-root transformation; a
 student’s t-test makes parametric comparisons on it.</p>
-<div class="sourceCode" id="cb83"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">rngAvgD</span><span class="op">$</span><span class="va">occurrences</span>, <span class="va">rngAvgP</span><span class="op">$</span><span class="va">occurrences</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># deep vs shallow</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; Warning in wilcox.test.default(rngAvgD$occurrences, rngAvgP$occurrences, : cannot compute exact p-value with ties</span></span></code></pre>
 <pre><code><span><span class="co">#&gt; </span></span>
@@ -773,7 +761,7 @@ student’s t-test makes parametric comparisons on it.</p>
 <span><span class="co">#&gt; data:  rngAvgD$occurrences and rngAvgP$occurrences</span></span>
 <span><span class="co">#&gt; W = 538, p-value = 0.3876</span></span>
 <span><span class="co">#&gt; alternative hypothesis: true location shift is greater than 0</span></span></code></pre>
-<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">occurrences</span>, <span class="va">rngAvgD</span><span class="op">$</span><span class="va">occurrences</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs deep</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Wilcoxon rank sum test with continuity correction</span></span>
@@ -781,7 +769,7 @@ student’s t-test makes parametric comparisons on it.</p>
 <span><span class="co">#&gt; data:  rngAvgE$occurrences and rngAvgD$occurrences</span></span>
 <span><span class="co">#&gt; W = 2794, p-value = 0.0002696</span></span>
 <span><span class="co">#&gt; alternative hypothesis: true location shift is greater than 0</span></span></code></pre>
-<div class="sourceCode" id="cb88"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">occurrences</span>, <span class="va">rngAvgP</span><span class="op">$</span><span class="va">occurrences</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs shallow</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Wilcoxon rank sum test with continuity correction</span></span>
@@ -789,10 +777,10 @@ student’s t-test makes parametric comparisons on it.</p>
 <span><span class="co">#&gt; data:  rngAvgE$occurrences and rngAvgP$occurrences</span></span>
 <span><span class="co">#&gt; W = 1603, p-value = 0.001076</span></span>
 <span><span class="co">#&gt; alternative hypothesis: true location shift is greater than 0</span></span></code></pre>
-<div class="sourceCode" id="cb90"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
-<span><span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
 <span><span class="va">rngAvgP</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">rngAvgP</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
+<span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test</a></span><span class="op">(</span><span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span>, <span class="va">rngAvgP</span><span class="op">$</span><span class="va">minSpanTree</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># deep vs shallow</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Welch Two Sample t-test</span></span>
@@ -805,7 +793,7 @@ student’s t-test makes parametric comparisons on it.</p>
 <span><span class="co">#&gt; sample estimates:</span></span>
 <span><span class="co">#&gt; mean of x mean of y </span></span>
 <span><span class="co">#&gt;  26.92918  26.67442</span></span></code></pre>
-<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">minSpanTree</span>, <span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs deep</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Welch Two Sample t-test</span></span>
@@ -818,7 +806,7 @@ student’s t-test makes parametric comparisons on it.</p>
 <span><span class="co">#&gt; sample estimates:</span></span>
 <span><span class="co">#&gt; mean of x mean of y </span></span>
 <span><span class="co">#&gt;  31.41559  26.92918</span></span></code></pre>
-<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test</a></span><span class="op">(</span><span class="va">rngAvgE</span><span class="op">$</span><span class="va">minSpanTree</span>, <span class="va">rngAvgD</span><span class="op">$</span><span class="va">minSpanTree</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs shallow</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Welch Two Sample t-test</span></span>
@@ -839,8 +827,9 @@ spanning tree distances. However, eurytopic taxa still measure larger
 than either specialist group, even by conservative thresholds for
 significance: eurytopic taxa occur in nearly one more grid cell of the
 15 in every subsample, and span about 270 km farther in tree length
-connecting occupied cells.</p>
-<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r">
+connecting occupied cells. (Recall the tree lengths printed here are
+square-root transformed.)</p>
+<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'occurrences'</span>, <span class="st">'minSpanTree'</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">'D'</span> <span class="op">=</span> <span class="va">rngAvgD</span>, <span class="st">'P'</span> <span class="op">=</span> <span class="va">rngAvgP</span>, <span class="st">'E'</span> <span class="op">=</span> <span class="va">rngAvgE</span><span class="op">)</span>,</span>
 <span>       <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span>,<span class="va">vars</span><span class="op">]</span>, <span class="fl">2</span>, <span class="va">mean</span><span class="op">)</span></span>
@@ -854,9 +843,9 @@ connecting occupied cells.</p>
 <p>As with the assemblage-based analysis above, we can investigate the
 inferences that would have resulted from analysing the original
 occurrence data, without subsampling.</p>
-<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># calculate geographic range size on alloccurrences (not subsampled)</span></span>
-<span><span class="va">unsamp</span> <span class="op">&lt;-</span> <span class="fu">subsampRange</span><span class="op">(</span><span class="va">taxa</span>, <span class="va">occSilur</span>, <span class="st">'genus'</span>, <span class="va">xyCell</span>, <span class="va">prj</span><span class="op">)</span></span>
+<span><span class="va">unsamp</span> <span class="op">&lt;-</span> <span class="fu">subsampRange</span><span class="op">(</span><span class="va">taxa</span>, df <span class="op">=</span> <span class="va">occSilur</span>, taxCol <span class="op">=</span> <span class="st">'genus'</span>, coordCols <span class="op">=</span> <span class="va">xyCell</span>, crs <span class="op">=</span> <span class="va">prj</span><span class="op">)</span></span>
 <span><span class="va">unsampD</span> <span class="op">&lt;-</span> <span class="va">unsamp</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">unsamp</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/terra/man/match.html" class="external-link">%in%</a></span> <span class="va">taxaD</span>,<span class="op">]</span></span>
 <span><span class="va">unsampP</span> <span class="op">&lt;-</span> <span class="va">unsamp</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">unsamp</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/terra/man/match.html" class="external-link">%in%</a></span> <span class="va">taxaP</span>,<span class="op">]</span></span>
 <span><span class="va">unsampE</span> <span class="op">&lt;-</span> <span class="va">unsamp</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">unsamp</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/terra/man/match.html" class="external-link">%in%</a></span> <span class="va">taxaE</span>,<span class="op">]</span></span>
@@ -868,7 +857,7 @@ occurrence data, without subsampling.</p>
 <span><span class="co">#&gt; data:  unsampD$occurrences and unsampP$occurrences</span></span>
 <span><span class="co">#&gt; W = 2778, p-value = 0.6299</span></span>
 <span><span class="co">#&gt; alternative hypothesis: true location shift is greater than 0</span></span></code></pre>
-<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">unsampE</span><span class="op">$</span><span class="va">occurrences</span>, <span class="va">unsampD</span><span class="op">$</span><span class="va">occurrences</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs deep</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Wilcoxon rank sum test with continuity correction</span></span>
@@ -876,7 +865,7 @@ occurrence data, without subsampling.</p>
 <span><span class="co">#&gt; data:  unsampE$occurrences and unsampD$occurrences</span></span>
 <span><span class="co">#&gt; W = 7878, p-value &lt; 2.2e-16</span></span>
 <span><span class="co">#&gt; alternative hypothesis: true location shift is greater than 0</span></span></code></pre>
-<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test</a></span><span class="op">(</span><span class="va">unsampE</span><span class="op">$</span><span class="va">occurrences</span>, <span class="va">unsampP</span><span class="op">$</span><span class="va">occurrences</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs shallow</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Wilcoxon rank sum test with continuity correction</span></span>
@@ -884,7 +873,7 @@ occurrence data, without subsampling.</p>
 <span><span class="co">#&gt; data:  unsampE$occurrences and unsampP$occurrences</span></span>
 <span><span class="co">#&gt; W = 5177.5, p-value = 5.463e-14</span></span>
 <span><span class="co">#&gt; alternative hypothesis: true location shift is greater than 0</span></span></code></pre>
-<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">unsampE</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">unsampE</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
 <span><span class="va">unsampD</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">unsampD</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
 <span><span class="va">unsampP</span><span class="op">$</span><span class="va">minSpanTree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">unsampP</span><span class="op">$</span><span class="va">minSpanTree</span><span class="op">)</span></span>
@@ -900,7 +889,7 @@ occurrence data, without subsampling.</p>
 <span><span class="co">#&gt; sample estimates:</span></span>
 <span><span class="co">#&gt; mean of x mean of y </span></span>
 <span><span class="co">#&gt; 105.78370  89.87555</span></span></code></pre>
-<div class="sourceCode" id="cb106"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test</a></span><span class="op">(</span><span class="va">unsampE</span><span class="op">$</span><span class="va">minSpanTree</span>, <span class="va">unsampD</span><span class="op">$</span><span class="va">minSpanTree</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs deep</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Welch Two Sample t-test</span></span>
@@ -913,7 +902,7 @@ occurrence data, without subsampling.</p>
 <span><span class="co">#&gt; sample estimates:</span></span>
 <span><span class="co">#&gt; mean of x mean of y </span></span>
 <span><span class="co">#&gt;  164.7019  105.7837</span></span></code></pre>
-<div class="sourceCode" id="cb108"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test</a></span><span class="op">(</span><span class="va">unsampE</span><span class="op">$</span><span class="va">minSpanTree</span>, <span class="va">unsampD</span><span class="op">$</span><span class="va">minSpanTree</span>, alternative<span class="op">=</span><span class="st">'g'</span><span class="op">)</span> <span class="co"># eurytopic vs shallow</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Welch Two Sample t-test</span></span>
@@ -932,7 +921,7 @@ analysis of per-taxon range size in this section, subsampling reduced
 the quantitative magnitude of differences between comparison groups. To
 some extent, this muting of absolute differences makes sense given the
 inherent truncation of geographic ranges due to subsampling. However,
-looking back at the <a href="#world_map">map of PBDB data
+looking back at the <a href="#raster_map">map of PBDB data
 distribution</a>, it is also possible to hypothesise that biased
 sampling artificially inflated group differences. For instance, as noted
 when plotting the map, sampling coverage of deep-water habitats extends
@@ -953,6 +942,11 @@ Allmon, Warren D, and Ronald E Martin. 2014. <span>“Seafood Through Time
 Revisited: The Phanerozoic Increase in Marine Trophic Resources and Its
 Macroevolutionary Consequences.”</span> Journal Article.
 <em>Paleobiology</em> 40 (2): 256–87.
+</div>
+<div id="ref-Antell2023" class="csl-entry">
+Antell, Gawain T, Roger BJ Benson, and Erin E Saupe. accepted.
+<span>“Spatial Standardization of Taxon Occurrence Data—a Call to
+Action.”</span> Journal Article. <em>Paleobiology</em>, accepted. <a href="https://doi.org/10.31223/X5997Z" class="external-link">https://doi.org/10.31223/X5997Z</a>.
 </div>
 <div id="ref-Antell2020" class="csl-entry">
 Antell, Gawain T, Wolfgang Kiessling, Martin Aberhan, and Erin E Saupe.
