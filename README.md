@@ -20,7 +20,8 @@ An R package offering spatial subsampling functions for biogeography and
 biodiversity studies, whether analysing fossil or modern taxon
 occurrence data, as described by Antell et al. (2023), ‘Spatial
 standardization of taxon occurrence data—a call to action’. A preprint
-of the *Paleobiology* paper is available at Earth ArXiv ().
+of the *Paleobiology* paper is available at [Earth
+ArXiv](https://doi.org/10.31223/X5997Z).
 
 Three types of subsampling are available to to standardise the number
 and maximum spread (dispersion) of sites within a region of specified
