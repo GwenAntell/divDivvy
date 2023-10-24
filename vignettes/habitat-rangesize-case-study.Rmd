@@ -1,7 +1,7 @@
 ---
 title: "Environmental and geographic standardisation case study"
 author: "G. T. Antell"
-date: "26 September 2023"
+date: "24 October 2023"
 output: rmarkdown::html_vignette
 bibliography: habitat-case-study-refs.bib
 vignette: >
@@ -40,9 +40,10 @@ The ecological attribute this case study focusses on is geographic range size, a
 
 The environmental niche breadth of a taxon strongly controls its geographic distribution; the maximum attainable extent of a taxon's range size is the extent of occurrence of that taxon's suitable habitat. Two consequences of this relationship are that (1) taxa with broad niches (generalists or eurytopic taxa) are expected to occupy larger ranges than those with narrow niches (specialists or stenotopic taxa), and (2) for environments within a given specialisation, a larger geographic distribution of those habitats permits taxa to occupy larger ranges. Taxa may be more restricted than suitable environmental conditions would predict (realised niche breadth), due to biotic or historic factors, but taxa cannot exceed the bounds set by environmental suitability. Since environmental characteristics are more homogeneous in the cold, dark waters of the deep sea than in the topologic complexity of shallow settings, ecologists have long theorised geographic ranges to be larger for deep-dwelling than shallow-water species [@Coe1946; @McClain2010; @Costello2017]. Most empirical tests of this hypothesis have relied upon modern data, however, with relatively little evidence from periods of Earth history when ocean circulation and continental configuration were entirely unlike those of today.
 
-The following sections walk through an analysis to test the expectations geographic ranges are wider for (1) eurytopic than stenotopic taxa and (2) deep- than shallow-water taxa, using brachiopod occurrences from the Silurian (444-419 Ma) recorded in the [Paleobiology Database](https://paleobiodb.org/) (PBDB). Brachiopoda was a diverse clade that made up a large component of Paleozoic benthic communities [@Close2020; @Rojas2021]. In the Paleozoic, much of the world's landmass had coalesced at southermost latitudes into Gondwana, with the remaining continents scattered at the equator and separated by the Iapetus, Paleo-Tethys, Rheic, and Panthalassic oceans (map below). Hence, the geometry of a cosmopolitan marine species' range from the Silurian would differ distinctly from a cosmopolitan range today. Spatial subsampling is crucial to addressing the research questions because the preserved area and distribution of shallow and deep-water habitats also differ from each other.
+<a id="atlas_map"></a>
+The following sections walk through an analysis to test the expectations geographic ranges are wider for (1) eurytopic than stenotopic taxa and (2) deep- than shallow-water taxa, using brachiopod occurrences from the Silurian (444-419 Ma) recorded in the [Paleobiology Database](https://paleobiodb.org/) (PBDB). Brachiopoda was a diverse clade that made up a large component of Paleozoic benthic communities [@Close2020; @Rojas2021]. In the Paleozoic, much of the world's landmass had coalesced at southermost latitudes into Gondwanaland, with the remaining continents scattered at the equator and separated by the Iapetus, Paleo-Tethys, Rheic, and Panthalassic oceans (map below). Hence, the geometry of a cosmopolitan marine species' range from the Silurian would differ distinctly from a cosmopolitan range today. Spatial subsampling is crucial to addressing the research questions because the preserved area and distribution of shallow and deep-water habitats also differ from each other.
 
-![Silurian palaeogeography, as reconstructed by the PALEOMAP PaleoAtlas project [@Scotese2016].](PALEOMAP_atlas_map75a_Llandovery_430.png)
+![*Silurian palaeogeography, as reconstructed by the PALEOMAP PaleoAtlas project [@Scotese2016].*](PALEOMAP_atlas_map75a_Llandovery_430.png)
 
 ## Prepare taxonomic occurrence data
 
@@ -122,9 +123,9 @@ deepTerms <- c("basinal (carbonate)", "basinal (siliceous)",
                "basin reef", "slope/ramp reef")
 ```
 
-The most accurate environmental information will be that associated directly with occurrence records. Where available, that is the information this script will prioritise. However, there are many instances of a blank or indeterminate 'environment' field. In those cases, a way to infer probable environment is to determine the predominant environment in the local grid cell based on the environment recorded from any PBDB collections in that cell. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate---therefore, collections are a rich source of environmental data that is largely independent of occurrences for an individual clade.
+The most accurate environmental information will be that associated directly with occurrence records. Where available, that is the information this script will prioritise. However, there are many instances of a blank or indeterminate `environment` field. In those cases, a way to infer probable environment is to determine the predominant environment in the local grid cell based on the environment recorded from any PBDB collections in that cell. A collection in the PBDB can contain any number of occurrences of any number of clades but is tied to a point coordinate---therefore, collections are a rich source of environmental data that is largely independent of occurrences for an individual clade.
 
-`divvy` provides the `classRast()` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. In the use below, the function classifies grid cells as proximal or deep-water whenever more than 80% of collections are affiliated with a single environment. The template raster passed to `classRast()` here has the same resolution, extent, and coordinate reference system as applied above to the occurrence data. <a id="world_map"></a>
+`divvy` provides the `classRast()` function to convert environmental occurrence points to a raster grid with a dominant environmental class in each cell. In the use below, the function classifies grid cells as proximal or deep-water whenever more than 80% of collections are affiliated with a single environment. The template raster passed to `classRast()` here has the same resolution, extent, and coordinate reference system as applied above to the occurrence data. <a id="raster_map"></a>
 
 ```r
 collSilur$bath <- NA
@@ -137,11 +138,11 @@ plot(bathRast, col = c("#1B9E77", "#D95F02", "black"))
 
 <div class="figure" style="text-align: center">
 <img src="classify-collections-enviro-1.png" alt="World map where a mix of grid cells labelled deep, shallow, and indeterminate are scattered around the outline of Gondwanaland and Laurasia. Most of the points fall close to the coastlines and are concentrated around Laurasia." width="650" height="325" />
-<p class="caption">Predominant environment recorded in PBDB collections</p>
+<p class="caption">*Predominant environment recorded in PBDB collections*</p>
 </div>
-A plot of the environmental distribution inferred from collection data traces the mid-latitude continents (figured above), albeit with gaps. Very few occurrences appear along the coasts of Gondwanaland, perhaps largely due to the under-sampling and under-reporting of the corresponding modern continents relative to North America and Europe. Also note that sampling of northern extents of Laurasia occurs almost exclusively in deep-water settings.
+A plot of the environmental distribution inferred from collection data traces the mid-latitude continents [(figured above)](#atlas_map), albeit with gaps. Very few occurrences appear along the coasts of Gondwanaland, perhaps largely due to the under-sampling and under-reporting of the corresponding modern continents relative to North America and Europe. Also note that sampling of northern extents of Laurasia occurs almost exclusively in deep-water settings.
 
-It is now possible to infer binary water depth for Brachiopod occurrence records. Where available, the classification will reflect the environment directly associated with occurrences, and otherwise will be inferences from the collections-based raster.
+It is now possible to infer binary water depth for brachiopod occurrence records. Where available, the classification will reflect the environment directly associated with occurrences, and otherwise will be inferences from the collections-based raster.
 
 ```r
 # create a new 'bathCell' column to note the collections-inferred environment
@@ -204,8 +205,6 @@ table(occSilur$bathCell)
 Now that the data are standardised to the same raster gridding and environmental classification, it is possible to infer the environmental preferences and niche breadth of all taxa. The custom function below labels a focal taxon as a specialist for an environment if more than a threshold proportion of its occurrences (here, 70%) lie within a single habitat type.
 
 ```r
-taxa <- unique(occSilur$genus)
-
 # categorise preferences as binary or nonspecific/eurytopic
 pref <- function(env, cutoff){
   envTbl <- table(env)
@@ -227,6 +226,7 @@ levels(occSilur$bath)
 
 ```r
 # tag each row as from a taxon with deep, proximal, or eurytopic preference
+taxa <- unique(occSilur$genus)
 occSilur$pref <- NA
 cutoff <- 0.7
 for (tax in taxa){
@@ -236,7 +236,7 @@ for (tax in taxa){
 }
 ```
 
-A simple way to split the data into comparison groups used in analysis below is to divide the occurrence dataset into three `data.frame`s: one for deep-water specialists, one for proximal-environment specialists, and one for eurytopic taxa with respect to depth. This data structure is straightforward to illustrate subsampling in the section below but is not the only way to proceed with analysis; for instance, one could organise the data subsets in a list or array instead and then perform subsampling across that structure's indices.
+A simple way to split the data into comparison groups used in analysis below is to divide the occurrence dataset into three `data.frame`s: one for deep-water specialists, one for proximal-environment specialists, and one for eurytopic taxa with respect to depth. This data structure is straightforward to illustrate subsampling in the section below but is not the only way to proceed with analysis; for instance, one could organise the data subsets in a `list` or `array` instead, and then perform subsampling across that structure's indices.
 
 ```r
 deep <- occSilur[ occSilur$pref == 'deep', ] |>
@@ -296,34 +296,16 @@ sampE <- cookies(dat = eury,
                  crs = prj, output = 'full')
 ```
 
-For further details of subsampling using `divvy`, including the `clustr()` function to define subsamples based on minimum spanning tree diameter instead of circular regional constraints, consult the main package vignette.
+For further details of subsampling using `divvy`, including the `clustr()` function to define subsamples based on minimum spanning tree diameter instead of circular regional constraints, consult the other vignettes and @Antell2023.
 
 ## Summed Common Occurrence Rate between environments
 
 We need to parameterise geographic range sizes in some way to make quantitative comparisons between ecological groups. One way to do so is with a measure of cosmopolitanism calculated on assemblage-level data (rather than individual taxa), such as the Summed Common species/taxon Occurrence Rate (SCOR). SCOR reflects the degree to which taxa are common/widespread and is decoupled from richness or abundance [@Hannisdal2012]. `divvy` provides the `sdSumry()` function to compute summary statistics about the geographic coverage and diversity of a dataset, including SCOR; conveniently, `sdSumry()` can take a `list` of subsampled occurrence data subsets as its data argument and return a single `data.frame` with columns for the summary variables and a row for each subsample.
 
 ```r
-metaD <- sdSumry(sampD, 'genus', xyCell, prj)
-```
-
-```
-#> Error in `[.data.frame`(x, coords): undefined columns selected
-```
-
-```r
-metaP <- sdSumry(sampP, 'genus', xyCell, prj)
-```
-
-```
-#> Error in `[.data.frame`(x, coords): undefined columns selected
-```
-
-```r
-metaE <- sdSumry(sampE, 'genus', xyCell, prj)
-```
-
-```
-#> Error in `[.data.frame`(x, coords): undefined columns selected
+metaD <- sdSumry(sampD, xyCell, 'genus', prj)
+metaP <- sdSumry(sampP, xyCell, 'genus', prj)
+metaE <- sdSumry(sampE, xyCell, 'genus', prj)
 ```
 
 SCOR is calculated as the sum across taxa of the log probability of incidence: very widespread taxa make a large contribution to an assemblage SCOR, while rare taxa have relatively little influence. When a taxon is present in *all* sampled locations, its log probability of incidence is infinite. Infinity is nonsensical in an empirical comparison, so let's screen out subsamples with those values (12 in total, of 1500 subsamples).
@@ -334,7 +316,7 @@ is.infinite(metaD$SCOR) |> any() # none in deep habitat dataset
 ```
 
 ```
-#> Error in eval(expr, envir, enclos): object 'metaD' not found
+#> [1] FALSE
 ```
 
 ```r
@@ -342,7 +324,7 @@ is.infinite(metaP$SCOR) |> any() # but some in the prox habitat dataset
 ```
 
 ```
-#> Error in eval(expr, envir, enclos): object 'metaP' not found
+#> [1] TRUE
 ```
 
 ```r
@@ -350,47 +332,19 @@ is.infinite(metaE$SCOR) |> any() # and some in the all-habitats dataset
 ```
 
 ```
-#> Error in eval(expr, envir, enclos): object 'metaE' not found
+#> [1] TRUE
 ```
 
 ```r
 infP <- is.infinite(metaP$SCOR)
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaP' not found
-```
-
-```r
 metaP <- metaP[ !infP, ]
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaP' not found
-```
-
-```r
 infE <- is.infinite(metaE$SCOR)
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaE' not found
-```
-
-```r
 metaE <- metaE[ !infE, ]
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaE' not found
-```
-
-```r
 sum(infP)
 ```
 
 ```
-#> Error in eval(expr, envir, enclos): object 'infP' not found
+#> [1] 10
 ```
 
 ```r
@@ -398,66 +352,20 @@ sum(infE)
 ```
 
 ```
-#> Error in eval(expr, envir, enclos): object 'infE' not found
+#> [1] 2
 ```
 
-For the permutation hypothesis tests below, it would be ideal for comparison groups to match in sample size. The previous step removed 10 samples from one group, 2 from another, and none from the third--a difference that could be remedied by omitting another 8 and 10 samples from the latter two groups, respectively. Samples could be selected at random. However, one could argue it would unfairly increase the odds of supporting the hypothesis of larger ranges in deep than shallow habitats to randomly omit 10 shallow samples but selectively omit the 10 deep samples where at least one taxon was universally distributed. For a conservative comparison, one could instead omit deep and eurytopic samples with largest values of SCOR.
+For the permutation hypothesis tests below, it would be ideal for comparison groups to match in sample size. The previous step removed 10 samples from one group, 2 from another, and none from the third---a difference that could be remedied by omitting another 8 and 10 samples from the latter two groups, respectively. Samples could be selected at random. However, one could argue it would unfairly increase the odds of supporting the hypothesis of larger ranges in deep than shallow habitats to randomly omit 10 deep samples but selectively omit the 10 shallow samples where at least one taxon was universally distributed. For a conservative comparison, one could instead omit deep and eurytopic samples with largest values of SCOR.
 
 ```r
-# make sample size (of subsamples) equal, by removing ones with highest SCOR
+# make sample size (of subsamples) equal, by removing ones with largest SCOR
 lowestN <- min(nrow(metaD), nrow(metaP), nrow(metaE))
-```
-
-```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaD' not found
-```
-
-```r
 sortD <- order(metaD$SCOR, decreasing = FALSE)
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaD' not found
-```
-
-```r
 metaD <- metaD[sortD, ]
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaD' not found
-```
-
-```r
 metaD <- metaD[1:lowestN, ]
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaD' not found
-```
-
-```r
 sortE <- order(metaE$SCOR, decreasing = FALSE)
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaE' not found
-```
-
-```r
 metaE <- metaE[sortE, ]
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaE' not found
-```
-
-```r
 metaE <- metaE[1:lowestN, ]
-```
-
-```
-#> Error in eval(expr, envir, enclos): object 'metaE' not found
 ```
 Ultimately, the choice of how to perform this selection step makes little difference to results, because it affects only 2% of subsamples.
 
@@ -485,7 +393,7 @@ diffDist <- function(dat1, dat2, vTest, nReps){
 }
 ```
 
-A random region of deep-water habitat contains more taxa with widespread ranges than a proximal habitat two-thirds of the time. Assemblages of eurytopic taxa from any random region almost always contained representatives with more widespread ranges than assemblages of either habitat specialist.
+When we apply the boostrapping test, the results indicate a random region of deep-water habitat contains more taxa with widespread ranges than a proximal habitat two-thirds of the time. Assemblages of eurytopic taxa from any random region almost always contained representatives with more widespread ranges than assemblages of either habitat specialist.
 
 ```r
 # do deep-water environments harbor more cosmopolitan taxa?
@@ -493,7 +401,8 @@ diffDist(metaD, metaP, vTest = 'SCOR', nReps = 1000)
 ```
 
 ```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaD' not found
+#>     lwrCI     uprCI      mean 
+#> 0.6122449 0.6592347 0.6349163
 ```
 
 ```r
@@ -502,7 +411,8 @@ diffDist(metaE, metaD, vTest = 'SCOR', nReps = 1000)
 ```
 
 ```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaE' not found
+#>     lwrCI     uprCI      mean 
+#> 0.9755102 0.9938776 0.9844980
 ```
 
 ```r
@@ -513,17 +423,19 @@ diffDist(metaE, metaP, vTest = 'SCOR', nReps = 1000)
 ```
 
 ```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'nrow': object 'metaE' not found
+#>     lwrCI     uprCI      mean 
+#> 0.9816327 0.9979592 0.9894939
 ```
 
-Another way one could compare SCOR between groups is inspecting the distribution of values in each comparison group. Overall, SCOR values from assemblages of deep-water taxa were slightly larger than those of proximal taxa, while eurytopic taxa were substantially more common than either of those groups (SCOR values five times as large). Again, note that because these results are derived from spatially-standardised data, these numbers account for the fact eurytopic taxa as defined here had many more cells of suitable habitat available to occupy.
+Another way one could compare SCOR between groups is inspecting the distribution of values in each comparison group. Overall, SCOR values from assemblages of deep-water taxa were slightly larger than those of proximal taxa, while eurytopic taxa were substantially more common than either of those groups (SCOR values 4--5 times as large). Again, note that because these results are derived from spatially standardised data, these numbers account for the fact that eurytopic taxa as defined here had many more cells of suitable habitat available to occupy.
 
 ```r
 summary(metaD$SCOR)
 ```
 
 ```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaD' not found
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   2.183   3.174   3.689   3.700   4.153   5.878
 ```
 
 ```r
@@ -531,7 +443,8 @@ summary(metaP$SCOR)
 ```
 
 ```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaP' not found
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   1.090   2.028   3.297   3.135   3.942   5.550
 ```
 
 ```r
@@ -539,38 +452,42 @@ summary(metaE$SCOR)
 ```
 
 ```
-#> Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'metaE' not found
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   3.383   9.796  15.042  14.959  19.822  28.715
 ```
 
 ### Contrast results from non-subsampled data
 
-What would the results and conclusions have been without going to the effort to spatially-subsample the original occurrence data? For comparison with the average SCOR values listed above, the following code uses the `sdSumry()` function again, this time on the non-standardized full datasets.
+What would the results and conclusions have been without going to the effort to spatially subsample the original occurrence data? For comparison with the average SCOR values listed above, the following code uses the `sdSumry()` function again, this time on the non-standardised full datasets.
 
 ```r
-sdSumry(deep, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(deep, xyCell, 'genus', prj) |> round(digits = 2)
 ```
 
 ```
-#> Error in `[.data.frame`(x, coords): undefined columns selected
-```
-
-```r
-sdSumry(prox, 'genus', xyCell, prj) |> round(digits = 2)
-```
-
-```
-#> Error in `[.data.frame`(x, coords): undefined columns selected
+#>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax
+#> [1,]  713  250  -3192759  -1735760   166.32      33567.84       8071.8    130946.3    3   94
 ```
 
 ```r
-sdSumry(eury, 'genus', xyCell, prj) |> round(digits = 2)
+sdSumry(prox, xyCell, 'genus', prj) |> round(digits = 2)
 ```
 
 ```
-#> Error in `[.data.frame`(x, coords): undefined columns selected
+#>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax
+#> [1,]  432  204  -3766508   -957619   166.32      33567.84      7845.98      127435 2.27   61
 ```
 
-In this case the overall direction of results is the same. However, subsampling makes the difference between eurytopic taxa and specialists more pronounced---SCOR values from raw data are estimated about three times larger rather than five times larger compared to shallow- and deep-water taxa.
+```r
+sdSumry(eury, xyCell, 'genus', prj) |> round(digits = 2)
+```
+
+```
+#>      nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist minSpanTree SCOR nTax
+#> [1,] 3462  404  -3134553  -1227392   166.32      33567.84      8321.72    168862.1 9.46  100
+```
+
+In this case the overall direction of results is the same (deep-water taxa tend to be slightly more widespread than shallow-water taxa, and eurytopic taxa are most widespread of all). However, subsampling makes the difference between eurytopic taxa and specialists more pronounced---SCOR values from raw data are estimated about three times larger (rather than 4--5 times larger) compared to shallow- and deep-water taxa.
 
 ## Average taxon range size between environments
 
@@ -608,7 +525,7 @@ rngE <- lapply(sampE, FUN = subsampRange, taxa = taxa, taxCol = 'genus',
                coordCols = xyCell, crs = prj)
 ```
 
-The above code chunk produces a `list` of range-size data for all species in all subsamples. The lines below average all values for each focal taxon to consolidate these intermediate calculations into per-taxon range data for final analysis.
+The above code chunk produces a `list` of range-size data for all genera in all subsamples. The lines below average all values for each focal taxon to consolidate these intermediate calculations into per-taxon range data for final analysis.
 
 ```r
 # summarize a focal species' range size data across all subsamples
@@ -650,9 +567,9 @@ sapply(list('D' = rngAvgD, 'P' = rngAvgP, 'E' = rngAvgE), nrow)
 #> 43 24 95
 ```
 
-The previous section, assessing SCOR as an example of comparing assemblage-based metrics, demonstrated a bootstrapping approach to generate results. As a complementary example, the following chunk uses Frequentist two-sample tests to address each hypothesis. For simplicity, only two measure of geographic range are compared here; the reader could easily substitute any of the other three in the datasets.
+The previous section, assessing SCOR as an example of comparing assemblage-based metrics, demonstrated a bootstrapping approach to generate results. As a complementary example, the following chunk uses Frequentist two-sample tests to address each hypothesis. For simplicity, only two measure of geographic range are compared here (grid cell occupancy and summed length of minimum spanning tree); the reader could easily substitute any of the other three in the datasets (latitudinal range, great circle distance, and mean pairwise distance).
 
-The occurrence or occupancy measure of range size is count data, so a Wilcoxon (Mann-Whitney) test is appropriate as a nonparametric test. The second range-size metric, summed length of minimum spanning trees, follows a normal distribution after square-root transformation; a student's t-test makes parametric comparisons on it.
+The occurrence or occupancy measure of range size is count data, so a Wilcoxon (Mann-Whitney) test is appropriate as a nonparametric test. The second range-size metric, summed length of minimum spanning tree, follows a normal distribution after square-root transformation; a student's t-test makes parametric comparisons on it.
 
 ```r
 wilcox.test(rngAvgD$occurrences, rngAvgP$occurrences, alternative='g') # deep vs shallow
@@ -698,9 +615,9 @@ wilcox.test(rngAvgE$occurrences, rngAvgP$occurrences, alternative='g') # eurytop
 ```
 
 ```r
-rngAvgE$minSpanTree <- sqrt(rngAvgE$minSpanTree)
 rngAvgD$minSpanTree <- sqrt(rngAvgD$minSpanTree)
 rngAvgP$minSpanTree <- sqrt(rngAvgP$minSpanTree)
+rngAvgE$minSpanTree <- sqrt(rngAvgE$minSpanTree)
 t.test(rngAvgD$minSpanTree, rngAvgP$minSpanTree, alternative='g') # deep vs shallow
 ```
 
@@ -754,7 +671,7 @@ t.test(rngAvgE$minSpanTree, rngAvgD$minSpanTree, alternative='g') # eurytopic vs
 #>  31.41559  26.92918
 ```
 
-The results of per-taxon range size comparisons are less clear than those of assemblage-based SCOR comparisons above. There is no discernible difference in mean range size between deep- and shallow-water species whether measured as occurrence counts or minimum spanning tree distances. However, eurytopic taxa still measure larger than either specialist group, even by conservative thresholds for significance: eurytopic taxa occur in nearly one more grid cell of the 15 in every subsample, and span about 270 km farther in tree length connecting occupied cells.
+The results of per-taxon range size comparisons are less clear than those of assemblage-based SCOR comparisons above. There is no discernible difference in mean range size between deep- and shallow-water species whether measured as occurrence counts or minimum spanning tree distances. However, eurytopic taxa still measure larger than either specialist group, even by conservative thresholds for significance: eurytopic taxa occur in nearly one more grid cell of the 15 in every subsample, and span about 270 km farther in tree length connecting occupied cells. (Recall the tree lengths printed here are square-root transformed.)
 
 ```r
 vars <- c('occurrences', 'minSpanTree')
@@ -775,7 +692,7 @@ As with the assemblage-based analysis above, we can investigate the inferences t
 
 ```r
 # calculate geographic range size on alloccurrences (not subsampled)
-unsamp <- subsampRange(taxa, occSilur, 'genus', xyCell, prj)
+unsamp <- subsampRange(taxa, df = occSilur, taxCol = 'genus', coordCols = xyCell, crs = prj)
 unsampD <- unsamp[rownames(unsamp) %in% taxaD,]
 unsampP <- unsamp[rownames(unsamp) %in% taxaP,]
 unsampE <- unsamp[rownames(unsamp) %in% taxaE,]
@@ -875,6 +792,6 @@ t.test(unsampE$minSpanTree, unsampD$minSpanTree, alternative='g') # eurytopic vs
 #>  164.7019  105.7837
 ```
 
-In the bootstrapped analysis of SCOR values, subsampling happened to amplify the differences between comparison groups. In the Frequentist analysis of per-taxon range size in this section, subsampling reduced the quantitative magnitude of differences between comparison groups. To some extent, this muting of absolute differences makes sense given the inherent truncation of geographic ranges due to subsampling. However, looking back at the [map of PBDB data distribution](#world_map), it is also possible to hypothesise that biased sampling artificially inflated group differences. For instance, as noted when plotting the map, sampling coverage of deep-water habitats extends much farther around Laurasia compared to shallow-water habitats. Without accounting for this influence, it is impossible to attribute the greater minimum spanning tree length of deep-water species to ecology alone. After subsampling, although there may be fewer results that are clear, the analyst can trust the results that do emerge as meaningful for biological interpretation.
+In the bootstrapped analysis of SCOR values, subsampling happened to amplify the differences between comparison groups. In the Frequentist analysis of per-taxon range size in this section, subsampling reduced the quantitative magnitude of differences between comparison groups. To some extent, this muting of absolute differences makes sense given the inherent truncation of geographic ranges due to subsampling. However, looking back at the [map of PBDB data distribution](#raster_map), it is also possible to hypothesise that biased sampling artificially inflated group differences. For instance, as noted when plotting the map, sampling coverage of deep-water habitats extends much farther around Laurasia compared to shallow-water habitats. Without accounting for this influence, it is impossible to attribute the greater minimum spanning tree length of deep-water species to ecology alone. After subsampling, although there may be fewer results that are clear, the analyst can trust the results that do emerge as meaningful for biological interpretation.
 
 ## References
