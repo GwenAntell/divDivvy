@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # divvy
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/divvy)](https://CRAN.R-project.org/package=divvy)
 [![R-CMD-check](https://github.com/GawainAntell/divvy/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GawainAntell/divvy/actions/workflows/R-CMD-check.yaml)
 [![test-coverage](https://github.com/GawainAntell/divvy/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/GawainAntell/divvy/actions/workflows/test-coverage.yaml)
 [![codecov](https://codecov.io/gh/GawainAntell/divvy/graph/badge.svg?token=SEJWHTUBB1)](https://app.codecov.io/gh/GawainAntell/divvy)

@@ -1,13 +1,15 @@
 Package: divvy
 Title: Spatial Subsampling of Biodiversity Occurrence Data
-Version: 0.2.0.9000
+Version: 1.0.0
 Authors@R: 
     person("Gawain", "Antell", , "gawainantell@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-1948-6624"))
 Depends: R (>= 4.0)
-Description: Divide taxonomic occurrence data into geographic regions of fair 
-    comparison, according to three customizable standardization methods. 
+Description: Divide taxonomic occurrence data into geographic regions of fair
+    comparison, with three customisable methods to standardise area and extent.
     Calculate common biodiversity and range-size metrics on subsampled data.
+    Background theory and practical considerations for the methods are described
+    in Antell and others (2023) <doi:10.31223/X5997Z>.
 License: GPL (>= 3)
 Encoding: UTF-8
 Imports: 

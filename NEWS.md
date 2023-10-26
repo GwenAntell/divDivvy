@@ -1,4 +1,4 @@
-# divvy (development version)
+# divvy 1.0.0
 
 ## Breaking changes
 
@@ -16,7 +16,6 @@
 * Built pkgdown website
 * Created unit tests
 * Added detail to function help documentation
-* Added option to specify custom breaks for latitudinal subsamples
 * Updated examples to avoid calling deprecated spatial packages
 
 # version 0.2.0
